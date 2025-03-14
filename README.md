@@ -35,7 +35,7 @@ Inspired by the limitless creative potential of artificial intelligence and the 
 - **Blockchain/Protocol:**  
   Integrates with Polkadot and Ethereum testnets to demonstrate cross-chain NFT functionality.
 - **Tools and APIs:**  
-  Hardhat, Viem, Wagmi, OpenAI API, Replicate API, RainbowKit, and Next Themes
+  Hardhat, Viem, Wagmi, Replicate API, RainbowKit, and Next Themes
 
 ## Features
 
@@ -50,7 +50,7 @@ Inspired by the limitless creative potential of artificial intelligence and the 
 
 ### Architecture
 
-The platform features a modern front-end built with Next.js and Tailwind CSS, interfacing with smart contracts deployed on Polkadot and Ethereum testnets. AI services from OpenAI and Replicate generate NFT images and stories, while blockchain interactions are handled via Viem and Wagmi. Additionally, a reward mechanism assigns XP to users based on their activity and NFT transactions.
+The platform features a modern front-end built with Next.js and Tailwind CSS, interfacing with smart contracts deployed on Polkadot and Ethereum testnets. AI service from Replicate generate NFT images, while blockchain interactions are handled via Viem and Wagmi. Additionally, a reward mechanism assigns XP to users based on their activity and NFT transactions.
 
 ### Demo Instructions
 
@@ -98,11 +98,13 @@ Planned enhancements include:
 
 ## Submission Details
 
-- **GitHub Repository:**  
+- **GitHub Repository:**
   [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
-- **Live Demo:**  
+- **Live Demo:**
   [![Watch the video](./public/live-demo.png)](https://www.youtube.com/watch?v=MH4DsjtsO8c)
   [https://www.youtube.com/watch?v=MH4DsjtsO8c](https://www.youtube.com/watch?v=MH4DsjtsO8c)
+- **Presentation Slides:**  
+  [https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit?utm_content=DAGhvgXMfyQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton](https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit?utm_content=DAGhvgXMfyQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 ## Acknowledgments
 
