@@ -82,7 +82,7 @@ The platform features a modern front-end built with Next.js and Tailwind CSS, in
 ## Challenges
 
 I faced several challenges, including:
-- Integrating AI APIs with blockchain smart contracts.
+- Coordinating AI Image Generation with On-Chain NFT Creation.
 - Ensuring a seamless cross-chain user experience.
 - Designing a secure and scalable system.
 
@@ -91,10 +91,10 @@ Overcoming these challenges required deep dives into both blockchain and AI tech
 ## Future Development
 
 Planned enhancements include:
-- Integrating additional blockchain networks.
-- Expanding the decentralized governance model.
-- Enhancing the reward and XP system.
-- Continuously improving the user interface and experience based on community feedback.
+- Multi-network expansion & advanced AI integrations.
+- Decentralized governance with community-driven updates.
+- Enhanced gamification & XP-based unlockables.
+- Expansion of reward pool for cross-chain grants.
 
 ## Submission Details
 
