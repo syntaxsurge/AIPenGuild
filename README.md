@@ -101,11 +101,8 @@ Planned enhancements include:
 - **GitHub Repository:**  
   [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
 - **Live Demo:**  
-  [https://aipenguild.syntaxsurge.com](https://aipenguild.syntaxsurge.com)
-- **Documentation:**  
-  [https://docs.aipenguild.syntaxsurge.com](https://docs.aipenguild.syntaxsurge.com)
-- **Presentation Slides:**  
-  [https://aipenguild.syntaxsurge.com/pitch-deck](https://aipenguild.syntaxsurge.com/pitch-deck)
+  [![Watch the video](./public/live-demo.png)](https://www.youtube.com/watch?v=MH4DsjtsO8c)
+  [https://www.youtube.com/watch?v=MH4DsjtsO8c](https://www.youtube.com/watch?v=MH4DsjtsO8c)
 
 ## Acknowledgments
 

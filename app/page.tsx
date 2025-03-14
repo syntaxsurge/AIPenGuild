@@ -19,6 +19,24 @@ export default function Home() {
     <>
       {/* Hero Section */}
       <HeroSection />
+      <section className="py-12 bg-white dark:bg-gray-900">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-extrabold text-primary">Watch Our Introduction</h2>
+            <p className="mt-2 text-muted-foreground">Learn more about AIPenGuild in this short video.</p>
+          </div>
+          <div className="relative pb-[56.25%] overflow-hidden rounded-lg shadow-lg">
+            <iframe
+              className="absolute top-0 left-0 w-full h-full"
+              src="https://www.youtube.com/embed/MH4DsjtsO8c"
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+      </section>
 
       {/* Featured AI NFTs Section */}
       <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
