@@ -38,10 +38,9 @@ export default function MyNFTsPage() {
   const [metadataMap, setMetadataMap] = useState<Record<string, MetadataState>>({})
 
   const [currentTokenId, setCurrentTokenId] = useState<bigint | null>(null)
-  // Add a ref to skip repeated fetches:
   const fetchedOwnedNFTsRef = useRef(false)
 
-  // 1) Fetch getLatestItemId from the contract (only once, or if user re-connects)
+  // 1) Fetch getLatestItemId from the contract
   useEffect(() => {
     async function fetchTokenCount() {
       try {
@@ -59,20 +58,18 @@ export default function MyNFTsPage() {
         console.error("Error reading getLatestItemId:", err)
       }
     }
-    // Only fetch if user is connected and there's a contract
     if (wagmiAddress && aiNftExchange?.address) {
       fetchTokenCount()
     }
   }, [wagmiAddress, aiNftExchange, publicClient])
 
-  // 2) Once we have currentTokenId, fetch the user’s owned tokens
+  // 2) Fetch the user’s owned tokens
   useEffect(() => {
     async function fetchOwnedNFTs() {
       if (!wagmiAddress || !currentTokenId || !aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) {
         return
       }
       try {
-        // Avoid re-fetching
         if (fetchedOwnedNFTsRef.current) return
         fetchedOwnedNFTsRef.current = true
 
@@ -107,7 +104,7 @@ export default function MyNFTsPage() {
               ownedTokens.push(item)
             }
           } catch (err) {
-            // Some tokens might not exist or cause errors, skip them
+            // skip missing tokens
           }
         }
         setOwnedNFTs(ownedTokens)
@@ -118,7 +115,7 @@ export default function MyNFTsPage() {
     fetchOwnedNFTs()
   }, [wagmiAddress, currentTokenId, aiNftExchange, publicClient])
 
-  // 3) Load metadata for the owned NFTs
+  // 3) Load metadata
   useEffect(() => {
     async function loadMetadata() {
       if (ownedNFTs.length === 0) return
@@ -141,7 +138,6 @@ export default function MyNFTsPage() {
             nft.resourceUrl.startsWith("https://") ||
             nft.resourceUrl.startsWith("http://")
           ) {
-            // Attempt to fetch as JSON
             const resp = await fetch(nft.resourceUrl)
             const maybeJson = await resp.json()
             if (maybeJson.image) finalImageUrl = maybeJson.image
@@ -149,7 +145,7 @@ export default function MyNFTsPage() {
             if (maybeJson.description) description = maybeJson.description
           }
         } catch (err) {
-          // Ignore JSON parse errors
+          // ignore
         }
 
         newMap[String(nft.itemId)] = {
@@ -160,7 +156,6 @@ export default function MyNFTsPage() {
       }
       setMetadataMap(newMap)
     }
-
     loadMetadata()
   }, [ownedNFTs])
 
@@ -279,13 +274,14 @@ export default function MyNFTsPage() {
 
       {selectedNFT && (
         <Card className="mt-6 border border-border rounded-lg shadow-xl bg-background">
-          <CardHeader className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-primary-foreground rounded-t-lg">
+          {/* Matching background color */}
+          <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
             <CardTitle className="text-lg font-semibold">Set Sale Price</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleListNFT} className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Sale Price (WND)</label>
+                <label className="text-sm font-medium">Sale Price (ETH)</label>
                 <Input
                   type="number"
                   step="0.001"

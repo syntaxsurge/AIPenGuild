@@ -1,60 +1,99 @@
 "use client"
-import { useState } from "react"
-import Image from "next/image"
+import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { X, Search } from "lucide-react"
+import { X, Search, Grid2X2, LayoutList } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Badge } from "@/components/ui/badge"
-import { Grid2X2, LayoutList } from "lucide-react"
+import { useContract } from "@/hooks/useContract"
+import { usePublicClient } from "wagmi"
 
-interface NFTItem {
-  id: number
-  title: string
+interface MarketplaceItem {
+  itemId: bigint
   creator: string
-  price: string
-  image: string
+  xpValue: bigint
+  isOnSale: boolean
+  salePrice: bigint
+  resourceUrl: string
+  owner: string
 }
-
-const mockNFTs: NFTItem[] = [
-  {
-    id: 1,
-    title: "Alapaap ng Maynila",
-    creator: "Sining Pinoy",
-    price: "0.07",
-    image: "/marketplace/nft_1.png"
-  },
-  {
-    id: 2,
-    title: "Bahaghari Night",
-    creator: "Makisig Studio",
-    price: "0.12",
-    image: "/marketplace/nft_2.png"
-  },
-  {
-    id: 3,
-    title: "Harana Scene",
-    creator: "Luwalhati Labs",
-    price: "0.04",
-    image: "/marketplace/nft_3.png"
-  }
-]
 
 export default function MarketplacePage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [priceRange, setPriceRange] = useState([0, 10])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [listedItems, setListedItems] = useState<MarketplaceItem[]>([])
 
   const categories = ["Art", "Music", "Virtual Worlds", "Trading Cards", "Collectibles"]
+  const aiNftExchange = useContract("AINFTExchange")
+  const publicClient = usePublicClient()
+  const fetchedRef = useRef(false)
 
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
     )
   }
+
+  // Fetch all minted items from the contract and filter for isOnSale
+  useEffect(() => {
+    async function fetchItems() {
+      if (!aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) return
+      if (fetchedRef.current) return
+      fetchedRef.current = true
+      try {
+        const totalItemId = await publicClient.readContract({
+          address: aiNftExchange.address as `0x${string}`,
+          abi: aiNftExchange.abi,
+          functionName: "getLatestItemId",
+          args: [], // important for zero-argument function
+        })
+        if (typeof totalItemId !== "bigint") return
+
+        const newListed: MarketplaceItem[] = []
+
+        for (let i = 1; i <= Number(totalItemId); i++) {
+          try {
+            const data = await publicClient.readContract({
+              address: aiNftExchange.address as `0x${string}`,
+              abi: aiNftExchange.abi,
+              functionName: "itemData",
+              args: [BigInt(i)],
+            }) as [bigint, string, bigint, boolean, bigint, string]
+
+            const owner = await publicClient.readContract({
+              address: aiNftExchange.address as `0x${string}`,
+              abi: aiNftExchange.abi,
+              functionName: "ownerOf",
+              args: [BigInt(i)],
+            }) as `0x${string}`
+
+            if (data[3]) { // isOnSale == true
+              newListed.push({
+                itemId: data[0],
+                creator: data[1],
+                xpValue: data[2],
+                isOnSale: data[3],
+                salePrice: data[4],
+                resourceUrl: data[5],
+                owner
+              })
+            }
+          } catch (_err) {
+            // skip invalid
+          }
+        }
+        setListedItems(newListed)
+      } catch (err) {
+        console.error("Error fetching marketplace items:", err)
+      }
+    }
+    fetchItems()
+  }, [aiNftExchange, publicClient])
 
   return (
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
@@ -155,9 +194,8 @@ export default function MarketplacePage() {
         </div>
       </aside>
 
-      {/* Main content area */}
+      {/* Main content */}
       <div className="flex-1 flex flex-col px-4 py-6 sm:px-6 md:px-8">
-        {/* Top bar */}
         <header className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-extrabold text-primary">AIPenGuild Marketplace</h1>
           <div className="flex items-center gap-2 md:hidden">
@@ -193,56 +231,83 @@ export default function MarketplacePage() {
           </Button>
         </div>
 
-        {/* NFT display */}
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {mockNFTs.map((nft) => (
-              <div key={nft.id} className="group overflow-hidden rounded-lg border border-border p-3 transition-shadow hover:shadow-lg">
-                <div className="relative h-60 w-full overflow-hidden rounded-md">
-                  <Image
-                    src={nft.image}
-                    alt={nft.title}
-                    fill
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">{nft.title}</h2>
-                  <span className="text-xs text-primary font-bold">{nft.price} ETH</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">by {nft.creator}</p>
-              </div>
-            ))}
-          </div>
+        {listedItems.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground mt-16">
+            No items listed for sale at the moment.
+          </p>
         ) : (
-          <div className="flex flex-col gap-4">
-            {mockNFTs.map((nft) => (
-              <div
-                key={nft.id}
-                className="flex flex-col items-start gap-4 rounded-lg border border-border p-4 transition-shadow hover:shadow-md sm:flex-row"
-              >
-                <div className="relative h-36 w-full flex-shrink-0 overflow-hidden rounded-md sm:w-36">
-                  <Image
-                    src={nft.image}
-                    alt={nft.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex flex-1 flex-col">
-                  <h3 className="text-base font-semibold">{nft.title}</h3>
-                  <p className="text-sm text-muted-foreground">by {nft.creator}</p>
-                </div>
-                <div className="flex flex-col items-start gap-2 sm:items-end">
-                  <span className="text-sm font-bold text-primary">{nft.price} ETH</span>
-                  <Button variant="default" size="sm">Buy</Button>
-                </div>
+          <>
+            {viewMode === "grid" ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                {listedItems.map((item) => (
+                  <div
+                    key={String(item.itemId)}
+                    className="group overflow-hidden rounded-lg border border-border p-3 transition-shadow hover:shadow-lg"
+                  >
+                    <div className="relative h-60 w-full overflow-hidden rounded-md">
+                      <MarketplaceImage resourceUrl={item.resourceUrl} />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">AI NFT #{String(item.itemId)}</h2>
+                      <span className="text-xs text-primary font-bold">
+                        {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">Owner: {item.owner.slice(0,6)}...{item.owner.slice(-4)}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {listedItems.map((item) => (
+                  <div
+                    key={String(item.itemId)}
+                    className="flex flex-col items-start gap-4 rounded-lg border border-border p-4 transition-shadow hover:shadow-md sm:flex-row"
+                  >
+                    <div className="relative h-36 w-full flex-shrink-0 overflow-hidden rounded-md sm:w-36">
+                      <MarketplaceImage resourceUrl={item.resourceUrl} />
+                    </div>
+                    <div className="flex flex-1 flex-col">
+                      <h3 className="text-base font-semibold">
+                        AI NFT #{String(item.itemId)}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Owner: {item.owner.slice(0,6)}...{item.owner.slice(-4)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 sm:items-end">
+                      <span className="text-sm font-bold text-primary">
+                        {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
+                      </span>
+                      <Button variant="default" size="sm">
+                        Buy
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
-
       </div>
     </main>
+  )
+}
+
+/**
+ * Helper to display the NFT image. If IPFS or HTTP, we do an <Image> with remote patterns.
+ */
+function MarketplaceImage({ resourceUrl }: { resourceUrl: string }) {
+  let imageUrl = resourceUrl
+  if (resourceUrl.startsWith("ipfs://")) {
+    imageUrl = resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
+  }
+  return (
+    <Image
+      src={imageUrl}
+      alt="NFT"
+      fill
+      className="object-cover transition-transform group-hover:scale-105"
+    />
   )
 }

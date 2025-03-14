@@ -10,11 +10,6 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagm
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
-/**
- * We'll store only the generated or uploaded image. Then call mintFromCollection(0, ipfsImageUrl)
- * with no story or additional metadata.
- */
-
 async function uploadFileToIpfs(file: File): Promise<string> {
   const formData = new FormData()
   formData.append("file", file)
@@ -24,17 +19,14 @@ async function uploadFileToIpfs(file: File): Promise<string> {
   })
   if (!res.ok) throw new Error("Failed to upload file to IPFS")
   const data = await res.json()
-  return data.fullUrl // e.g. https://ipfs.unique.network/ipfs/...
+  return data.fullUrl
 }
 
 export default function MintNFTPage() {
   const { address: wagmiAddress } = useAccount()
   const { toast } = useToast()
-
-  // Our CreatorCollection contract instance
   const creatorCollection = useContract("CreatorCollection")
 
-  // For initiating writes
   const {
     data: writeData,
     error,
@@ -43,7 +35,6 @@ export default function MintNFTPage() {
     writeContract
   } = useWriteContract()
 
-  // Wait for the transaction receipt using the hash (writeData)
   const {
     data: txReceipt,
     isLoading: isTxLoading,
@@ -54,21 +45,16 @@ export default function MintNFTPage() {
     hash: writeData ?? undefined
   })
 
-  // AI generation
   const [prompt, setPrompt] = useState("")
   const [aiNft, setAiNft] = useState<any>(null)
   const [generatingImage, setGeneratingImage] = useState(false)
   const [generateImageError, setGenerateImageError] = useState("")
   const [showPromptError, setShowPromptError] = useState(false)
 
-  // Manually uploaded file
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  // Toggle: use AI image or manual upload
   const [useAIImage, setUseAIImage] = useState(true)
-
-  // Mint error
   const [mintError, setMintError] = useState("")
 
   async function handleGenerateImage() {
@@ -111,7 +97,7 @@ export default function MintNFTPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] || null
     setUploadedFile(file)
-    setAiNft(null) // reset AI image if user chooses manual
+    setAiNft(null)
     if (file) {
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
@@ -131,9 +117,15 @@ export default function MintNFTPage() {
         })
         return
       }
+      if (!creatorCollection) {
+        toast({
+          title: "No Contract Found",
+          description: "CreatorCollection contract not found. Check your chain or config.",
+          variant: "destructive"
+        })
+        return
+      }
 
-      // No story or additional metadata. Just image. We'll pass collectionId=0.
-      // Decide final image URL
       let finalImageUrl = ""
       if (useAIImage) {
         if (!aiNft?.imageUrl) {
@@ -145,7 +137,6 @@ export default function MintNFTPage() {
           })
           return
         }
-        // re-upload the AI image to IPFS
         toast({ title: "Uploading to IPFS...", description: "Please wait" })
         const imageData = await fetch(aiNft.imageUrl)
         if (!imageData.ok) throw new Error("Failed to fetch AI image for re-upload to IPFS")
@@ -153,7 +144,6 @@ export default function MintNFTPage() {
         const file = new File([blob], "ai_nft.png", { type: blob.type })
         finalImageUrl = await uploadFileToIpfs(file)
       } else {
-        // manual
         if (!uploadedFile) {
           setMintError("No manual upload found. Please generate or upload an image first.")
           toast({
@@ -167,7 +157,6 @@ export default function MintNFTPage() {
         finalImageUrl = await uploadFileToIpfs(uploadedFile)
       }
 
-      // Now mint from collection #0 with that finalImageUrl
       const mintFromCollectionABI = {
         name: "mintFromCollection",
         type: "function",
@@ -184,7 +173,7 @@ export default function MintNFTPage() {
         abi: [mintFromCollectionABI],
         functionName: "mintFromCollection",
         args: [0, finalImageUrl],
-        value: parseEther("0.1") // 0.1 DEV
+        value: parseEther("0.1")
       })
 
       toast({
@@ -201,6 +190,7 @@ export default function MintNFTPage() {
     }
   }
 
+  // Show toasts for transaction events
   useEffect(() => {
     if (isTxLoading) {
       toast({
@@ -230,7 +220,6 @@ export default function MintNFTPage() {
         Generate or upload your NFT image and mint from the default collection.
       </p>
 
-      {/* NFT Image Options */}
       <Card className="border border-border shadow-lg rounded-lg p-6">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -239,7 +228,6 @@ export default function MintNFTPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Toggle: AI-based or upload */}
           <div>
             <div className="mb-2 text-sm font-medium text-muted-foreground">
               Choose how to get your NFT image
@@ -271,7 +259,6 @@ export default function MintNFTPage() {
             </div>
           </div>
 
-          {/* AI-based image */}
           {useAIImage && (
             <div className="rounded-md bg-secondary p-4">
               <label className="mb-2 block text-sm font-medium text-muted-foreground">
@@ -313,7 +300,6 @@ export default function MintNFTPage() {
             </div>
           )}
 
-          {/* Manual file upload */}
           {!useAIImage && (
             <div className="rounded-md bg-secondary p-4">
               <label className="mb-2 block text-sm font-medium text-muted-foreground">
@@ -342,7 +328,6 @@ export default function MintNFTPage() {
         </CardContent>
       </Card>
 
-      {/* Final Mint CTA */}
       <Card className="border border-border shadow-lg rounded-lg mt-8 p-6">
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -369,16 +354,22 @@ export default function MintNFTPage() {
             {mintError && (
               <p className="text-xs text-destructive break-words whitespace-pre-wrap">{mintError}</p>
             )}
-            {isTxSuccess && (
-              <p className="text-xs text-green-600">
-                Transaction Confirmed! Your NFT is minted.
-              </p>
-            )}
-            {isTxError && (
-              <p className="text-xs text-red-600 break-words whitespace-pre-wrap">
-                Transaction Failed: {txError?.message}
-              </p>
-            )}
+
+            {/* Transaction Status block */}
+            <div className="rounded-md border border-border p-4 mt-2 text-sm">
+              <p className="font-medium">Transaction Status:</p>
+              {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+              {isTxSuccess && (
+                <p className="text-green-600">
+                  Transaction Confirmed! Your NFT is minted.
+                </p>
+              )}
+              {isTxError && (
+                <p className="text-red-600">
+                  Transaction Failed: {txError?.message}
+                </p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
