@@ -24,36 +24,22 @@ const mockNFTs: NFTItem[] = [
     title: "Alapaap ng Maynila",
     creator: "Sining Pinoy",
     price: "0.07",
-    image: "/market_nft_a.png"
+    image: "/marketplace/nft_1.png"
   },
   {
     id: 2,
     title: "Bahaghari Night",
     creator: "Makisig Studio",
     price: "0.12",
-    image: "/market_nft_b.png"
+    image: "/marketplace/nft_2.png"
   },
   {
     id: 3,
     title: "Harana Scene",
     creator: "Luwalhati Labs",
     price: "0.04",
-    image: "/market_nft_c.png"
-  },
-  {
-    id: 4,
-    title: "Lakan Dreams",
-    creator: "Pinoy Brush",
-    price: "0.09",
-    image: "/market_nft_d.png"
-  },
-  {
-    id: 5,
-    title: "Tala't Lakas",
-    creator: "Atin Visuals",
-    price: "0.06",
-    image: "/market_nft_e.png"
-  },
+    image: "/marketplace/nft_3.png"
+  }
 ]
 
 export default function MarketplacePage() {
@@ -181,7 +167,7 @@ export default function MarketplacePage() {
           </div>
           <div className="hidden md:flex items-center gap-4">
             <Link href="/list-nft">
-              <Button variant="outline" size="sm">List NFT for Sale</Button>
+              <Button variant="outline" size="sm">My NFTs</Button>
             </Link>
             <Link href="/mint">
               <Button size="sm">Generate AI NFT</Button>

@@ -12,17 +12,16 @@ import { parseEther } from "viem"
 
 /**
  * Renamed from "create-new-item" to "list-nft" for clarity.
- * This page has a wider styling (max-w-4xl) and a more modern design for listing an NFT.
+ * This page allows the user to see which NFTs they own, and list them for sale.
  */
 
 interface NFTDetails {
-  tokenId: bigint
+  itemId: bigint
   creator: string
-  xpPoints: bigint
-  mintPrice: bigint
-  isListed: boolean
-  listingPrice: bigint
-  imageUrl: string
+  xpValue: bigint
+  isOnSale: boolean
+  salePrice: bigint
+  resourceUrl: string
 }
 
 export default function ListNFTPage() {
@@ -35,10 +34,11 @@ export default function ListNFTPage() {
   const [ownedNFTs, setOwnedNFTs] = useState<NFTDetails[]>([])
   const [selectedNFT, setSelectedNFT] = useState<NFTDetails | null>(null)
 
+  // Retrieve the total minted token count from the contract
   const { data: currentTokenId } = useContractRead({
     address: nftMarketplace?.address as `0x${string}`,
     abi: nftMarketplace?.abi,
-    functionName: "getTokenId"
+    functionName: "getLatestItemId"
   })
 
   useEffect(() => {
@@ -47,6 +47,7 @@ export default function ListNFTPage() {
       const ownedTokens: NFTDetails[] = []
       for (let i = 1; i <= Number(currentTokenId); i++) {
         try {
+          // Check if user is the owner
           const owner = (await publicClient.readContract({
             address: nftMarketplace.address as `0x${string}`,
             abi: nftMarketplace.abi,
@@ -55,15 +56,27 @@ export default function ListNFTPage() {
           })) as `0x${string}`
 
           if (owner.toLowerCase() === wagmiAddress.toLowerCase()) {
+            // Get item data from public mapping itemData
             const details = (await publicClient.readContract({
               address: nftMarketplace.address as `0x${string}`,
               abi: nftMarketplace.abi,
-              functionName: "nftDetails",
+              functionName: "itemData",
               args: [BigInt(i)]
-            })) as NFTDetails
-            ownedTokens.push(details)
+            })) as [bigint, string, bigint, boolean, bigint, string]
+
+            const item: NFTDetails = {
+              itemId: details[0],
+              creator: details[1],
+              xpValue: details[2],
+              isOnSale: details[3],
+              salePrice: details[4],
+              resourceUrl: details[5]
+            }
+            ownedTokens.push(item)
           }
-        } catch {}
+        } catch (err) {
+          // Some tokens may not exist or revert. Just continue for others
+        }
       }
       setOwnedNFTs(ownedTokens)
     }
@@ -77,7 +90,7 @@ export default function ListNFTPage() {
     if (!wagmiAddress) {
       toast({
         title: "Wallet not connected",
-        description: "Please connect your wallet or switch to a supported network before listing an NFT.",
+        description: "Please connect your wallet before listing an NFT.",
         variant: "destructive"
       })
       return
@@ -105,8 +118,8 @@ export default function ListNFTPage() {
       await writeContract({
         address: nftMarketplace?.address as `0x${string}`,
         abi: [abiListNFT],
-        functionName: "listNFTForSale",
-        args: [selectedNFT.tokenId, parseEther(price)]
+        functionName: "listAIItem",
+        args: [selectedNFT.itemId, parseEther(price)]
       })
       toast({
         title: "Success",
@@ -142,21 +155,21 @@ export default function ListNFTPage() {
             <div className="grid grid-cols-2 gap-4">
               {ownedNFTs.map((nft) => (
                 <div
-                  key={String(nft.tokenId)}
+                  key={String(nft.itemId)}
                   onClick={() => setSelectedNFT(nft)}
                   className={`cursor-pointer rounded-lg border-2 p-2 transition-transform hover:scale-105 ${
-                    selectedNFT?.tokenId === nft.tokenId ? "border-primary" : "border-border"
+                    selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
                   }`}
                 >
                   <div className="relative h-24 w-full overflow-hidden rounded-md">
                     <Image
-                      src={nft.imageUrl}
-                      alt={`NFT #${nft.tokenId}`}
+                      src={nft.resourceUrl}
+                      alt={`NFT #${nft.itemId}`}
                       fill
                       className="object-cover"
                     />
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Token ID: {String(nft.tokenId)}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Item ID: {String(nft.itemId)}</p>
                 </div>
               ))}
             </div>

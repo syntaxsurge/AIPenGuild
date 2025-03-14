@@ -79,7 +79,7 @@ export default function CreateCollectionPage() {
       await writeContract({
         address: creatorCollection.address as `0x${string}`,
         abi: [createCollectionABI],
-        functionName: "createCollection",
+        functionName: "defineNewCollection",
         args: [
           formData.name,
           formData.description, 
@@ -93,12 +93,12 @@ export default function CreateCollectionPage() {
         type: "function",
         stateMutability: "nonpayable",
         inputs: [{ name: "collectionAddr", type: "address" }],
-        outputs: []
+        outputs: [{ name: "collectionId", type: "uint256" }]
       }
       await writeContract({
         address: nftMarketplace.address as `0x${string}`,
         abi: [registerCollectionABI],
-        functionName: "registerCollection",
+        functionName: "registerAIDerivedContract",
         args: [creatorCollection.address as `0x${string}`]
       })
 

@@ -216,7 +216,7 @@ export default function MintNFTPage() {
           0, // Using primary collection (collectionId 0)
           finalImageUrl
         ],
-        value: parseEther("0.05")
+        value: parseEther("0.1")
       })
       toast({
         title: "Mint Success",

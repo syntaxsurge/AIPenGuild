@@ -5,7 +5,7 @@ const creatorData = [
   {
     id: 1,
     name: "Juan dela Cruz",
-    avatar: "/avatars/aurora.png",
+    avatar: "/avatars/creator1.png",
     change: 2.12,
     itemsSold: 860,
     volume: 21.3
@@ -13,7 +13,7 @@ const creatorData = [
   {
     id: 2,
     name: "Marites Santos",
-    avatar: "/avatars/maxwell.png",
+    avatar: "/avatars/creator2.png",
     change: 1.77,
     itemsSold: 512,
     volume: 18.9
@@ -21,18 +21,10 @@ const creatorData = [
   {
     id: 3,
     name: "Aling Nena",
-    avatar: "/avatars/dylan.png",
+    avatar: "/avatars/creator3.png",
     change: 1.25,
     itemsSold: 370,
     volume: 12.4
-  },
-  {
-    id: 4,
-    name: "Pedro Reyes",
-    avatar: "/avatars/fiona.png",
-    change: 0.95,
-    itemsSold: 210,
-    volume: 9.2
   }
 ]
 

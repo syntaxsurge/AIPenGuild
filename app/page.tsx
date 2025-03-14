@@ -35,7 +35,7 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            {["featured1.png", "featured2.png", "featured3.png"].map((src, idx) => (
+            {["marketplace/nft_1.png", "marketplace/nft_2.png", "marketplace/nft_3.png"].map((src, idx) => (
               <div
                 key={idx}
                 className="group relative overflow-hidden rounded-lg border border-border p-2"
@@ -88,7 +88,7 @@ export default function Home() {
             </div>
             <div className="relative h-48 w-full overflow-hidden rounded-md sm:h-64">
               <Image
-                src="/why_AIPenGuild.jpg"
+                src="/why_AIPenGuild.png"
                 alt="Why AIPenGuild"
                 fill
                 className={cn("object-cover")}
@@ -131,43 +131,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Westend Test Network Section (Modernized) */}
+      {/* Moonbase Test Network Section (Modernized) */}
       <section className="relative w-full px-4 py-16 sm:py-20 md:py-24 lg:py-28 bg-gradient-to-b from-secondary to-secondary/50 dark:from-gray-800 dark:to-gray-700 text-foreground">
         <div className="mx-auto max-w-5xl rounded-xl bg-white dark:bg-gray-900 p-6 md:p-10 shadow-lg">
           <h2 className="mb-6 text-center text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl">
-            About Westend Test Network
+            About Moonbase Test Network
           </h2>
           <p className="mx-auto mb-6 max-w-3xl text-center text-base sm:text-lg text-muted-foreground">
-            AIPenGuild utilizes the Westend testnet (a Polkadot test environment) so you can explore
+            AIPenGuild utilizes the Moonbase Alpha testnet so you can explore
             AI-driven NFT minting, trading, and staking without risking real assets.
           </p>
           <div className="mx-auto max-w-3xl space-y-4 text-sm text-foreground sm:text-base">
             <div className="flex items-start gap-3 rounded-lg bg-accent p-4 text-accent-foreground">
               <strong className="min-w-[2rem] text-lg">1.</strong>
               <div>
-                <strong>Connect to Westend:</strong> Configure your wallet (e.g., Talisman or MetaMask bridging solution)
-                with the Westend AssetHub chain ID <code className="font-mono text-xs">420420421</code>.
+                <strong>Connect to Moonbase:</strong> Configure your wallet with the Moonbase Alpha
+                chain ID <code className="font-mono text-xs">1287</code> (e.g., MetaMask with a custom RPC).
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-lg bg-accent p-4 text-accent-foreground">
               <strong className="min-w-[2rem] text-lg">2.</strong>
               <div>
-                <strong>Request Test Tokens:</strong> Get WND tokens from any Westend faucet or from the Polkadot community.
-                These tokens cover transaction fees so you can test freely.
+                <strong>Request Dev Tokens:</strong> Get free DEV tokens for testing from the official
+                faucet at <a href="https://faucet.moonbeam.network/" className="underline">Moonbeam Faucet</a>.
+                These tokens cover transaction fees so you can experiment freely.
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-lg bg-accent p-4 text-accent-foreground">
               <strong className="min-w-[2rem] text-lg">3.</strong>
               <div>
                 <strong>Start Building:</strong> Experiment with AI NFT creation, listing, and more on AIPenGuild—
-                all without risking real funds. Push the boundaries of art and tech synergy.
+                all without risking real funds. Push the boundaries of art and tech synergy on Moonbase Alpha.
               </div>
             </div>
           </div>
           <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-muted-foreground">
-            For full documentation or support, hop into our Discord and read our official guide.
-            <br />
-            Happy minting and exploring on the AIPenGuild Westend test network!
+            Happy minting and exploring on the AIPenGuild Moonbase test network!
           </p>
         </div>
       </section>

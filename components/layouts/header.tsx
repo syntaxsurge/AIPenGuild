@@ -1,6 +1,6 @@
 "use client"
 import ConnectWalletBtn from "@/components/connect-wallet-btn"
-   
+
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -66,11 +66,11 @@ function Header() {
                     Explore
                   </Link>
                   <Link href="/list-nft" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    List NFT for Sale
+                    My NFTs
                   </Link>
-    <Link href="/mint" className="block rounded-sm px-4 py-2 hover:bg-muted">
-      Create AI NFT
-    </Link>
+                  <Link href="/mint" className="block rounded-sm px-4 py-2 hover:bg-muted">
+                    Create AI NFT
+                  </Link>
                 </div>
               </div>
             </div>

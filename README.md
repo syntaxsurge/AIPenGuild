@@ -9,6 +9,7 @@ AI Pen Guild is a pioneering AI-driven NFT marketplace that empowers creators an
   **Contact Information:**  
   - Email: syntaxsurge@gmail.com
   - Discord: syntaxsurge
+  - Telegram: syntaxsurge
 
 ## Development Guidelines
 
@@ -100,11 +101,11 @@ Planned enhancements include:
 - **GitHub Repository:**  
   [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
 - **Live Demo:**  
-  [https://aipen-guild-demo.vercel.app](https://aipen-guild-demo.vercel.app)
+  [https://aipenguild.syntaxsurge.com](https://aipenguild.syntaxsurge.com)
 - **Documentation:**  
-  [https://docs.aipen-guild.io](https://docs.aipen-guild.io)
+  [https://docs.aipenguild.syntaxsurge.com](https://docs.aipenguild.syntaxsurge.com)
 - **Presentation Slides:**  
-  [https://drive.google.com/file/d/yourpresentationlink/view](https://drive.google.com/file/d/yourpresentationlink/view)
+  [https://aipenguild.syntaxsurge.com/pitch-deck](https://aipenguild.syntaxsurge.com/pitch-deck)
 
 ## Acknowledgments
 

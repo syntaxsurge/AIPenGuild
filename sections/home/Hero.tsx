@@ -43,7 +43,7 @@ export default function HeroSection() {
 
         {/* Right side media */}
         <motion.div
-          className="relative h-64 w-full flex-1 overflow-hidden rounded-xl sm:h-96"
+          className="relative h-[600px] w-full flex-1 overflow-hidden rounded-xl sm:h-[600px]"
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7 }}
@@ -51,7 +51,8 @@ export default function HeroSection() {
           <Image
             src="/hero_nft_preview.png"
             alt="AIPenGuild Showcase"
-            fill
+            width={800}
+            height={600}
             className={cn("object-cover")}
           />
         </motion.div>

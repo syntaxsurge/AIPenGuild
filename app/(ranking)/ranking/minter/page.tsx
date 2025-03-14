@@ -25,14 +25,6 @@ const minterData = [
     change: 1.4,
     itemsSold: 15,
     volume: 3.0
-  },
-  {
-    id: 4,
-    name: "Glenda Pascual",
-    avatar: "/avatars/minter4.png",
-    change: 1.2,
-    itemsSold: 10,
-    volume: 2.2
   }
 ]
 
