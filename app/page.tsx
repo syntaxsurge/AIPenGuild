@@ -2,10 +2,19 @@
 import HeroSection from "@/sections/home/Hero"
 import Image from "next/image"
 import { motion } from "framer-motion"
+import { useTheme } from "next-themes"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export default function Home() {
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  const logoSrc = mounted && resolvedTheme === "dark" ? "/moonbase-logo-white.png" : "/moonbase-logo-black.png"
+
   return (
     <>
       {/* Hero Section */}
@@ -189,12 +198,14 @@ export default function Home() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Image
-              src="/moonbase-logo.png"
-              alt="Moonbase Test Network"
-              fill
-              className="object-cover"
-            />
+            <div className="absolute inset-0">
+              <Image
+                src={logoSrc}
+                alt="Moonbase Test Network"
+                fill
+                className="object-contain p-2"
+              />
+            </div>
           </motion.div>
         </div>
       </section>

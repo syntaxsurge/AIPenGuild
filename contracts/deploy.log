@@ -1,7 +1,7 @@
 Deploying contracts with account: 0x7CE33579392AEAF1791c9B0c8302a502B5867688
-AIRewardPool deployed to: 0x4AD722AEFf2D98ABB879aA4f7E907659263C3641
-AIExperience deployed to: 0x8b1B9DCa3dAc6A2fb0AE3518D1e33DC277fc7B25
-AINFTExchange deployed to: 0xee946764766Fa09e54794F2a0aA3CB3A133e163E
-AICreatorCollection deployed to: 0x0d490Eb74Ed9d3Eca8a0A4c3fEBd42006F373A1D
+AIRewardPool deployed to: 0x33eB2c50Fbd1fFA5378711870a59860520B48b36
+AIExperience deployed to: 0xE2529987b1F00a76A1978A2484c6232E301Fe81C
+AINFTExchange deployed to: 0x713838410E21064F7640bef32A34449A27Cf5dC9
+AICreatorCollection deployed to: 0x2d7699713BF2B1857Bb67982e4B38d98723EB2cF
 Registering primary collection 0 with AINFTExchange...
-Registered collection 0 -> 0x0d490Eb74Ed9d3Eca8a0A4c3fEBd42006F373A1D  in AINFTExchange!
+Registered collection 0 -> 0x2d7699713BF2B1857Bb67982e4B38d98723EB2cF  in AINFTExchange!

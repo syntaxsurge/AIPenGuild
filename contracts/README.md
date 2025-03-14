@@ -57,6 +57,13 @@ This folder contains the smart contracts and HardHat configuration for AIPenGuil
    ```
    This command calls `npx hardhat clean` under the hood, clearing the `artifacts` and `cache` directories.
 
+7. **One-Line Redeploy**
+
+   If you want to quickly clean, compile, deploy to Moonbase, and update addresses in one command, run:
+   ```bash
+   npm run clean && npm run compile && npm run deploy:moonbase:log && npm run update:addresses
+   ```
+
 ## Contract Overview
 - **AIRewardPool.sol**: Manages the reward pool for the platform.
 - **AIExperience.sol**: Handles the assignment and modification of experience points.

@@ -64,6 +64,8 @@ contract AINFTExchange is ERC721URIStorage, Ownable {
         require(aiCollections[collectionId] == msg.sender, "Not authorized collection");
         uint256 newId = _nextItemId();
         _safeMint(recipient, newId);
+        // Set the token's URI so block explorers can read its metadata
+        _setTokenURI(newId, imageUrl);
 
         uint256 xpAssigned = IAIExperience(experienceModule).assignRandomXP(newId);
         IAIExperience(experienceModule).modifyUserXP(recipient, newId, true);
