@@ -1,15 +1,7 @@
 "use client"
 import ConnectWalletBtn from "@/components/connect-wallet-btn"
-
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Separator } from "@/components/ui/separator"
-import {
-  IconBrandDiscordFilled,
-  IconBrandTelegram,
-  IconMenu2,
-  IconChevronDown,
-  IconGlobe
-} from "@tabler/icons-react"
+import { IconMenu2, IconChevronDown } from "@tabler/icons-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
@@ -76,7 +68,7 @@ function Header() {
               </div>
             </div>
 
-            {/* Connect Wallet, Theme Toggle, Social icons */}
+            {/* Connect Wallet, Theme Toggle */}
             <div className="flex flex-col items-start gap-4 md:ml-6 md:flex-row md:items-center">
               <div className="flex items-center justify-center gap-3">
                 <ThemeToggle />
