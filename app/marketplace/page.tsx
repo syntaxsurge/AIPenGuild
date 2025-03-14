@@ -166,7 +166,7 @@ export default function MarketplacePage() {
             </Button>
           </div>
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/list-nft">
+            <Link href="/my-nfts">
               <Button variant="outline" size="sm">My NFTs</Button>
             </Link>
             <Link href="/mint">

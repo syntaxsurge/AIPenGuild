@@ -65,7 +65,7 @@ function Header() {
                   <Link href="/marketplace" className="block rounded-sm px-4 py-2 hover:bg-muted">
                     Explore
                   </Link>
-                  <Link href="/list-nft" className="block rounded-sm px-4 py-2 hover:bg-muted">
+                  <Link href="/my-nfts" className="block rounded-sm px-4 py-2 hover:bg-muted">
                     My NFTs
                   </Link>
                   <Link href="/mint" className="block rounded-sm px-4 py-2 hover:bg-muted">

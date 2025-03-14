@@ -11,8 +11,9 @@ import Image from "next/image"
 import { parseEther } from "viem"
 
 /**
- * Renamed from "create-new-item" to "list-nft" for clarity.
- * This page allows the user to see which NFTs they own, and list them for sale.
+ * Previously: "list-nft"
+ * Updated to "my-nfts" for clarity and improved naming convention.
+ * This page shows the NFTs you own, letting you list them for sale if desired.
  */
 
 interface NFTDetails {
@@ -24,7 +25,7 @@ interface NFTDetails {
   resourceUrl: string
 }
 
-export default function ListNFTPage() {
+export default function MyNFTsPage() {
   const { address: wagmiAddress } = useAccount()
   const publicClient = usePublicClient()
   const { toast } = useToast()
@@ -34,7 +35,7 @@ export default function ListNFTPage() {
   const [ownedNFTs, setOwnedNFTs] = useState<NFTDetails[]>([])
   const [selectedNFT, setSelectedNFT] = useState<NFTDetails | null>(null)
 
-  // Retrieve the total minted token count from the contract
+  // Retrieve total minted token count from the contract
   const { data: currentTokenId } = useContractRead({
     address: nftMarketplace?.address as `0x${string}`,
     abi: nftMarketplace?.abi,
@@ -56,7 +57,7 @@ export default function ListNFTPage() {
           })) as `0x${string}`
 
           if (owner.toLowerCase() === wagmiAddress.toLowerCase()) {
-            // Get item data from public mapping itemData
+            // Get item data from public mapping
             const details = (await publicClient.readContract({
               address: nftMarketplace.address as `0x${string}`,
               abi: nftMarketplace.abi,
@@ -86,7 +87,6 @@ export default function ListNFTPage() {
   const handleListNFT = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Check if wallet is connected
     if (!wagmiAddress) {
       toast({
         title: "Wallet not connected",
@@ -139,18 +139,18 @@ export default function ListNFTPage() {
     <main
       className="mx-auto min-h-screen max-w-4xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground"
     >
-      <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">List NFT for Sale</h1>
+      <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">My NFTs</h1>
       <p className="mb-8 text-center text-sm text-muted-foreground">
-        Choose from your existing NFTs and list them for sale with one click.
+        Here are the NFTs you own. You can list them for sale in one click.
       </p>
 
       <Card className="border border-border rounded-lg shadow-xl bg-background">
         <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
-          <CardTitle className="text-lg font-semibold">Your NFTs</CardTitle>
+          <CardTitle className="text-lg font-semibold">My NFTs</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           {ownedNFTs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">You have no NFTs to list.</p>
+            <p className="text-sm text-muted-foreground">You have no NFTs to display.</p>
           ) : (
             <div className="grid grid-cols-2 gap-4">
               {ownedNFTs.map((nft) => (
