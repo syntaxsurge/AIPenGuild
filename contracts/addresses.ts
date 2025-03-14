@@ -4,7 +4,7 @@ export const SUPPORTED_CHAINS = {
 } as const
 
 type ChainAddresses = {
-  NFTMarketplace: string
+  AINFTExchange: string
   AIRewardPool: string
   AIExperience: string
   CreatorCollection: string
@@ -17,10 +17,10 @@ type ContractAddresses = {
 
 export const CONTRACT_ADDRESSES: ContractAddresses = {
   [SUPPORTED_CHAINS.MOONBASE]: {
-    NFTMarketplace: "0x713838410E21064F7640bef32A34449A27Cf5dC9",
-    AIRewardPool: "0x33eB2c50Fbd1fFA5378711870a59860520B48b36",
-    AIExperience: "0xE2529987b1F00a76A1978A2484c6232E301Fe81C",
-    CreatorCollection: "0x2d7699713BF2B1857Bb67982e4B38d98723EB2cF",
+    AINFTExchange: "0x30F75b2308bffd9F74b84DD8C6B2938bf59e4D17",
+    AIRewardPool: "0x1Cc8aA2b212d479F99a296E105E8040EB5Fccc10",
+    AIExperience: "0x5E03b2f7F16A2bC32E00374e4FfB954d5e29Db55",
+    CreatorCollection: "0x320a5ef19efAa9b4522d6c325E62063040Ec144A",
     explorer: "https://moonbase.moonscan.io"
   }
 }

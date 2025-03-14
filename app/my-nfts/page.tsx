@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from "react"
-import { useAccount, useContractRead, usePublicClient } from "wagmi"
+import { useAccount, usePublicClient } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,55 +30,89 @@ export default function MyNFTsPage() {
   const { address: wagmiAddress } = useAccount()
   const publicClient = usePublicClient()
   const { toast } = useToast()
-  const nftMarketplace = useContract("NFTMarketplace")
-  const { data: hash, error, isPending, writeContract } = useWriteContract()
+  const aiNftExchange = useContract("AINFTExchange")
+  const { data: writeHash, error, isPending, writeContract } = useWriteContract()
 
   const [price, setPrice] = useState("")
   const [ownedNFTs, setOwnedNFTs] = useState<NFTDetails[]>([])
   const [selectedNFT, setSelectedNFT] = useState<NFTDetails | null>(null)
-
-  // We'll store metadata in a parallel structure: itemId -> {imageUrl, name, description}
   const [metadataMap, setMetadataMap] = useState<Record<string, MetadataState>>({})
 
-  // Read total minted tokens
-  const { data: currentTokenId } = useContractRead({
-    address: nftMarketplace?.address as `0x${string}`,
-    abi: nftMarketplace?.abi,
-    functionName: "getLatestItemId"
-  })
+  // We'll fetch the total minted tokens via direct call instead of wagmi's specialized hook for clarity.
+  // (We can do a 'readContract' directly with publicClient.)
+  const [currentTokenId, setCurrentTokenId] = useState<bigint | null>(null)
 
-  // On mount or when currentTokenId changes, fetch all owned tokens
+  // 1) Fetch the getLatestItemId from the contract
   useEffect(() => {
-    const fetchOwnedNFTs = async () => {
-      if (
-        !wagmiAddress ||
-        !currentTokenId ||
-        !nftMarketplace?.address ||
-        !nftMarketplace?.abi ||
-        !publicClient
-      ) return
+    async function fetchTokenCount() {
+      if (!aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) {
+        console.log("[fetchTokenCount]: Missing contract or public client.")
+        return
+      }
+      try {
+        console.log("[fetchTokenCount]: Reading getLatestItemId...")
+        const val = await publicClient.readContract({
+          address: aiNftExchange.address as `0x${string}`,
+          abi: aiNftExchange.abi,
+          functionName: "getLatestItemId",
+          args: [], // No args needed
+        })
+        if (typeof val === "bigint") {
+          console.log("[fetchTokenCount]: total minted = ", val.toString())
+          setCurrentTokenId(val)
+        } else {
+          console.log("[fetchTokenCount]: unexpected type", val)
+        }
+      } catch (err) {
+        console.log("[fetchTokenCount]: Error reading getLatestItemId =>", err)
+      }
+    }
+    fetchTokenCount()
+  }, [aiNftExchange, publicClient])
 
-      const ownedTokens: NFTDetails[] = []
+  // 2) Once we have currentTokenId, we fetch the user's owned tokens
+  useEffect(() => {
+    async function fetchOwnedNFTs() {
+      if (!wagmiAddress) {
+        console.log("[fetchOwnedNFTs]: No wagmiAddress, skipping.")
+        return
+      }
+      if (!currentTokenId) {
+        console.log("[fetchOwnedNFTs]: No currentTokenId found, skipping.")
+        return
+      }
+      if (!aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) {
+        console.log("[fetchOwnedNFTs]: Missing contract or public client, skipping.")
+        return
+      }
+
       const totalMinted = Number(currentTokenId)
+      console.log("[fetchOwnedNFTs]: totalMinted =", totalMinted)
+      console.log("[fetchOwnedNFTs]: user address =", wagmiAddress)
+      const ownedTokens: NFTDetails[] = []
+
       for (let i = 1; i <= totalMinted; i++) {
         try {
-          // Check if user is the owner
-          const owner = (await publicClient.readContract({
-            address: nftMarketplace.address as `0x${string}`,
-            abi: nftMarketplace.abi,
+          // 2a) check owner
+          const owner = await publicClient.readContract({
+            address: aiNftExchange.address as `0x${string}`,
+            abi: aiNftExchange.abi,
             functionName: "ownerOf",
             args: [BigInt(i)]
-          })) as `0x${string}`
+          }) as `0x${string}`
 
+          console.log(`[fetchOwnedNFTs]: Token #${i} => owner =`, owner)
           if (owner.toLowerCase() === wagmiAddress.toLowerCase()) {
-            // itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
-            const details = (await publicClient.readContract({
-              address: nftMarketplace.address as `0x${string}`,
-              abi: nftMarketplace.abi,
+            console.log(`[fetchOwnedNFTs]: user IS owner of token #${i}, reading itemData...`)
+            // 2b) itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
+            const details = await publicClient.readContract({
+              address: aiNftExchange.address as `0x${string}`,
+              abi: aiNftExchange.abi,
               functionName: "itemData",
               args: [BigInt(i)]
-            })) as [bigint, string, bigint, boolean, bigint, string]
+            }) as [bigint, string, bigint, boolean, bigint, string]
 
+            console.log(`[fetchOwnedNFTs]: itemData for #${i} =>`, details)
             const item: NFTDetails = {
               itemId: details[0],
               creator: details[1],
@@ -90,46 +124,56 @@ export default function MyNFTsPage() {
             ownedTokens.push(item)
           }
         } catch (err) {
-          // If token doesn't exist or there's an error, skip
+          console.log(`[fetchOwnedNFTs]: Could not read token #${i}:`, err)
         }
       }
-
+      console.log("[fetchOwnedNFTs]: final ownedTokens =>", ownedTokens)
       setOwnedNFTs(ownedTokens)
     }
 
     fetchOwnedNFTs()
-  }, [wagmiAddress, currentTokenId, nftMarketplace, publicClient])
+  }, [wagmiAddress, aiNftExchange, publicClient, currentTokenId])
 
-  // After we set ownedNFTs, fetch their metadata JSON if possible
+  // 3) Load metadata for the owned NFTs
   useEffect(() => {
-    const loadMetadata = async () => {
+    async function loadMetadata() {
+      if (!ownedNFTs.length) {
+        console.log("[loadMetadata]: No ownedNFTs found, skipping.")
+        return
+      }
+
+      console.log("[loadMetadata]: Attempting to fetch metadata for =>", ownedNFTs)
       const newMap: Record<string, MetadataState> = {}
+
       for (const nft of ownedNFTs) {
-        let finalImageUrl = nft.resourceUrl // fallback
+        let finalImageUrl = nft.resourceUrl
         let name = `AI NFT #${String(nft.itemId)}`
         let description = ""
 
-        // If resourceUrl is ipfs or https, let's try to fetch JSON
-        // We'll attempt a fetch and see if we can parse a JSON with {image, name, description}:
         try {
           if (nft.resourceUrl.startsWith("ipfs://")) {
-            // convert ipfs:// -> https://ipfs.io/ipfs/...
             const ipfsHttp = nft.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
+            console.log("[loadMetadata]: fetch ipfs =>", ipfsHttp)
             const resp = await fetch(ipfsHttp)
             const maybeJson = await resp.json()
+            console.log("ipfs fetch returned =>", maybeJson)
             if (maybeJson.image) finalImageUrl = maybeJson.image
             if (maybeJson.name) name = maybeJson.name
             if (maybeJson.description) description = maybeJson.description
-          } else if (nft.resourceUrl.startsWith("https://") || nft.resourceUrl.startsWith("http://")) {
-            // We'll fetch and see if it's JSON
+          } else if (
+            nft.resourceUrl.startsWith("https://") ||
+            nft.resourceUrl.startsWith("http://")
+          ) {
+            console.log("[loadMetadata]: fetch =>", nft.resourceUrl)
             const resp = await fetch(nft.resourceUrl)
             const maybeJson = await resp.json()
+            console.log("url fetch returned =>", maybeJson)
             if (maybeJson.image) finalImageUrl = maybeJson.image
             if (maybeJson.name) name = maybeJson.name
             if (maybeJson.description) description = maybeJson.description
           }
         } catch (err) {
-          // Not valid JSON or fetch fail => no problem, fallback to resourceUrl
+          console.log("[loadMetadata]: error reading JSON metadata =>", err)
         }
 
         newMap[String(nft.itemId)] = {
@@ -138,13 +182,14 @@ export default function MyNFTsPage() {
           description
         }
       }
+      console.log("[loadMetadata]: resulting metadata map =>", newMap)
       setMetadataMap(newMap)
     }
-    if (ownedNFTs.length > 0) {
-      loadMetadata()
-    }
+
+    loadMetadata()
   }, [ownedNFTs])
 
+  // 4) Listing NFT for sale
   const handleListNFT = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!wagmiAddress) {
@@ -165,7 +210,7 @@ export default function MyNFTsPage() {
     }
 
     try {
-      // listAIItem(itemId, price)
+      console.log("[handleListNFT]: listing NFT =>", selectedNFT.itemId.toString(), "price =>", price)
       const abiListNFT = {
         name: "listAIItem",
         type: "function",
@@ -178,7 +223,7 @@ export default function MyNFTsPage() {
       }
 
       await writeContract({
-        address: nftMarketplace?.address as `0x${string}`,
+        address: aiNftExchange?.address as `0x${string}`,
         abi: [abiListNFT],
         functionName: "listAIItem",
         args: [selectedNFT.itemId, parseEther(price)]
@@ -189,6 +234,7 @@ export default function MyNFTsPage() {
         description: "Your NFT has been listed on the marketplace!"
       })
     } catch (err) {
+      console.log("[handleListNFT]: error =>", err)
       toast({
         title: "Error",
         description: error?.message || "An error occurred while listing the NFT",
@@ -197,17 +243,15 @@ export default function MyNFTsPage() {
     }
   }
 
-  // If user didn't fetch metadata or it fails, we'll fallback to resourceUrl directly
+  // If user didn't fetch metadata or it fails, fallback to resourceUrl
   function getDisplayUrl(nft: NFTDetails): string {
     const meta = metadataMap[String(nft.itemId)]
     if (!meta?.imageUrl) {
-      // fallback
       if (nft.resourceUrl.startsWith("ipfs://")) {
         return nft.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
       }
       return nft.resourceUrl
     }
-    // otherwise use the metadata's imageUrl
     if (meta.imageUrl.startsWith("ipfs://")) {
       return meta.imageUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
     }

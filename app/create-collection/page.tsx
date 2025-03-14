@@ -32,7 +32,7 @@ export default function CreateCollectionPage() {
     maxSupply: ""
   })
 
-  const nftMarketplace = useContract("NFTMarketplace")
+  const aiNftExchange = useContract("AINFTExchange")
   const creatorCollection = useContract("CreatorCollection")
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,7 +54,7 @@ export default function CreateCollectionPage() {
         })
         return
       }
-      if (!nftMarketplace || !creatorCollection) {
+      if (!aiNftExchange || !creatorCollection) {
         toast({
           title: "Error",
           description: "No contract found. Check your config.",
@@ -96,10 +96,10 @@ export default function CreateCollectionPage() {
         outputs: [{ name: "collectionId", type: "uint256" }]
       }
       await writeContract({
-        address: nftMarketplace.address as `0x${string}`,
+        address: aiNftExchange.address as `0x\${string}`,
         abi: [registerCollectionABI],
         functionName: "registerAIDerivedContract",
-        args: [creatorCollection.address as `0x${string}`]
+        args: [creatorCollection.address as `0x\${string}`]
       })
 
       toast({

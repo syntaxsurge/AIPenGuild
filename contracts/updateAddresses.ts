@@ -17,7 +17,7 @@ async function updateAddresses() {
         addresses.AIExperience = line.split("AIExperience deployed to:")[1].trim()
       }
       if (line.includes("AINFTExchange deployed to:")) {
-        addresses.NFTMarketplace = line.split("AINFTExchange deployed to:")[1].trim()
+        addresses.AINFTExchange = line.split("AINFTExchange deployed to:")[1].trim()
       }
       if (line.includes("AICreatorCollection deployed to:")) {
         addresses.CreatorCollection = line.split("AICreatorCollection deployed to:")[1].trim()

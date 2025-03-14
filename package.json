@@ -4,14 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "cd contracts && npx hardhat compile && cd .. && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "deploy-moonbase": "cd contracts && (echo y | npx hardhat ignition deploy ./ignition/modules/NFTMarketplace.ts --network moonbaseAlpha) > deploy.log && npx tsc updateAddresses.ts && node updateAddresses.js",
-    "deploy-westend": "cd contracts && (echo y | npx hardhat ignition deploy ./ignition/modules/NFTMarketplace.ts --network westend) > deploy.log && npx tsc updateAddresses.ts && node updateAddresses.js",
-    "test": "cd contracts && npx hardhat test",
-    "compile": "cd contracts && npx hardhat compile",
-    "clean": "cd contracts && npx hardhat clean"
+    "lint": "next lint"
   },
   "dependencies": {
     "@next/third-parties": "^15.1.3",
