@@ -17,10 +17,10 @@ type ContractAddresses = {
 
 export const CONTRACT_ADDRESSES: ContractAddresses = {
   [SUPPORTED_CHAINS.MOONBASE]: {
-    NFTMarketplace: "0xdd665d880F44DAa5B3d18b8a8085def1aa3A9180",
-    AIRewardPool: "0xaA085D3505C097c0A5e0CD97AB0F52114cCa9967",
-    AIExperience: "0x7b35F0D7322dfcd53204187679Ca6355d384dfec",
-    CreatorCollection: "0x8dACe4BE3d1D4c12523E68e2C7f1e0FD5C27d244",
+    NFTMarketplace: "0xee946764766Fa09e54794F2a0aA3CB3A133e163E",
+    AIRewardPool: "0x4AD722AEFf2D98ABB879aA4f7E907659263C3641",
+    AIExperience: "0x8b1B9DCa3dAc6A2fb0AE3518D1e33DC277fc7B25",
+    CreatorCollection: "0x0d490Eb74Ed9d3Eca8a0A4c3fEBd42006F373A1D",
     explorer: "https://moonbase.moonscan.io"
   }
 }

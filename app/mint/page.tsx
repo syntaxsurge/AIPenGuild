@@ -1,82 +1,78 @@
 "use client"
-"use client"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Image from "next/image"
-import { Loader2, Brain, Wand, BookOpen, Info, Upload } from "lucide-react"
+import { Brain, Wand, BookOpen, Info, Upload, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { parseEther } from "viem"
 import { useContract } from "@/hooks/useContract"
-import { useAccount, useWriteContract } from "wagmi"
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 /**
- * This page now offers two ways to set the NFT image:
- * 1. Generate via AI (Optional).
- * 2. Upload your own custom image.
- *
- * It also allows for AI-based or manual stories (metadata).
- * We have updated references from "AI NFT" to "NFT" to reflect this new flexibility.
- *
- * NOTE: If you click "Mint NFT" and nothing happens:
- * - Ensure your wallet is connected
- * - The contract function here is still a placeholder ("createCollection"),
- *   so you may need to adapt or replace with your real mint function.
- * - Check console for errors
+ * Updated to use `useWaitForTransactionReceipt` from wagmi instead of `useWaitForTransaction`.
+ * For older wagmi versions that do not export useWaitForTransaction,
+ * we rely on useWaitForTransactionReceipt which uses a hash.
  */
 
 export default function MintNFTPage() {
   const { address: wagmiAddress } = useAccount()
   const { toast } = useToast()
+
+  // Our CreatorCollection contract instance
   const creatorCollection = useContract("CreatorCollection")
-  const { data: hash, error, isPending, isSuccess, writeContract } = useWriteContract()
 
-  // For user prompt if they want to use AI generation
+  // For initiating writes
+  const {
+    data: writeData,       // This is the transaction hash (0x...)
+    error,
+    isPending: isWritePending,
+    isSuccess: isWriteSuccess,
+    writeContract
+  } = useWriteContract()
+
+  // Wait for the transaction receipt using the hash (writeData)
+  // If no hash is present, pass undefined to avoid errors
+  const {
+    data: txReceipt,
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    isError: isTxError,
+    error: txError
+  } = useWaitForTransactionReceipt({
+    hash: writeData ?? undefined
+  })
+
+  // Prompt for AI generation
   const [prompt, setPrompt] = useState("")
-
-  // If user chooses AI generation, we store the AI image data here
+  // AI Image data from replicate
   const [aiNft, setAiNft] = useState<any>(null)
-
-  // If user chooses manual image upload
+  // Upload-based image
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  // Let users pick between AI-based or manual image
-  const [useAIImage, setUseAIImage] = useState<boolean>(true)
+  // Toggles for AI or manual image, AI or manual story
+  const [useAIImage, setUseAIImage] = useState(true)
+  const [useAIStory, setUseAIStory] = useState(true)
 
-  // Let users pick between AI-based story or manual story
-  const [useAIStory, setUseAIStory] = useState<boolean>(true)
-
-  // AI story generation
+  // States for the story metadata
   const [metadataStory, setMetadataStory] = useState("")
-  const [generatingImage, setGeneratingImage] = useState(false)
-  const [generatingStory, setGeneratingStory] = useState(false)
-  const [minting, setMinting] = useState(false)
-
-  // Additional states for showing messages
-  const [showPromptError, setShowPromptError] = useState(false)
-  const [generateImageError, setGenerateImageError] = useState<string>("")
-  const [generateStoryError, setGenerateStoryError] = useState<string>("")
-  const [mintError, setMintError] = useState<string>("")
-
-  // Optional manual metadata field
   const [manualMetadata, setManualMetadata] = useState("")
 
-  // Handle manual file upload selection
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null
-    setUploadedFile(file)
-    setAiNft(null) // Reset AI image if user chooses manual
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
-    } else {
-      setPreviewUrl(null)
-    }
-  }
+  // States for loading & errors
+  const [generatingImage, setGeneratingImage] = useState(false)
+  const [generatingStory, setGeneratingStory] = useState(false)
+  const [mintError, setMintError] = useState("")
+  const [generateImageError, setGenerateImageError] = useState("")
+  const [generateStoryError, setGenerateStoryError] = useState("")
+  const [showPromptError, setShowPromptError] = useState(false)
 
-  // Generate AI Image
+  // Let user pick which collection ID to mint from (0 => primary, 1 => new)
+  const [collectionId, setCollectionId] = useState("0")
+
+  // -------------- AI Image Generation --------------
   async function handleGenerateImage() {
     if (!prompt.trim()) {
       setShowPromptError(true)
@@ -115,12 +111,10 @@ export default function MintNFTPage() {
     }
   }
 
-  // Generate AI story
+  // -------------- AI Story Generation --------------
   async function handleGenerateStory() {
-    // If we have no image or haven't generated an AI image, still okay
-    // We only need prompt for story. But let's show an error if there's truly no base
     if (useAIImage && !aiNft) {
-      setGenerateStoryError("No AI NFT image found. Please generate an image first or switch to upload mode.")
+      setGenerateStoryError("No AI NFT image found. Generate or upload an image first.")
       toast({
         title: "No Image",
         description: "Generate or upload an image before creating a story.",
@@ -131,8 +125,6 @@ export default function MintNFTPage() {
     setGenerateStoryError("")
     setGeneratingStory(true)
     try {
-      // Use the AI image attribute or prompt for a story
-      // If we have an AI NFT with attributes, let's pass that
       const firstTrait = aiNft?.metadata?.attributes?.[0]?.value || "Your NFT"
       const res = await fetch("/api/v1/ai-metadata", {
         method: "POST",
@@ -162,42 +154,50 @@ export default function MintNFTPage() {
     }
   }
 
-  // Mint logic
+  // -------------- File Upload --------------
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] || null
+    setUploadedFile(file)
+    setAiNft(null) // reset AI image if user chooses manual upload
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+    } else {
+      setPreviewUrl(null)
+    }
+  }
+
+  // -------------- Mint NFT --------------
   async function handleMint() {
-    // Check we have some kind of image (either AI or upload)
-    const finalImageUrl = useAIImage
-      ? aiNft?.imageUrl
-      : previewUrl
-
-    if (!finalImageUrl) {
-      setMintError("No NFT image found. Please generate or upload an image first.")
-      toast({
-        title: "No NFT Image",
-        description: "Please generate or upload an image first.",
-        variant: "destructive"
-      })
-      return
-    }
-    setMintError("")
-    setMinting(true)
-
-    // If user is using manual metadata, use that, else use AI story
-    const finalMetadata = useAIStory ? metadataStory : manualMetadata
-
-    // Check if wallet is connected
-    if (!wagmiAddress) {
-      toast({
-        title: "Wallet not connected",
-        description: "Please connect your wallet or switch to a supported network before minting an NFT.",
-        variant: "destructive"
-      })
-      return
-    }
-
     try {
-      // Placeholder contract function. You can adapt to your actual mint function.
-      // Updated contract function call to mint NFT from a collection.
-      // This calls the mintFromCollection function which is payable and accepts (collectionId, imageUrl).
+      setMintError("")
+
+      // Check connection
+      if (!wagmiAddress) {
+        toast({
+          title: "Wallet not connected",
+          description: "Please connect your wallet or switch to a supported network before minting.",
+          variant: "destructive"
+        })
+        return
+      }
+      // Check we have an image
+      const finalImageUrl = useAIImage ? aiNft?.imageUrl : previewUrl
+      if (!finalImageUrl) {
+        setMintError("No NFT image found. Please generate or upload an image first.")
+        toast({
+          title: "No NFT Image",
+          description: "Please generate or upload an image before minting.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // If user is using manual metadata, use that, else use AI story
+      // (Not storing finalMetadata on-chain here, but you could store it in IPFS.)
+      const finalMetadata = useAIStory ? metadataStory : manualMetadata
+
+      // Prepare the mint call to CreatorCollection
       const mintFromCollectionABI = {
         name: "mintFromCollection",
         type: "function",
@@ -208,19 +208,21 @@ export default function MintNFTPage() {
         ],
         outputs: []
       }
+
       await writeContract({
         address: creatorCollection?.address as `0x${string}`,
         abi: [mintFromCollectionABI],
         functionName: "mintFromCollection",
         args: [
-          0, // Using primary collection (collectionId 0)
+          parseInt(collectionId),
           finalImageUrl
         ],
-        value: parseEther("0.1")
+        value: parseEther("0.1") // 0.1 DEV or ETH
       })
+
       toast({
-        title: "Mint Success",
-        description: "Your NFT has been recorded on-chain! (Placeholder function)."
+        title: "Mint Transaction",
+        description: "Transaction submitted... awaiting confirmation."
       })
     } catch (err: any) {
       setMintError(err.message || "Unable to mint NFT")
@@ -229,26 +231,71 @@ export default function MintNFTPage() {
         description: err.message || "Unable to mint NFT",
         variant: "destructive"
       })
-    } finally {
-      setMinting(false)
     }
   }
 
+  // -------------- Transaction Status Handling --------------
+  // Show toast messages once the transaction changes
+  useEffect(() => {
+    if (isTxLoading) {
+      toast({
+        title: "Transaction Pending",
+        description: "Your mint transaction is being confirmed..."
+      })
+    }
+    if (isTxSuccess) {
+      toast({
+        title: "Transaction Successful!",
+        description: "NFT minted successfully! Check your wallet or view it in My NFTs."
+      })
+    }
+    if (isTxError) {
+      toast({
+        title: "Transaction Failed",
+        description: txError?.message || "Something went wrong.",
+        variant: "destructive"
+      })
+    }
+  }, [isTxLoading, isTxSuccess, isTxError, txError, toast])
+
+  // -------------- UI Rendering --------------
   return (
     <main className="mx-auto min-h-screen max-w-4xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-        <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
+      <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
       <p className="mb-4 text-center text-sm text-muted-foreground">
-        You can generate an AI image or upload your own custom image, then optionally add metadata or a story before minting.
-        <br />
-        <span className="mt-2 block font-semibold text-foreground">
-          Note: A connected wallet is required to complete the mint transaction on-chain.
-        </span>
+        Generate or upload your NFT image, add optional AI-based or manual metadata, and mint from your chosen collection.
       </p>
 
+      {/* Collection Selection */}
+      <Card className="mb-8 border border-border shadow-lg rounded-lg">
+        <CardHeader className="p-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Info className="h-5 w-5" />
+            Select Collection
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Pick which collection ID you want to mint from. 0 = primary, 1 or higher = additional collections.
+          </p>
+          <Select value={collectionId} onValueChange={setCollectionId}>
+            <SelectTrigger className="w-full sm:w-52">
+              <SelectValue placeholder="Collection ID" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Primary Collection (ID=0)</SelectItem>
+              <SelectItem value="1">Collection #1</SelectItem>
+              {/* Add more if defineNewCollection is used */}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Image Source: AI or Upload */}
       <Card className="border border-border shadow-lg rounded-lg p-6">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Info className="h-5 w-5" />
+            <Wand className="h-5 w-5" />
             NFT Image Options
           </CardTitle>
         </CardHeader>
@@ -356,6 +403,7 @@ export default function MintNFTPage() {
         </CardContent>
       </Card>
 
+      {/* Metadata / Story */}
       <Card className="border border-border shadow-lg rounded-lg mt-8 p-6">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -425,6 +473,7 @@ export default function MintNFTPage() {
         </CardContent>
       </Card>
 
+      {/* Final Mint CTA */}
       <Card className="border border-border shadow-lg rounded-lg mt-8 p-6">
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -433,19 +482,38 @@ export default function MintNFTPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Button onClick={handleMint} disabled={minting} className="w-full">
-            {minting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Minting...
-              </>
-            ) : (
-              "Mint NFT"
+          <div className="flex flex-col space-y-3">
+            <Button
+              onClick={handleMint}
+              disabled={isWritePending || isTxLoading}
+              className="w-full"
+            >
+              {isWritePending || isTxLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isWritePending ? "Waiting for Wallet..." : "Minting..."}
+                </>
+              ) : (
+                "Mint NFT"
+              )}
+            </Button>
+
+            {mintError && (
+              <p className="text-xs text-destructive break-words whitespace-pre-wrap">{mintError}</p>
             )}
-          </Button>
-          {mintError && (
-            <p className="mt-2 text-xs text-destructive">{mintError}</p>
-          )}
+
+            {/* Display final transaction success or error */}
+            {isTxSuccess && (
+              <p className="text-xs text-green-600">
+                Transaction Confirmed! Your NFT is minted.
+              </p>
+            )}
+            {isTxError && (
+              <p className="text-xs text-red-600 break-words whitespace-pre-wrap">
+                Transaction Failed: {txError?.message}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </main>

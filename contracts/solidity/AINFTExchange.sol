@@ -16,6 +16,11 @@ interface IAICreatorCollection {
     function owner() external view returns (address);
 }
 
+// We add this to the same file for simplicity:
+interface IAINFTExchange {
+    function setAiCollection(uint256 collectionId, address collectionAddr) external;
+}
+
 contract AINFTExchange is ERC721URIStorage, Ownable {
     uint256 private itemCounter;
     address public immutable rewardPool;
@@ -125,6 +130,11 @@ contract AINFTExchange is ERC721URIStorage, Ownable {
     function _nextItemId() private returns (uint256) {
         itemCounter++;
         return itemCounter;
+    }
+
+    // Add setAiCollection() above the final brace
+    function setAiCollection(uint256 collectionId, address collectionAddr) external onlyOwner {
+        aiCollections[collectionId] = collectionAddr;
     }
 
     function getRewardPool() external view returns (address) {

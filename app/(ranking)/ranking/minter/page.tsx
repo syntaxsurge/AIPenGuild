@@ -5,7 +5,7 @@ const minterData = [
   {
     id: 1,
     name: "Benjie Manalo",
-    avatar: "/avatars/minter1.png",
+    avatar: "/avatars/minter-1.png",
     change: 2.9,
     itemsSold: 32,
     volume: 5.7
@@ -13,7 +13,7 @@ const minterData = [
   {
     id: 2,
     name: "Lia Mercado",
-    avatar: "/avatars/minter2.png",
+    avatar: "/avatars/minter-2.png",
     change: 2.1,
     itemsSold: 24,
     volume: 4.1
@@ -21,7 +21,7 @@ const minterData = [
   {
     id: 3,
     name: "Rafael Torres",
-    avatar: "/avatars/minter3.png",
+    avatar: "/avatars/minter-3.png",
     change: 1.4,
     itemsSold: 15,
     volume: 3.0

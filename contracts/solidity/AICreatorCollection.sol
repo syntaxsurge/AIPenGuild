@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 interface IAINFTExchange {
     function generateAIItem(address recipient, uint256 collectionId, string memory imageUrl) external payable;
     function getRewardPool() external view returns (address);
+    function setAiCollection(uint256 collectionId, address collectionAddr) external;
 }
 
 contract AICreatorCollection is Ownable {

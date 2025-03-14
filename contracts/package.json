@@ -8,7 +8,8 @@
     "deploy:moonbase:log": "hardhat run scripts/deploy.ts --network moonbaseAlpha > deploy.log",
     "deploy:westend:log": "hardhat run scripts/deploy.ts --network westend > deploy.log",
     "update:addresses": "npx ts-node updateAddresses.ts",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "clean": "hardhat clean"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",

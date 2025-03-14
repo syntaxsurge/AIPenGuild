@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 export default function Home() {
   return (
     <>
+      {/* Hero Section */}
       <HeroSection />
 
       {/* Featured AI NFTs Section */}
@@ -27,7 +28,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
           >
-            Explore a curated selection of next-gen AI-generated NFTs minted on AIPenGuild.
+            Explore a curated selection of next-gen AI-generated NFTs, minted on AIPenGuild by creative minds worldwide.
           </motion.p>
           <motion.div
             className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
@@ -35,10 +36,10 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            {["marketplace/nft_1.png", "marketplace/nft_2.png", "marketplace/nft_3.png"].map((src, idx) => (
+            {["marketplace/nft-1.png", "marketplace/nft-2.png", "marketplace/nft-3.png"].map((src, idx) => (
               <div
                 key={idx}
-                className="group relative overflow-hidden rounded-lg border border-border p-2"
+                className="group relative overflow-hidden rounded-lg border border-border p-2 transition-shadow hover:shadow-lg"
               >
                 <div className="relative h-56 w-full overflow-hidden rounded-lg sm:h-64 md:h-72">
                   <Image
@@ -66,7 +67,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Promotional Info / Roadmap Teaser */}
+      {/* Promotional Info / Why AIPenGuild */}
       <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800">
         <div className="mx-auto max-w-6xl">
           <motion.div
@@ -78,17 +79,18 @@ export default function Home() {
             <div className="flex flex-col justify-center space-y-4">
               <h2 className="text-3xl font-extrabold text-primary sm:text-4xl">Why AIPenGuild?</h2>
               <p className="text-muted-foreground sm:text-lg">
-                AIPenGuild empowers creators and collectors with advanced AI generation and frictionless blockchain integration. Unleash your creativity and discover immersive digital art experiences.
+                AIPenGuild merges advanced AI capabilities with seamless blockchain technology,
+                empowering creators to forge unique NFTs and collectors to discover immersive digital art.
               </p>
               <ul className="ml-4 list-disc space-y-2 text-sm text-muted-foreground sm:text-base">
                 <li>Cross-chain compatibility with Polkadot ecosystem</li>
-                <li>Cutting-edge AI-based NFT generation</li>
-                <li>Robust reward system for active participants</li>
+                <li>Cutting-edge AI-based NFT generation tools</li>
+                <li>Reward system incentivizing creators and collectors</li>
               </ul>
             </div>
             <div className="relative h-48 w-full overflow-hidden rounded-md sm:h-64">
               <Image
-                src="/why_AIPenGuild.png"
+                src="/why-aipenguild.png"
                 alt="Why AIPenGuild"
                 fill
                 className={cn("object-cover")}
@@ -98,7 +100,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Check the Latest Rankings */}
+      {/* Creator/Minter Rankings */}
       <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
         <div className="mx-auto max-w-6xl text-center">
           <motion.h2
@@ -114,7 +116,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            See which artists and minters are topping the AIPenGuild charts. Earn XP, create masterpieces, and climb to the top!
+            See which artists and minters are dominating the scene. Earn XP, craft phenomenal NFTs, and climb to the top!
           </motion.p>
           <Link
             href="/ranking/creator"
@@ -131,43 +133,69 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Moonbase Test Network Section (Modernized) */}
-      <section className="relative w-full px-4 py-16 sm:py-20 md:py-24 lg:py-28 bg-gradient-to-b from-secondary to-secondary/50 dark:from-gray-800 dark:to-gray-700 text-foreground">
-        <div className="mx-auto max-w-5xl rounded-xl bg-white dark:bg-gray-900 p-6 md:p-10 shadow-lg">
-          <h2 className="mb-6 text-center text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl">
-            About Moonbase Test Network
-          </h2>
-          <p className="mx-auto mb-6 max-w-3xl text-center text-base sm:text-lg text-muted-foreground">
-            AIPenGuild utilizes the Moonbase Alpha testnet so you can explore
-            AI-driven NFT minting, trading, and staking without risking real assets.
-          </p>
-          <div className="mx-auto max-w-3xl space-y-4 text-sm text-foreground sm:text-base">
-            <div className="flex items-start gap-3 rounded-lg bg-accent p-4 text-accent-foreground">
-              <strong className="min-w-[2rem] text-lg">1.</strong>
-              <div>
-                <strong>Connect to Moonbase:</strong> Configure your wallet with the Moonbase Alpha
-                chain ID <code className="font-mono text-xs">1287</code> (e.g., MetaMask with a custom RPC).
+      {/* Moonbase Test Network Section - Modernized */}
+      <section className="relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-b from-secondary/20 via-secondary/30 to-secondary/50 dark:from-gray-800/20 dark:via-gray-800/40 dark:to-gray-800/80">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 rounded-xl p-6 sm:p-12 md:flex-row md:gap-12 md:p-16 shadow-md dark:shadow-none bg-white dark:bg-gray-900">
+          {/* Left Side Text */}
+          <div className="flex-1">
+            <h2 className="mb-4 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl">
+              About Moonbase Test Network
+            </h2>
+            <p className="mb-6 text-sm sm:text-base text-muted-foreground">
+              AIPenGuild leverages the Moonbase Alpha testnet so you can experiment with AI-driven NFT minting, trading, and staking—completely risk-free. Dive into the future of Web3 creation without using real assets.
+            </p>
+            <div className="space-y-4 sm:text-base text-sm text-foreground">
+              <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
+                <strong className="min-w-[2rem] text-lg">1.</strong>
+                <div>
+                  <strong>Connect to Moonbase:</strong> Configure your wallet with the
+                  Moonbase Alpha chain ID{" "}
+                  <code className="font-mono text-xs">1287</code>.
+                  (Example: MetaMask → Custom RPC).
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
+                <strong className="min-w-[2rem] text-lg">2.</strong>
+                <div>
+                  <strong>Request DEV Tokens:</strong> Grab free DEV tokens from the official{" "}
+                  <a
+                    href="https://faucet.moonbeam.network/"
+                    className="underline hover:opacity-90"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Moonbeam Faucet
+                  </a>
+                  . These cover gas fees, enabling you to explore at no cost.
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
+                <strong className="min-w-[2rem] text-lg">3.</strong>
+                <div>
+                  <strong>Start Creating:</strong> Mint AI NFTs, list them, and trade on AIPenGuild
+                  with zero financial risk. Push the boundaries of AI and blockchain innovation on
+                  Moonbase Alpha.
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-3 rounded-lg bg-accent p-4 text-accent-foreground">
-              <strong className="min-w-[2rem] text-lg">2.</strong>
-              <div>
-                <strong>Request Dev Tokens:</strong> Get free DEV tokens for testing from the official
-                faucet at <a href="https://faucet.moonbeam.network/" className="underline">Moonbeam Faucet</a>.
-                These tokens cover transaction fees so you can experiment freely.
-              </div>
-            </div>
-            <div className="flex items-start gap-3 rounded-lg bg-accent p-4 text-accent-foreground">
-              <strong className="min-w-[2rem] text-lg">3.</strong>
-              <div>
-                <strong>Start Building:</strong> Experiment with AI NFT creation, listing, and more on AIPenGuild—
-                all without risking real funds. Push the boundaries of art and tech synergy on Moonbase Alpha.
-              </div>
-            </div>
+            <p className="mt-6 text-sm text-muted-foreground sm:text-base">
+              Happy minting and exploring on the AIPenGuild Moonbase test network!
+            </p>
           </div>
-          <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-muted-foreground">
-            Happy minting and exploring on the AIPenGuild Moonbase test network!
-          </p>
+          {/* Right Side Image */}
+          <motion.div
+            className="relative w-full max-w-[500px] max-h-[500px] aspect-square overflow-hidden rounded-md shadow-xl md:w-1/2"
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <Image
+              src="/moonbase-logo.png"
+              alt="Moonbase Test Network"
+              fill
+              className="object-cover"
+            />
+          </motion.div>
         </div>
       </section>
     </>

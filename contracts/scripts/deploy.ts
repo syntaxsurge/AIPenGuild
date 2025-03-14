@@ -33,6 +33,12 @@ async function main() {
   )
   await creatorCollection.waitForDeployment()
   console.log("AICreatorCollection deployed to:", creatorCollection.target)
+
+  // Now set collection #0 in the exchange
+  console.log("Registering primary collection 0 with AINFTExchange...")
+  const setAiCollectionTx = await exchange.setAiCollection(0, creatorCollection.target)
+  await setAiCollectionTx.wait()
+  console.log("Registered collection 0 ->", creatorCollection.target, " in AINFTExchange!")
 }
 
 main()

@@ -24,10 +24,6 @@ This folder contains the smart contracts and HardHat configuration for AIPenGuil
    ```bash
    npm run compile
    ```
-   or
-   ```bash
-   npx hardhat compile
-   ```
 
 4. **Deploy Contracts with Logging**
 
@@ -50,10 +46,18 @@ This folder contains the smart contracts and HardHat configuration for AIPenGuil
    ```bash
    npm run update:addresses
    ```
+
    This command will read the `deploy.log` file and update the contract addresses accordingly.
 
-## Contract Overview
+6. **Clean Artifacts**
 
+   If you need to remove all build artifacts (such as compiled files and caches), run:
+   ```bash
+   npm run clean
+   ```
+   This command calls `npx hardhat clean` under the hood, clearing the `artifacts` and `cache` directories.
+
+## Contract Overview
 - **AIRewardPool.sol**: Manages the reward pool for the platform.
 - **AIExperience.sol**: Handles the assignment and modification of experience points.
 - **AINFTExchange.sol**: NFT exchange contract that manages minting, listing, and trading of NFTs.
