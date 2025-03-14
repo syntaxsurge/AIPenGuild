@@ -11,6 +11,7 @@ import {
   IconGlobe
 } from "@tabler/icons-react"
 import Link from "next/link"
+import Image from "next/image"
 import { useState } from "react"
 
 function Header() {
@@ -93,8 +94,11 @@ export default Header
 
 export const Logo = () => {
   return (
-    <Link href="/" className="text-lg font-bold text-primary hover:opacity-90 md:text-xl">
-      AIPenGuild
+    <Link href="/" className="flex items-center space-x-2">
+      <Image src="/AIPenGuild-logo.png" alt="AIPenGuild Logo" width={40} height={40} />
+      <span className="text-lg font-bold text-primary hover:opacity-90 md:text-xl">
+        AIPenGuild
+      </span>
     </Link>
   )
 }
