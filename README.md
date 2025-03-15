@@ -64,26 +64,26 @@ The platform features a modern front-end built with Next.js and Tailwind CSS, in
 2. **Compile and Deploy the Smart Contracts:**
   Navigate to the contracts folder and read the dedicated README for instructions on how to install dependencies, compile, and deploy the contracts to a test network (e.g., Moonbase Alpha). You should do this before running the Next.js application if you want the site to function with live on-chain data.
   
-  ```bash
-  cd contracts
-  npm install
-  npm run compile
-  npm run deploy:moonbase:log
-  npm run update:addresses
-  cd ..
-  ```
+    ```bash
+    cd contracts
+    npm install
+    npm run compile
+    npm run deploy:moonbase:log
+    npm run update:addresses
+    cd ..
+    ```
 
 3. **Install Front-End Dependencies (in the project root):**
 
-  ```bash
-  npm install
-  ```
+    ```bash
+    npm install
+    ```
 
 4. **Start the Development Server:**
 
-  ```bash
-  npm run dev
-  ```
+    ```bash
+    npm run dev
+    ```
 
 5. **Connect Your Wallet:**
   Use the integrated wallet connection to access the NFT functionalities (e.g., Metamask configured for Moonbase Alpha).
