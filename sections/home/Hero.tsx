@@ -49,7 +49,7 @@ export default function HeroSection() {
           transition={{ duration: 0.7 }}
         >
           <Image
-            src="/hero-nft-preview.png"
+            src="/images/hero-nft-preview.png"
             alt="AIPenGuild Showcase"
             width={800}
             height={600}

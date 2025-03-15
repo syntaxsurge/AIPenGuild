@@ -113,7 +113,7 @@ Planned enhancements include:
 - **GitHub Repository:**
   [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
 - **Live Demo:**
-  [![Watch the video](./public/live-demo.png)](https://www.youtube.com/watch?v=MH4DsjtsO8c)
+[![Watch the video](./public/images/live-demo.png)](https://www.youtube.com/watch?v=MH4DsjtsO8c)
   [https://www.youtube.com/watch?v=MH4DsjtsO8c](https://www.youtube.com/watch?v=MH4DsjtsO8c)
 - **Presentation Slides:**  
   [https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit?utm_content=DAGhvgXMfyQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton](https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit?utm_content=DAGhvgXMfyQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)

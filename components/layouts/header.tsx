@@ -84,7 +84,7 @@ export default Header
 export const Logo = () => {
   return (
     <Link href="/" className="flex items-center space-x-2">
-      <Image src="/AIPenGuild-logo.png" alt="AIPenGuild Logo" width={40} height={40} />
+        <Image src="/images/aipenguild-logo.png" alt="AIPenGuild Logo" width={40} height={40} />
       <span className="text-lg font-bold text-primary hover:opacity-90 md:text-xl">
         AIPenGuild
       </span>

@@ -13,7 +13,7 @@ export default function Home() {
   useEffect(() => {
     setMounted(true)
   }, [])
-  const logoSrc = mounted && resolvedTheme === "dark" ? "/moonbase-logo-white.png" : "/moonbase-logo-black.png"
+const logoSrc = mounted && resolvedTheme === "dark" ? "/images/moonbase-logo-white.png" : "/images/moonbase-logo-black.png"
 
   return (
     <>
@@ -89,7 +89,7 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            {["marketplace/nft-1.png", "marketplace/nft-2.png", "marketplace/nft-3.png"].map((src, idx) => (
+            {["images/marketplace/nft-1.png", "images/marketplace/nft-2.png", "images/marketplace/nft-3.png"].map((src, idx) => (
               <div
                 key={idx}
                 className="group relative overflow-hidden rounded-lg border border-border p-2 transition-shadow hover:shadow-lg"
@@ -143,7 +143,7 @@ export default function Home() {
             </div>
             <div className="relative h-48 w-full overflow-hidden rounded-md sm:h-64">
               <Image
-                src="/why-aipenguild.png"
+                src="/images/why-aipenguild.png"
                 alt="Why AIPenGuild"
                 fill
                 className={cn("object-cover")}
