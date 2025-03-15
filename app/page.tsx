@@ -205,9 +205,9 @@ export default function Home() {
                       <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
                         The Leaderboard ranks users by their total Experience (XP).
                         Every time you mint a new NFT, random XP (between 1 and 100)
-                        is assigned to that item. When you own that NFT, you gain that XP.
-                        As you accumulate more NFTs, your total XP increases. The Leaderboard
-                        showcases who has accrued the highest XP on AIPenGuild.
+                        is assigned to that item. As you accumulate more NFTs,
+                        your total XP increases. The Leaderboard showcases who has
+                        accrued the highest XP on AIPenGuild.
                       </AccordionContent>
                     </AccordionItem>
 
@@ -294,9 +294,7 @@ export default function Home() {
                       <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
                         The Admin Panel is primarily for platform maintainers or the contract
                         owner. In the current implementation, the main admin action is to
-                        withdraw (or manage) funds from the reward pool. Admin users may
-                        also toggle collection activity, update mint prices, or define new
-                        collections.
+                        withdraw (or manage) funds from the reward pool.
                       </AccordionContent>
                     </AccordionItem>
 
@@ -330,7 +328,7 @@ export default function Home() {
                           </li>
                           <li>
                             <strong>Admin Panel</strong> (if you have access) to manage reward pool
-                            funds or collection parameters. XP settings are not adjustable at this time.
+                            funds or collection parameters.
                           </li>
                         </ol>
                       </AccordionContent>
