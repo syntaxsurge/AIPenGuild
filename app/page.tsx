@@ -413,47 +413,50 @@ export default function Home() {
           {/* Left Side Text */}
           <div className="flex-1">
             <h2 className="mb-4 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl">
-              About Moonbase Test Network
+              Supported Test Networks
             </h2>
             <p className="mb-6 text-sm sm:text-base text-muted-foreground">
-              AIPenGuild leverages the Moonbase Alpha testnet so you can experiment with AI-driven NFT minting, trading, and staking—completely risk-free. Dive into the future of Web3 creation without using real assets.
+              AIPenGuild proudly supports three networks by default: West End Asset Hub, Moonbeam, and
+              Moonbase Alpha. For the smoothest experience, we strongly recommend using Moonbase Alpha
+              when testing our AI-driven NFT creation and trading features. Moonbase Alpha is less prone
+              to transaction errors and offers a fast, reliable environment for experimentation.
             </p>
             <div className="space-y-4 sm:text-base text-sm text-foreground">
               <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
                 <strong className="min-w-[2rem] text-lg">1.</strong>
                 <div>
-                  <strong>Connect to Moonbase:</strong> Configure your wallet with the
-                  Moonbase Alpha chain ID{" "}
-                  <code className="font-mono text-xs">1287</code>.
-                  (Example: MetaMask → Custom RPC).
+                  <strong>Connect your wallet:</strong> Configure it for Moonbase Alpha (Chain ID{" "}
+                  <code className="font-mono text-xs">1287</code>), West End Asset Hub, or Moonbeam
+                  depending on your preference. If unsure, we recommend Moonbase Alpha for simplicity.
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
                 <strong className="min-w-[2rem] text-lg">2.</strong>
                 <div>
-                  <strong>Request DEV Tokens:</strong> Grab free DEV tokens from the official{" "}
+                  <strong>Obtain test tokens:</strong> For Moonbase Alpha, request free DEV tokens from{" "}
                   <a
                     href="https://faucet.moonbeam.network/"
                     className="underline hover:opacity-90"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Moonbeam Faucet
+                    the official faucet
                   </a>
-                  . These cover gas fees, enabling you to explore at no cost.
+                  . This ensures gas fees remain cost-free during your exploration.
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
                 <strong className="min-w-[2rem] text-lg">3.</strong>
                 <div>
-                  <strong>Start Creating:</strong> Mint AI NFTs, list them, and trade on AIPenGuild
-                  with zero financial risk. Push the boundaries of AI and blockchain innovation on
-                  Moonbase Alpha.
+                  <strong>Begin your journey:</strong> Mint AI NFTs, list them, and trade on AIPenGuild
+                  with zero financial risk. Use any of the three networks for your needs, though
+                  Moonbase Alpha is the recommended choice for its stability and ease of use.
                 </div>
               </div>
             </div>
             <p className="mt-6 text-sm text-muted-foreground sm:text-base">
-              Happy minting and exploring on the AIPenGuild Moonbase test network!
+              This project is open source, so you can freely customize and add more networks to suit your
+              own needs. Happy minting, discovering, and innovating on AIPenGuild!
             </p>
           </div>
           {/* Right Side Image */}
@@ -466,7 +469,7 @@ export default function Home() {
             <div className="absolute inset-0">
               <Image
                 src={logoSrc}
-                alt="Moonbase Test Network"
+                alt="Test Network Overview"
                 fill
                 className="object-contain p-2"
               />
