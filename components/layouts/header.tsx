@@ -5,11 +5,13 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { IconMenu2, IconChevronDown } from "@tabler/icons-react"
 import Link from "next/link"
 import Image from "next/image"
+import { useAccount } from "wagmi"
 import { useState } from "react"
 
 function Header() {
   const [open, setOpen] = useState(false)
   const toggleOpen = () => setOpen(prev => !prev)
+  const { isDisconnected } = useAccount()
 
   return (
     <div className="fixed left-0 right-0 top-0 z-[100] border-b border-border bg-background">
@@ -40,10 +42,13 @@ function Header() {
               DASHBOARD
             </Link>
 
-            {/* Admin link */}
-            <Link href="/admin" className="hover:underline">
-              ADMIN
-            </Link>
+            {/* Admin link (hidden if disconnected) */}
+            {!isDisconnected && (
+              <Link href="/admin" className="hover:underline">
+                ADMIN
+              </Link>
+            )
+            }
 
             {/* Marketplace dropdown */}
             <div className="group relative">
@@ -85,7 +90,7 @@ export default Header
 export const Logo = () => {
   return (
     <Link href="/" className="flex items-center space-x-2">
-        <Image src="/images/aipenguild-logo.png" alt="AIPenGuild Logo" width={40} height={40} />
+      <Image src="/images/aipenguild-logo.png" alt="AIPenGuild Logo" width={40} height={40} />
       <span className="text-lg font-bold text-primary hover:opacity-90 md:text-xl">
         AIPenGuild
       </span>

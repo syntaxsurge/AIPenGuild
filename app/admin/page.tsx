@@ -22,7 +22,6 @@ export default function AdminPage() {
   // We'll store the pool balance
   const [poolBalance, setPoolBalance] = useState<bigint>(0n)
   const [loadingBalance, setLoadingBalance] = useState(false)
-  const [reloadBalance, setReloadBalance] = useState(false)
 
   // For withdrawing from reward pool
   const [withdrawAmount, setWithdrawAmount] = useState("")
@@ -30,15 +29,16 @@ export default function AdminPage() {
     data: withdrawData,
     error: withdrawError,
     isPending: isWithdrawPending,
+    isSuccess: isWriteSuccess,
     writeContract: writeWithdrawContract
   } = useWriteContract()
 
   const {
     data: withdrawReceipt,
-    isLoading: isWithdrawTxLoading,
-    isSuccess: isWithdrawTxSuccess,
-    isError: isWithdrawTxError,
-    error: withdrawTxError
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    isError: isTxError,
+    error: txError
   } = useWaitForTransactionReceipt({
     hash: withdrawData ?? undefined
   })
@@ -72,7 +72,7 @@ export default function AdminPage() {
     checkOwner()
   }, [aiRewardPool, publicClient, wagmiAddress])
 
-  // Load reward pool balance
+  // Load reward pool balance once, or after successful withdrawal
   async function loadBalance() {
     if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient) return
     try {
@@ -99,8 +99,18 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    loadBalance()
-  }, [reloadBalance, aiRewardPool])
+    // Load balance once on mount, if the user is possibly the correct owner
+    if (!isDisconnected && aiRewardPool?.address) {
+      loadBalance()
+    }
+  }, [aiRewardPool?.address, isDisconnected])
+
+  // Re-check balance after successful withdraw
+  useEffect(() => {
+    if (isTxSuccess) {
+      loadBalance()
+    }
+  }, [isTxSuccess])
 
   // Handle withdraw transaction
   const handleWithdraw = async (e: React.FormEvent) => {
@@ -155,35 +165,33 @@ export default function AdminPage() {
 
   // Watch events for withdraw transaction
   useEffect(() => {
-    if (isWithdrawTxLoading) {
+    if (isTxLoading) {
       toast({
         title: "Transaction Pending",
         description: "Your withdrawal transaction is being confirmed..."
       })
     }
-    if (isWithdrawTxSuccess) {
+    if (isTxSuccess) {
       toast({
         title: "Withdrawal Successful",
         description: "Funds withdrawn from reward pool"
       })
       setWithdrawAmount("")
-      setReloadBalance(!reloadBalance)
     }
-    if (isWithdrawTxError) {
+    if (isTxError) {
       toast({
         title: "Transaction Failed",
-        description: withdrawTxError?.message || withdrawError?.message || "Something went wrong",
+        description: txError?.message || withdrawError?.message || "Something went wrong",
         variant: "destructive"
       })
     }
   }, [
-    isWithdrawTxLoading,
-    isWithdrawTxSuccess,
-    isWithdrawTxError,
+    isTxLoading,
+    isTxSuccess,
+    isTxError,
     withdrawError,
-    withdrawTxError,
-    toast,
-    reloadBalance
+    txError,
+    toast
   ])
 
   if (isDisconnected) {
@@ -237,8 +245,8 @@ export default function AdminPage() {
             <p className="text-sm text-muted-foreground mb-2">
               Withdraw funds from the reward pool (owner only).
             </p>
-            <form onSubmit={handleWithdraw} className="flex flex-col sm:flex-row sm:items-end gap-2">
-              <div className="flex flex-col flex-1">
+            <form onSubmit={handleWithdraw} className="flex flex-col gap-2">
+              <div className="flex flex-col">
                 <label className="text-xs font-medium">Amount in ETH</label>
                 <Input
                   value={withdrawAmount}
@@ -248,10 +256,26 @@ export default function AdminPage() {
               </div>
               <Button
                 type="submit"
-                disabled={isWithdrawPending || isWithdrawTxLoading}
+                disabled={isWithdrawPending || isTxLoading}
               >
-                {isWithdrawPending || isWithdrawTxLoading ? "Withdrawing..." : "Withdraw"}
+                {isWithdrawPending || isTxLoading ? "Withdrawing..." : "Withdraw"}
               </Button>
+
+              {/* Transaction Status */}
+              <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                <p className="font-medium">Transaction Status:</p>
+                {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                {isTxSuccess && (
+                  <p className="text-green-600">
+                    Transaction Confirmed! Withdrawal successful.
+                  </p>
+                )}
+                {isTxError && (
+                  <p className="text-red-600">
+                    Transaction Failed: {txError?.message || withdrawError?.message}
+                  </p>
+                )}
+              </div>
             </form>
           </div>
         </CardContent>
