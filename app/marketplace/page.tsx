@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import {
   Accordion,
   AccordionContent,
@@ -115,39 +114,18 @@ export default function MarketplacePage() {
   const [listedItems, setListedItems] = useState<MarketplaceItem[]>([])
   const fetchedRef = useRef(false)
 
-  // Filter states that the user sees/edits immediately:
+  // Filter states for user input
   const [tempSearch, setTempSearch] = useState("")
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10])
-  const [tempBuyNow, setTempBuyNow] = useState(false)
-  const [tempOnAuction, setTempOnAuction] = useState(false)
-  const [tempNew, setTempNew] = useState(false)
-  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([])
 
-  // Final filter states, which we only update when "Apply Filters" is clicked
+  // Final filter states
   const [searchTerm, setSearchTerm] = useState("")
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10])
-  const [buyNow, setBuyNow] = useState(false)
-  const [onAuction, setOnAuction] = useState(false)
-  const [showNew, setShowNew] = useState(false)
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-
-  // Categories for demonstration
-  const categories = ["Art", "Music", "Virtual Worlds", "Trading Cards", "Collectibles"]
-
-  const toggleTempCategory = (category: string) => {
-    setTempSelectedCategories((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
-    )
-  }
 
   // "Apply Filters" merges all temp states into final states
   function handleApplyFilters() {
     setSearchTerm(tempSearch)
     setPriceRange(tempPriceRange)
-    setBuyNow(tempBuyNow)
-    setOnAuction(tempOnAuction)
-    setShowNew(tempNew)
-    setSelectedCategories(tempSelectedCategories)
     // Close sidebar if on mobile
     setSidebarOpen(false)
   }
@@ -221,32 +199,6 @@ export default function MarketplacePage() {
         return false
       }
 
-      // "Buy Now" filter => isOnSale == true
-      if (buyNow && !item.isOnSale) {
-        return false
-      }
-
-      // "On Auction" is not truly implemented. If user checks "On Auction," we'll skip items not on sale
-      if (onAuction) {
-        if (!item.isOnSale) return false
-      }
-
-      // "New" filter => let's define new as top 5 item IDs
-      if (showNew) {
-        const maxItemId = listedItems.reduce((acc, cur) => (cur.itemId > acc ? cur.itemId : acc), BigInt(0))
-        if (item.itemId < maxItemId - BigInt(5)) {
-          return false
-        }
-      }
-
-      // category filter is not actually stored in data. We'll do a fallback:
-      // If categories are selected, require "Art" is in the categories to keep item
-      if (selectedCategories.length > 0) {
-        if (!selectedCategories.includes("Art")) {
-          return false
-        }
-      }
-
       // search filter => check if itemId or resourceUrl
       const itemIdStr = String(item.itemId)
       const lowerSearch = searchTerm.toLowerCase()
@@ -256,10 +208,9 @@ export default function MarketplacePage() {
           return false
         }
       }
-
       return true
     })
-  }, [listedItems, priceRange, buyNow, onAuction, showNew, selectedCategories, searchTerm])
+  }, [listedItems, priceRange, searchTerm])
 
   // Handle "Buy" button
   async function handleBuy(item: MarketplaceItem) {
@@ -363,44 +314,8 @@ export default function MarketplacePage() {
               </div>
             </div>
 
-            {/* Accordion Filters */}
+            {/* Accordion Filter for Price Range only */}
             <Accordion type="multiple" className="w-full">
-              {/* Status */}
-              <AccordionItem value="status">
-                <AccordionTrigger>Status</AccordionTrigger>
-                <AccordionContent>
-                  <div className="flex flex-col gap-2">
-                    <label className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="rounded"
-                        checked={tempBuyNow}
-                        onChange={(e) => setTempBuyNow(e.target.checked)}
-                      />
-                      <span>Buy Now</span>
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="rounded"
-                        checked={tempOnAuction}
-                        onChange={(e) => setTempOnAuction(e.target.checked)}
-                      />
-                      <span>On Auction</span>
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="rounded"
-                        checked={tempNew}
-                        onChange={(e) => setTempNew(e.target.checked)}
-                      />
-                      <span>New</span>
-                    </label>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
               {/* Price */}
               <AccordionItem value="price">
                 <AccordionTrigger>Price Range</AccordionTrigger>
@@ -435,25 +350,6 @@ export default function MarketplacePage() {
                         className="w-20"
                       />
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Categories */}
-              <AccordionItem value="categories">
-                <AccordionTrigger>Categories</AccordionTrigger>
-                <AccordionContent>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {categories.map((category) => (
-                      <Badge
-                        key={category}
-                        variant={tempSelectedCategories.includes(category) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => toggleTempCategory(category)}
-                      >
-                        {category}
-                      </Badge>
-                    ))}
                   </div>
                 </AccordionContent>
               </AccordionItem>
