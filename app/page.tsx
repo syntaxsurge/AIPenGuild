@@ -1,12 +1,12 @@
 'use client'
 
-import HeroSection from "@/sections/home/hero"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { InteractiveHoverButton } from "@/components/ui/interactive-button"
 
 export default function Home() {
   const { resolvedTheme } = useTheme()
@@ -14,12 +14,63 @@ export default function Home() {
   useEffect(() => {
     setMounted(true)
   }, [])
-const logoSrc = mounted && resolvedTheme === "dark" ? "/images/moonbase-logo-white.png" : "/images/moonbase-logo-black.png"
+  const logoSrc = mounted && resolvedTheme === "dark" ? "/images/moonbase-logo-white.png" : "/images/moonbase-logo-black.png"
 
   return (
     <>
       {/* Hero Section */}
-      <HeroSection />
+      <section className="w-full bg-background px-4 py-12 sm:py-16 md:py-20 lg:py-24">
+        <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-10 md:flex-row md:gap-6">
+          {/* Left side content */}
+          <div className="flex-1">
+            <motion.h1
+              className="mb-4 text-4xl font-extrabold leading-tight text-primary sm:text-5xl md:text-6xl"
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7 }}
+            >
+              Welcome to AIPenGuild
+            </motion.h1>
+            <motion.p
+              className="mb-6 max-w-md text-base text-muted-foreground sm:text-lg"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.7 }}
+            >
+              A new era of AI-driven NFTs. Build, collect, and explore imaginative digital assets
+              fueled by cutting-edge blockchain technology.
+            </motion.p>
+            <motion.div
+              className="flex flex-col sm:flex-row sm:items-center sm:gap-4"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, duration: 0.7 }}
+            >
+              <Link href="/mint">
+                <InteractiveHoverButton text="Mint Your First AI NFT" />
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* Right side media */}
+          <motion.div
+            className="relative h-[600px] w-full flex-1 overflow-hidden rounded-xl sm:h-[600px]"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+          >
+            <Image
+              src="/images/hero-nft-preview.png"
+              alt="AIPenGuild Showcase"
+              width={800}
+              height={600}
+              className={cn("object-cover")}
+            />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Introduction Section */}
       <section className="py-12 bg-white dark:bg-gray-900">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-8 text-center">
@@ -121,7 +172,7 @@ const logoSrc = mounted && resolvedTheme === "dark" ? "/images/moonbase-logo-whi
         </div>
       </section>
 
-      {/* Promotional Info / Why AIPenGuild */}
+      {/* Why AIPenGuild Section */}
       <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800">
         <div className="mx-auto max-w-6xl">
           <motion.div
@@ -154,7 +205,7 @@ const logoSrc = mounted && resolvedTheme === "dark" ? "/images/moonbase-logo-whi
         </div>
       </section>
 
-      {/* Creator/Minter Rankings */}
+      {/* Leaderboard Section */}
       <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
         <div className="mx-auto max-w-6xl text-center">
           <motion.h2
@@ -187,7 +238,7 @@ const logoSrc = mounted && resolvedTheme === "dark" ? "/images/moonbase-logo-whi
         </div>
       </section>
 
-      {/* Moonbase Test Network Section - Modernized */}
+      {/* Moonbase Test Network Section */}
       <section className="relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-b from-secondary/20 via-secondary/30 to-secondary/50 dark:from-gray-800/20 dark:via-gray-800/40 dark:to-gray-800/80">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 rounded-xl p-6 sm:p-12 md:flex-row md:gap-12 md:p-16 shadow-md dark:shadow-none bg-white dark:bg-gray-900">
           {/* Left Side Text */}
