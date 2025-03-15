@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
 import { getUserTitle } from "@/lib/experience"
 
 /**
@@ -30,6 +31,7 @@ export default function LeaderboardPage() {
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [fetched, setFetched] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // Filter states
   const [addressSearch, setAddressSearch] = useState("")
@@ -40,6 +42,7 @@ export default function LeaderboardPage() {
   async function loadLeaderboard() {
     if (!aiExperience || !aiExchange || !publicClient) return
     try {
+      setLoading(true)
       const itemCount = await publicClient.readContract({
         address: aiExchange.address as `0x${string}`,
         abi: aiExchange.abi,
@@ -87,6 +90,8 @@ export default function LeaderboardPage() {
         description: err.message || "Something went wrong loading XP leaderboard",
         variant: "destructive"
       })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -158,7 +163,12 @@ export default function LeaderboardPage() {
           <CardTitle className="text-lg font-semibold">Top 10 XP Holders</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          {filteredLeaderboard.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading leaderboard data...</span>
+            </div>
+          ) : filteredLeaderboard.length === 0 ? (
             <p className="text-sm text-muted-foreground">No addresses found for the given filters.</p>
           ) : (
             <table className="w-full text-sm">
@@ -200,4 +210,3 @@ export default function LeaderboardPage() {
     </main>
   )
 }
-
