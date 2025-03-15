@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { useAccount, usePublicClient, useWaitForTransactionReceipt } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,34 +8,28 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { useContract } from "@/hooks/use-contract"
 import { useWriteContract } from "wagmi"
-
-/**
- * Basic admin page:
- *  - Show reward pool balance (from AIRewardPool)
- *  - Let owner withdraw an amount
- *  - Potential placeholder for distributing from the pool, awarding perks, etc.
- *
- * In production, you might require an on-chain check if the user is the owner.
- * Here we trust them to only call if they are the contract owner, or the transaction will fail.
- */
+import { parseEther } from "viem"
 
 export default function AdminPage() {
-  const { address: wagmiAddress } = useAccount()
+  const { address: wagmiAddress, isDisconnected } = useAccount()
   const publicClient = usePublicClient()
   const aiRewardPool = useContract("AIRewardPool")
   const { toast } = useToast()
 
-  const [balance, setBalance] = useState<bigint>(0n)
-  const [reload, setReload] = useState(false)
-  const [withdrawAmount, setWithdrawAmount] = useState("")
-  const [loadingBalance, setLoadingBalance] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
+  const [ownerLoading, setOwnerLoading] = useState(true)
 
-  // For the withdraw transaction
+  // We'll store the pool balance
+  const [poolBalance, setPoolBalance] = useState<bigint>(0n)
+  const [loadingBalance, setLoadingBalance] = useState(false)
+  const [reloadBalance, setReloadBalance] = useState(false)
+
+  // For withdrawing from reward pool
+  const [withdrawAmount, setWithdrawAmount] = useState("")
   const {
     data: withdrawData,
     error: withdrawError,
     isPending: isWithdrawPending,
-    isSuccess: isWithdrawSuccess,
     writeContract: writeWithdrawContract
   } = useWriteContract()
 
@@ -44,55 +38,41 @@ export default function AdminPage() {
     isLoading: isWithdrawTxLoading,
     isSuccess: isWithdrawTxSuccess,
     isError: isWithdrawTxError,
-    error: withdrawTxReceiptError
+    error: withdrawTxError
   } = useWaitForTransactionReceipt({
     hash: withdrawData ?? undefined
   })
 
-  // Toast notifications for withdraw
+  // Check if user is AIRewardPool's owner
   useEffect(() => {
-    if (isWithdrawTxLoading) {
-      toast({
-        title: "Transaction Pending",
-        description: "Your withdraw transaction is being confirmed..."
-      })
+    async function checkOwner() {
+      if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient || !wagmiAddress) {
+        setIsOwner(false)
+        setOwnerLoading(false)
+        return
+      }
+      try {
+        const contractOwner = await publicClient.readContract({
+          address: aiRewardPool.address as `0x${string}`,
+          abi: aiRewardPool.abi,
+          functionName: "owner",
+          args: []
+        }) as `0x${string}`
+        if (contractOwner.toLowerCase() === wagmiAddress.toLowerCase()) {
+          setIsOwner(true)
+        } else {
+          setIsOwner(false)
+        }
+      } catch (err: any) {
+        console.error("Owner check error:", err)
+        setIsOwner(false)
+      }
+      setOwnerLoading(false)
     }
-    if (isWithdrawTxSuccess) {
-      toast({
-        title: "Transaction Successful!",
-        description: "Funds have been withdrawn from the reward pool."
-      })
-      setWithdrawAmount("")
-      setReload(!reload)
-    }
-    if (isWithdrawTxError) {
-      toast({
-        title: "Transaction Failed",
-        description: withdrawTxReceiptError?.message || withdrawError?.message || "Something went wrong.",
-        variant: "destructive"
-      })
-    }
-  }, [
-    isWithdrawTxLoading,
-    isWithdrawTxSuccess,
-    isWithdrawTxError,
-    withdrawTxReceiptError,
-    withdrawError,
-    toast,
-    reload
-  ])
+    checkOwner()
+  }, [aiRewardPool, publicClient, wagmiAddress])
 
-  // If user rejects in the wallet
-  useEffect(() => {
-    if (withdrawError) {
-      toast({
-        title: "Transaction Rejected",
-        description: withdrawError.message || "User canceled transaction in wallet.",
-        variant: "destructive"
-      })
-    }
-  }, [withdrawError, toast])
-
+  // Load reward pool balance
   async function loadBalance() {
     if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient) return
     try {
@@ -101,12 +81,13 @@ export default function AdminPage() {
         address: aiRewardPool.address as `0x${string}`,
         abi: aiRewardPool.abi,
         functionName: "getPoolBalance",
-        args: [] // FIX: Provide empty args
+        args: []
       })
       if (typeof val === "bigint") {
-        setBalance(val)
+        setPoolBalance(val)
       }
     } catch (err: any) {
+      console.error("Error loading pool balance:", err)
       toast({
         title: "Error",
         description: err.message || "Cannot load reward pool balance.",
@@ -117,27 +98,30 @@ export default function AdminPage() {
     }
   }
 
-  async function handleWithdraw(e: React.FormEvent) {
+  useEffect(() => {
+    loadBalance()
+  }, [reloadBalance, aiRewardPool])
+
+  // Handle withdraw transaction
+  const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!aiRewardPool?.address) {
+    if (!aiRewardPool?.address || !aiRewardPool?.abi) {
       toast({
-        title: "No Contract Found",
-        description: "AIRewardPool contract not found.",
+        title: "Error",
+        description: "Unable to find AIRewardPool contract or ABI.",
         variant: "destructive"
       })
       return
     }
-    if (!withdrawAmount || isNaN(Number(withdrawAmount))) {
+    if (!withdrawAmount || isNaN(Number(withdrawAmount)) || Number(withdrawAmount) <= 0) {
       toast({
         title: "Invalid Amount",
-        description: "Please enter a valid numeric amount (in ETH).",
+        description: "Please enter a positive numeric amount of ETH to withdraw.",
         variant: "destructive"
       })
       return
     }
-
-    // We'll parse the input as ETH, convert to wei
-    const weiAmount = BigInt(Math.floor(Number(withdrawAmount) * 1e18))
+    const weiAmount = parseEther(withdrawAmount)
 
     const withdrawABI = {
       name: "withdrawPoolFunds",
@@ -156,79 +140,122 @@ export default function AdminPage() {
         functionName: "withdrawPoolFunds",
         args: [weiAmount]
       })
-
       toast({
-        title: "Withdrawal Transaction",
-        description: "Transaction submitted... awaiting confirmation."
+        title: "Transaction Submitted",
+        description: `Withdrawing ${withdrawAmount} ETH from reward pool...`
       })
     } catch (err: any) {
       toast({
         title: "Withdraw Error",
-        description: err.message || "Unable to process withdrawal.",
+        description: err.message || "Transaction submission failed",
         variant: "destructive"
       })
     }
   }
 
+  // Watch events for withdraw transaction
   useEffect(() => {
-    loadBalance()
-  }, [reload, aiRewardPool])
+    if (isWithdrawTxLoading) {
+      toast({
+        title: "Transaction Pending",
+        description: "Your withdrawal transaction is being confirmed..."
+      })
+    }
+    if (isWithdrawTxSuccess) {
+      toast({
+        title: "Withdrawal Successful",
+        description: "Funds withdrawn from reward pool"
+      })
+      setWithdrawAmount("")
+      setReloadBalance(!reloadBalance)
+    }
+    if (isWithdrawTxError) {
+      toast({
+        title: "Transaction Failed",
+        description: withdrawTxError?.message || withdrawError?.message || "Something went wrong",
+        variant: "destructive"
+      })
+    }
+  }, [
+    isWithdrawTxLoading,
+    isWithdrawTxSuccess,
+    isWithdrawTxError,
+    withdrawError,
+    withdrawTxError,
+    toast,
+    reloadBalance
+  ])
 
+  if (isDisconnected) {
+    return (
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
+        <p className="text-center text-sm text-muted-foreground">Please connect your wallet.</p>
+      </main>
+    )
+  }
+
+  if (ownerLoading) {
+    return (
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
+        <p className="text-center text-sm text-muted-foreground">Checking ownership...</p>
+      </main>
+    )
+  }
+
+  if (!isOwner) {
+    return (
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">403 Access Denied</h1>
+        <p className="text-center text-sm text-destructive">
+          You do not have permission to view this page. Only the contract owner can access the Admin Panel.
+        </p>
+      </main>
+    )
+  }
+
+  // If user is indeed the contract owner
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-      <h1 className="mb-4 text-center text-3xl font-extrabold text-primary">Admin Panel</h1>
-      {!wagmiAddress ? (
-        <p className="text-center text-sm text-muted-foreground">Please connect your wallet.</p>
-      ) : (
-        <>
-          <Card className="border border-border rounded-lg shadow-xl bg-background">
-            <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
-              <CardTitle className="text-lg font-semibold">Reward Pool</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Pool Balance:</p>
-                <div className="text-lg font-bold text-primary">
-                  {loadingBalance ? "Loading..." : `${Number(balance) / 1e18} ETH`}
-                </div>
-              </div>
-              <div className="border-t border-border pt-4 mt-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Withdraw funds from the reward pool (owner only).
-                </p>
-                <form onSubmit={handleWithdraw} className="flex flex-col sm:flex-row sm:items-end gap-2">
-                  <div className="flex flex-col flex-1">
-                    <label className="text-xs font-medium">Amount (ETH)</label>
-                    <Input
-                      placeholder="0.5"
-                      value={withdrawAmount}
-                      onChange={(e) => setWithdrawAmount(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isWithdrawPending || isWithdrawTxLoading}
-                  >
-                    {isWithdrawPending || isWithdrawTxLoading ? "Withdrawing..." : "Withdraw"}
-                  </Button>
-                </form>
-              </div>
-            </CardContent>
-          </Card>
+      <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
+      <Card className="border border-border rounded-lg shadow-xl bg-background">
+        <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
+          <CardTitle className="text-lg font-semibold">Reward Pool Management</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Current Pool Balance:</p>
+            <div className="text-lg font-bold text-primary">
+              {loadingBalance ? "Loading..." : `${(Number(poolBalance) / 1e18).toFixed(4)} ETH`}
+            </div>
+          </div>
 
-          {/* Extra placeholder: awarding perks or distributing from the pool can be added here */}
-          <Card className="mt-6 border border-border rounded-lg shadow-xl bg-background">
-            <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
-              <CardTitle className="text-lg font-semibold">XP Perks / Airdrops (Placeholder)</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">
-                Future expansion: Distribute token rewards or perks to top XP users automatically.
-              </p>
-            </CardContent>
-          </Card>
-        </>
-      )}
+          <hr className="border-border" />
+
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">
+              Withdraw funds from the reward pool (owner only).
+            </p>
+            <form onSubmit={handleWithdraw} className="flex flex-col sm:flex-row sm:items-end gap-2">
+              <div className="flex flex-col flex-1">
+                <label className="text-xs font-medium">Amount in ETH</label>
+                <Input
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="0.5"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={isWithdrawPending || isWithdrawTxLoading}
+              >
+                {isWithdrawPending || isWithdrawTxLoading ? "Withdrawing..." : "Withdraw"}
+              </Button>
+            </form>
+          </div>
+        </CardContent>
+      </Card>
     </main>
   )
 }
