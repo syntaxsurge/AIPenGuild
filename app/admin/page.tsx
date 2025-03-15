@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useAccount } from "wagmi"
 import { useContract } from "@/hooks/use-contract"
