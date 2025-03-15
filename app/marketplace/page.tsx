@@ -553,9 +553,14 @@ export default function MarketplacePage() {
                         </Button>
                       )}
                       {item.isOnSale && isOwner && (
-                        <p className="mt-2 text-xs text-muted-foreground">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="mt-2 w-full"
+                          disabled
+                        >
                           You own this NFT. You cannot buy it.
-                        </p>
+                        </Button>
                       )}
                     </div>
                   )
@@ -603,9 +608,13 @@ export default function MarketplacePage() {
                           </Button>
                         )}
                         {item.isOnSale && isOwner && (
-                          <p className="text-xs text-muted-foreground">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled
+                          >
                             You own this NFT. You cannot buy it.
-                          </p>
+                          </Button>
                         )}
                       </div>
                     </div>
