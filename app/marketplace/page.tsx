@@ -289,6 +289,15 @@ export default function MarketplacePage() {
         })
         return
       }
+      // Check if user is the owner
+      if (wagmiAddress.toLowerCase() === item.owner.toLowerCase()) {
+        toast({
+          title: "Already Owned",
+          description: "You already own this NFT. You can't buy your own NFT.",
+          variant: "destructive",
+        })
+        return
+      }
 
       // Mark this item as being purchased, so only its button changes to "Processing..."
       setBuyingItemId(item.itemId)
@@ -507,70 +516,30 @@ export default function MarketplacePage() {
           <>
             {viewMode === "grid" ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {filteredItems.map((item) => (
-                  <div
-                    key={String(item.itemId)}
-                    className="group overflow-hidden rounded-lg border border-border p-3 transition-shadow hover:shadow-lg"
-                  >
-                    <div className="relative h-60 w-full overflow-hidden rounded-md bg-secondary">
-                      <MarketplaceImage resourceUrl={item.resourceUrl} />
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <h2 className="text-sm font-semibold">AI NFT #{String(item.itemId)}</h2>
-                      <span className="text-xs text-primary font-bold">
-                        {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
-                    </p>
-                    {item.isOnSale && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="mt-2 w-full"
-                        onClick={() => handleBuy(item)}
-                        disabled={buyingItemId === item.itemId}
-                      >
-                        {buyingItemId === item.itemId ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          "Buy"
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {filteredItems.map((item) => (
-                  <div
-                    key={String(item.itemId)}
-                    className="flex flex-col items-start gap-4 rounded-lg border border-border p-4 transition-shadow hover:shadow-md sm:flex-row"
-                  >
-                    <div className="relative h-36 w-full flex-shrink-0 overflow-hidden rounded-md bg-secondary sm:w-36">
-                      <MarketplaceImage resourceUrl={item.resourceUrl} />
-                    </div>
-                    <div className="flex flex-1 flex-col">
-                      <h3 className="text-base font-semibold">
-                        AI NFT #{String(item.itemId)}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Owner: {item.owner.slice(0,6)}...{item.owner.slice(-4)}
+                {filteredItems.map((item) => {
+                  const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
+                  return (
+                    <div
+                      key={String(item.itemId)}
+                      className="group overflow-hidden rounded-lg border border-border p-3 transition-shadow hover:shadow-lg"
+                    >
+                      <div className="relative h-60 w-full overflow-hidden rounded-md bg-secondary">
+                        <MarketplaceImage resourceUrl={item.resourceUrl} />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold">AIPenGuild NFT #{String(item.itemId)}</h2>
+                        <span className="text-xs text-primary font-bold">
+                          {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
                       </p>
-                    </div>
-                    <div className="flex flex-col items-start gap-2 sm:items-end">
-                      <span className="text-sm font-bold text-primary">
-                        {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
-                      </span>
-                      {item.isOnSale && (
+                      {item.isOnSale && !isOwner && (
                         <Button
                           variant="default"
                           size="sm"
+                          className="mt-2 w-full"
                           onClick={() => handleBuy(item)}
                           disabled={buyingItemId === item.itemId}
                         >
@@ -584,9 +553,65 @@ export default function MarketplacePage() {
                           )}
                         </Button>
                       )}
+                      {item.isOnSale && isOwner && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          You own this NFT. You cannot buy it.
+                        </p>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {filteredItems.map((item) => {
+                  const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
+                  return (
+                    <div
+                      key={String(item.itemId)}
+                      className="flex flex-col items-start gap-4 rounded-lg border border-border p-4 transition-shadow hover:shadow-md sm:flex-row"
+                    >
+                      <div className="relative h-36 w-full flex-shrink-0 overflow-hidden rounded-md bg-secondary sm:w-36">
+                        <MarketplaceImage resourceUrl={item.resourceUrl} />
+                      </div>
+                      <div className="flex flex-1 flex-col">
+                        <h3 className="text-base font-semibold">
+                          AI NFT #{String(item.itemId)}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Owner: {item.owner.slice(0,6)}...{item.owner.slice(-4)}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-start gap-2 sm:items-end">
+                        <span className="text-sm font-bold text-primary">
+                          {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
+                        </span>
+                        {item.isOnSale && !isOwner && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleBuy(item)}
+                            disabled={buyingItemId === item.itemId}
+                          >
+                            {buyingItemId === item.itemId ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Buy"
+                            )}
+                          </Button>
+                        )}
+                        {item.isOnSale && isOwner && (
+                          <p className="text-xs text-muted-foreground">
+                            You own this NFT. You cannot buy it.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </>
