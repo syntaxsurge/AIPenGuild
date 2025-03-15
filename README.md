@@ -61,23 +61,35 @@ The platform features a modern front-end built with Next.js and Tailwind CSS, in
    cd AIPenGuild
    ```
 
-2. **Install Dependencies:**
+2. **Compile and Deploy the Smart Contracts:**
+  Navigate to the contracts folder and read the dedicated README for instructions on how to install dependencies, compile, and deploy the contracts to a test network (e.g., Moonbase Alpha). You should do this before running the Next.js application if you want the site to function with live on-chain data.
+  
+  ```bash
+  cd contracts
+  npm install
+  npm run compile
+  npm run deploy:moonbase:log
+  npm run update:addresses
+  cd ..
+  ```
 
-   ```bash
-   npm install
-   ```
+3. **Install Front-End Dependencies (in the project root):**
 
-3. **Start the Development Server:**
+  ```bash
+  npm install
+  ```
 
-   ```bash
-   npm run dev
-   ```
+4. **Start the Development Server:**
 
-4. **Connect Your Wallet:**  
-   Use the integrated wallet connection to access the NFT functionalities.
+  ```bash
+  npm run dev
+  ```
 
-5. **Mint and Trade NFTs:**  
-   Navigate to the minting page to generate AI-driven NFTs or upload your own images, then list them on the marketplace for trade.
+5. **Connect Your Wallet:**
+  Use the integrated wallet connection to access the NFT functionalities (e.g., Metamask configured for Moonbase Alpha).
+
+6.	**Mint and Trade NFTs:**
+  Navigate to the minting page to generate AI-driven NFTs or upload your own images, then list them on the marketplace for trade. Have fun exploring the AI-driven NFT ecosystem!
 
 ## Challenges
 
