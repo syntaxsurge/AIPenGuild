@@ -7,6 +7,12 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { InteractiveHoverButton } from "@/components/ui/interactive-button"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 export default function Home() {
   const { resolvedTheme } = useTheme()
@@ -172,6 +178,172 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section
+        className="relative px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900"
+        data-aos="fade-up"
+      >
+        <div className="mx-auto max-w-6xl space-y-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary text-center mb-8">
+            Frequently Asked Questions
+          </h2>
+          <p className="mx-auto max-w-3xl text-center text-muted-foreground mb-6">
+            Expand each question to learn more about how AIPenGuild works.
+          </p>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="mt-6">
+              <div className="bg-accent/10 rounded-lg p-4 md:p-6">
+                <div className="w-full space-y-2">
+                  <Accordion type="multiple" className="w-full space-y-2">
+
+                    {/* Leaderboard */}
+                    <AccordionItem value="leaderboard">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        1. What is the Leaderboard?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        The Leaderboard ranks users by their total Experience (XP).
+                        Every time you mint a new NFT, random XP (between 1 and 100)
+                        is assigned to that item. When you own that NFT, you gain that XP.
+                        As you accumulate more NFTs, your total XP increases. The Leaderboard
+                        showcases who has accrued the highest XP on AIPenGuild.
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Perks or Achievements */}
+                    <AccordionItem value="perks">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        2. What are Perks or Achievements?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground space-y-3">
+                        <p>
+                          Perks or Achievements are fun titles displayed on your profile
+                          or in the Leaderboard once you pass certain XP milestones. For
+                          example, if your XP surpasses a specific threshold, you might
+                          see <em>&quot;Enthusiast&quot;</em> next to your name. Below is an example
+                          table of the perk tiers currently recognized on the platform:
+                        </p>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm md:text-base border border-border">
+                            <thead className="bg-secondary text-secondary-foreground">
+                              <tr>
+                                <th className="px-4 py-2">Perk/Achievement</th>
+                                <th className="px-4 py-2">XP Range</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="even:bg-accent/5">
+                                <td className="px-4 py-2">Explorer</td>
+                                <td className="px-4 py-2">1 - 99</td>
+                              </tr>
+                              <tr className="even:bg-accent/5">
+                                <td className="px-4 py-2">Enthusiast</td>
+                                <td className="px-4 py-2">100 - 299</td>
+                              </tr>
+                              <tr className="even:bg-accent/5">
+                                <td className="px-4 py-2">Connoisseur</td>
+                                <td className="px-4 py-2">300 - 499</td>
+                              </tr>
+                              <tr className="even:bg-accent/5">
+                                <td className="px-4 py-2">Master</td>
+                                <td className="px-4 py-2">500+</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <p>
+                          Tiers can be updated in future versions but currently remain as above.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* XP / Experience Distribution */}
+                    <AccordionItem value="xp-distribution">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        3. How is XP distributed?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        The XP assigned for each newly minted NFT is random (ranging from
+                        1 to 100). This random XP value is stored in the <code>AIExperience</code>
+                        contract. When you own a newly minted NFT, that random XP is credited
+                        to your address. The XP updates automatically if you transfer or sell
+                        the NFT to someone else. It&apos;s all governed by that random assignment in the
+                        smart contract.
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Dashboard */}
+                    <AccordionItem value="dashboard">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        4. What is the Dashboard used for?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        The &quot;Dashboard&quot; is your personalized view for tracking
+                        all your stats on AIPenGuild: total XP, number of NFTs minted,
+                        NFTs listed for sale, and more. It provides a quick snapshot
+                        of your entire experience within the platform.
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Admin Panel */}
+                    <AccordionItem value="admin">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        5. What can I do in the Admin Panel?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        The Admin Panel is primarily for platform maintainers or the contract
+                        owner. In the current implementation, the main admin action is to
+                        withdraw (or manage) funds from the reward pool. Admin users may
+                        also toggle collection activity, update mint prices, or define new
+                        collections.
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Step-by-Step */}
+                    <AccordionItem value="usage-guide">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        6. Step-by-step: How do I use AIPenGuild?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground space-y-3">
+                        <ol className="list-decimal list-inside ml-4">
+                          <li>
+                            <strong>Connect your Wallet</strong> to Moonbase Alpha (or the supported
+                            chain) so you can interact with the smart contracts.
+                          </li>
+                          <li>
+                            <strong>Mint an AI NFT</strong> by going to &quot;Mint&quot;. Provide a
+                            text prompt or upload your own file. Finalize with a wallet transaction.
+                          </li>
+                          <li>
+                            <strong>List or Unlist NFTs</strong> on &quot;My NFTs.&quot; Specify a
+                            sale price if you&apos;d like to sell.
+                          </li>
+                          <li>
+                            <strong>Buy NFTs</strong> in the &quot;Marketplace.&quot; Approve the
+                            purchase in your wallet. Ownership (and XP) will transfer to you.
+                          </li>
+                          <li>
+                            <strong>Track your XP &amp; Perks</strong> in the &quot;Leaderboard&quot;
+                            or &quot;Dashboard.&quot; You’ll see your total XP and the perk or
+                            achievement you’ve earned.
+                          </li>
+                          <li>
+                            <strong>Admin Panel</strong> (if you have access) to manage reward pool
+                            funds or collection parameters. XP settings are not adjustable at this time.
+                          </li>
+                        </ol>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                  </Accordion>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Why AIPenGuild Section */}
       <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800">
         <div className="mx-auto max-w-6xl">
@@ -305,70 +477,6 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
-
-      {/* FAQ Section */}
-      <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="mb-6 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl text-center">Frequently Asked Questions</h2>
-          <div className="space-y-8 text-sm sm:text-base text-muted-foreground">
-            <div>
-              <h3 className="font-semibold text-foreground">1. What is the Leaderboard?</h3>
-              <p className="mt-2">
-                The Leaderboard ranks users based on their Experience Points (XP) earned through on-chain activities such as minting NFTs, buying, selling, and listing. The user with the highest XP is displayed at the top. The Leaderboard fosters a friendly competition among community members.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">2. What are Perks or Achievements?</h3>
-              <p className="mt-2">
-                Perks or Achievements are special titles or benefits granted to users once they reach certain XP milestones or complete specific achievements. For example, you could see achievements like &quot;Rookie Minter,&quot; &quot;Art Connoisseur,&quot; &quot;Marketplace Whale,&quot; or &quot;AI Master.&quot; Each has its own requirements, such as minting a certain number of NFTs, reaching a certain total XP, or completing unique tasks in the platform.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">3. How much XP do I get for each interaction?</h3>
-              <p className="mt-2">
-                While the exact XP distribution can be adjusted by the smart contract or via the admin panel, here&apos;s a general guideline:
-                <ul className="list-disc list-inside ml-4 mt-2">
-                  <li>Minting a new NFT: <strong>10 XP</strong></li>
-                  <li>Listing an NFT for sale: <strong>5 XP</strong></li>
-                  <li>Buying an NFT: <strong>5 XP</strong></li>
-                  <li>Unlisting an NFT: <strong>1 XP</strong> (if any XP is assigned here, depends on final setting)</li>
-                  <li>Being the creator of a sold NFT: <strong>2 XP</strong></li>
-                </ul>
-                These numbers may vary, but the general idea is that each type of on-chain action grants you a certain amount of XP to reflect your engagement in the ecosystem.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">4. What is the Dashboard?</h3>
-              <p className="mt-2">
-                The Dashboard is a centralized location where you can track your personal statistics, including your total XP, number of NFTs minted, items listed or sold, and more. Think of it as your personal control center for everything happening in the AIPenGuild platform.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">5. What is the Admin Panel?</h3>
-              <p className="mt-2">
-                The Admin Panel is where authorized administrators or contract owners can manage platform-wide settings. This can include adjusting XP rewards, toggling certain features, managing official NFT collections, or distributing special rewards. If you do not have administrator privileges, you will not be able to see or access this panel. It is meant for platform maintainers to keep the ecosystem balanced and secure.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">6. Step-by-Step: How do I use the platform effectively?</h3>
-              <ol className="list-decimal list-inside ml-4 mt-2 space-y-1">
-                <li><strong>Connect your Wallet:</strong> Ensure you have set your wallet (e.g., Metamask) to the correct test network (like Moonbase Alpha).</li>
-                <li><strong>Mint an AI NFT:</strong> Head to &quot;Mint&quot; to generate an AI-based NFT or upload your own art. Confirm the transaction in your wallet.</li>
-                <li><strong>List or Unlist NFTs:</strong> On the &quot;My NFTs&quot; page, set a sale price and list items for sale. You can unlist anytime.</li>
-                <li><strong>Buy NFTs:</strong> Explore the &quot;Marketplace&quot; to purchase NFTs from other users. Confirm the transaction to finalize the purchase.</li>
-                <li><strong>Track XP & Perks:</strong> Visit the &quot;Leaderboard&quot; or your &quot;Dashboard&quot; to view your rank, XP total, and any Achievements you&apos;ve unlocked.</li>
-                <li><strong>Admin Panel (If applicable):</strong> If you have admin privileges, go to the &quot;Admin&quot; page to adjust platform settings, XP rates, or manage collections.</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      </section>
-
     </>
   )
 }
