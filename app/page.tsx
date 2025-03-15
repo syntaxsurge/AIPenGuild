@@ -305,6 +305,70 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-6 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl text-center">Frequently Asked Questions</h2>
+          <div className="space-y-8 text-sm sm:text-base text-muted-foreground">
+            <div>
+              <h3 className="font-semibold text-foreground">1. What is the Leaderboard?</h3>
+              <p className="mt-2">
+                The Leaderboard ranks users based on their Experience Points (XP) earned through on-chain activities such as minting NFTs, buying, selling, and listing. The user with the highest XP is displayed at the top. The Leaderboard fosters a friendly competition among community members.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-foreground">2. What are Perks or Achievements?</h3>
+              <p className="mt-2">
+                Perks or Achievements are special titles or benefits granted to users once they reach certain XP milestones or complete specific achievements. For example, you could see achievements like &quot;Rookie Minter,&quot; &quot;Art Connoisseur,&quot; &quot;Marketplace Whale,&quot; or &quot;AI Master.&quot; Each has its own requirements, such as minting a certain number of NFTs, reaching a certain total XP, or completing unique tasks in the platform.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-foreground">3. How much XP do I get for each interaction?</h3>
+              <p className="mt-2">
+                While the exact XP distribution can be adjusted by the smart contract or via the admin panel, here&apos;s a general guideline:
+                <ul className="list-disc list-inside ml-4 mt-2">
+                  <li>Minting a new NFT: <strong>10 XP</strong></li>
+                  <li>Listing an NFT for sale: <strong>5 XP</strong></li>
+                  <li>Buying an NFT: <strong>5 XP</strong></li>
+                  <li>Unlisting an NFT: <strong>1 XP</strong> (if any XP is assigned here, depends on final setting)</li>
+                  <li>Being the creator of a sold NFT: <strong>2 XP</strong></li>
+                </ul>
+                These numbers may vary, but the general idea is that each type of on-chain action grants you a certain amount of XP to reflect your engagement in the ecosystem.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-foreground">4. What is the Dashboard?</h3>
+              <p className="mt-2">
+                The Dashboard is a centralized location where you can track your personal statistics, including your total XP, number of NFTs minted, items listed or sold, and more. Think of it as your personal control center for everything happening in the AIPenGuild platform.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-foreground">5. What is the Admin Panel?</h3>
+              <p className="mt-2">
+                The Admin Panel is where authorized administrators or contract owners can manage platform-wide settings. This can include adjusting XP rewards, toggling certain features, managing official NFT collections, or distributing special rewards. If you do not have administrator privileges, you will not be able to see or access this panel. It is meant for platform maintainers to keep the ecosystem balanced and secure.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-foreground">6. Step-by-Step: How do I use the platform effectively?</h3>
+              <ol className="list-decimal list-inside ml-4 mt-2 space-y-1">
+                <li><strong>Connect your Wallet:</strong> Ensure you have set your wallet (e.g., Metamask) to the correct test network (like Moonbase Alpha).</li>
+                <li><strong>Mint an AI NFT:</strong> Head to &quot;Mint&quot; to generate an AI-based NFT or upload your own art. Confirm the transaction in your wallet.</li>
+                <li><strong>List or Unlist NFTs:</strong> On the &quot;My NFTs&quot; page, set a sale price and list items for sale. You can unlist anytime.</li>
+                <li><strong>Buy NFTs:</strong> Explore the &quot;Marketplace&quot; to purchase NFTs from other users. Confirm the transaction to finalize the purchase.</li>
+                <li><strong>Track XP & Perks:</strong> Visit the &quot;Leaderboard&quot; or your &quot;Dashboard&quot; to view your rank, XP total, and any Achievements you&apos;ve unlocked.</li>
+                <li><strong>Admin Panel (If applicable):</strong> If you have admin privileges, go to the &quot;Admin&quot; page to adjust platform settings, XP rates, or manage collections.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </>
   )
 }
