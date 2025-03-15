@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect, useRef } from "react"
-import { useAccount, usePublicClient } from "wagmi"
+import { useAccount, usePublicClient, useWaitForTransactionReceipt } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,7 +30,88 @@ export default function MyNFTsPage() {
   const publicClient = usePublicClient()
   const { toast } = useToast()
   const aiNftExchange = useContract("AINFTExchange")
-  const { data: writeHash, error, isPending, writeContract } = useWriteContract()
+
+  // For listing
+  const {
+    data: listWriteData,
+    error: listError,
+    isPending: isListPending,
+    writeContract: writeListContract,
+  } = useWriteContract()
+
+  const {
+    data: listTxReceipt,
+    isLoading: isListTxLoading,
+    isSuccess: isListTxSuccess,
+    isError: isListTxError,
+    error: listTxReceiptError
+  } = useWaitForTransactionReceipt({
+    hash: listWriteData ?? undefined
+  })
+
+  // For unlisting
+  const {
+    data: unlistWriteData,
+    error: unlistError,
+    isPending: isUnlistPending,
+    writeContract: writeUnlistContract
+  } = useWriteContract()
+
+  const {
+    data: unlistTxReceipt,
+    isLoading: isUnlistTxLoading,
+    isSuccess: isUnlistTxSuccess,
+    isError: isUnlistTxError,
+    error: unlistTxReceiptError
+  } = useWaitForTransactionReceipt({
+    hash: unlistWriteData ?? undefined
+  })
+
+  // Toast notifications for list transactions
+  useEffect(() => {
+    if (isListTxLoading) {
+      toast({
+        title: "Transaction Pending",
+        description: "Your list transaction is being confirmed..."
+      })
+    }
+    if (isListTxSuccess) {
+      toast({
+        title: "Transaction Successful!",
+        description: "Your NFT has been listed for sale."
+      })
+    }
+    if (isListTxError) {
+      toast({
+        title: "Transaction Failed",
+        description: listTxReceiptError?.message || listError?.message || "Something went wrong.",
+        variant: "destructive"
+      })
+    }
+  }, [isListTxLoading, isListTxSuccess, isListTxError, listTxReceiptError, listError, toast])
+
+  // Toast notifications for unlist transactions
+  useEffect(() => {
+    if (isUnlistTxLoading) {
+      toast({
+        title: "Transaction Pending",
+        description: "Your unlist transaction is being confirmed..."
+      })
+    }
+    if (isUnlistTxSuccess) {
+      toast({
+        title: "Transaction Successful!",
+        description: "Your NFT has been unlisted."
+      })
+    }
+    if (isUnlistTxError) {
+      toast({
+        title: "Transaction Failed",
+        description: unlistTxReceiptError?.message || unlistError?.message || "Something went wrong.",
+        variant: "destructive"
+      })
+    }
+  }, [isUnlistTxLoading, isUnlistTxSuccess, isUnlistTxError, unlistTxReceiptError, unlistError, toast])
 
   const [price, setPrice] = useState("")
   const [ownedNFTs, setOwnedNFTs] = useState<NFTDetails[]>([])
@@ -189,21 +270,17 @@ export default function MyNFTsPage() {
         ],
         outputs: []
       }
-      await writeContract({
-        address: aiNftExchange?.address as `0x\${string}`,
+      await writeListContract({
+        address: aiNftExchange?.address as `0x${string}`,
         abi: [abiListNFT],
         functionName: "listAIItem",
         args: [selectedNFT.itemId, parseEther(price)]
       })
-
-      toast({
-        title: "Success",
-        description: "Your NFT has been listed on the marketplace!"
-      })
-    } catch (err) {
+      // Toast for listing is handled in useEffect
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: error?.message || "An error occurred while listing the NFT",
+        description: err.message || listError?.message || "An error occurred while listing the NFT",
         variant: "destructive"
       })
     }
@@ -235,21 +312,17 @@ export default function MyNFTsPage() {
         inputs: [{ name: "itemId", type: "uint256" }],
         outputs: []
       }
-      await writeContract({
-        address: aiNftExchange?.address as `0x\${string}`,
+      await writeUnlistContract({
+        address: aiNftExchange?.address as `0x${string}`,
         abi: [abiUnlistNFT],
         functionName: "unlistAIItem",
         args: [selectedNFT.itemId]
       })
-
-      toast({
-        title: "Success",
-        description: "Your NFT has been unlisted!"
-      })
-    } catch (err) {
+      // Toast for unlisting is handled in useEffect
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: error?.message || "An error occurred while unlisting the NFT",
+        description: err.message || unlistError?.message || "An error occurred while unlisting the NFT",
         variant: "destructive"
       })
     }
@@ -276,9 +349,9 @@ export default function MyNFTsPage() {
         Here are the NFTs you own. You can list them for sale in one click.
       </p>
 
-      <Card className="border border-border rounded-lg shadow-xl bg-background">
+      <Card className="mt-6 border border-border rounded-lg shadow-xl bg-background">
         <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
-          <CardTitle className="text-lg font-semibold">My NFTs</CardTitle>
+          <CardTitle className="text-lg font-semibold">Manage NFT Listing</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           {ownedNFTs.length === 0 ? (
@@ -292,8 +365,9 @@ export default function MyNFTsPage() {
                   <div
                     key={String(nft.itemId)}
                     onClick={() => setSelectedNFT(nft)}
-                    className={`cursor-pointer rounded-lg border-2 p-2 transition-transform hover:scale-105 ${selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
-                      }`}
+                    className={`cursor-pointer rounded-lg border-2 p-2 transition-transform hover:scale-105 ${
+                      selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
+                    }`}
                   >
                     <div className="relative h-32 w-full overflow-hidden rounded-md sm:h-36">
                       <Image
@@ -319,7 +393,6 @@ export default function MyNFTsPage() {
 
       {selectedNFT && (
         <Card className="mt-6 border border-border rounded-lg shadow-xl bg-background">
-          {/* Matching background color */}
           <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
             <CardTitle className="text-lg font-semibold">Set Sale Price</CardTitle>
           </CardHeader>
@@ -339,23 +412,59 @@ export default function MyNFTsPage() {
               </div>
               <Button
                 type="submit"
-                disabled={!selectedNFT || !price || isPending}
+                disabled={!selectedNFT || !price || isListPending || isListTxLoading}
                 className="w-full"
               >
-                {isPending ? "Processing..." : "List for Sale"}
+                {(isListPending || isListTxLoading) ? "Processing..." : "List for Sale"}
               </Button>
+
+              {/* Transaction Status for Listing */}
+              <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                <p className="font-medium">Transaction Status:</p>
+                {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                {isListTxSuccess && (
+                  <p className="text-green-600">
+                    Transaction Confirmed! Your NFT is now listed.
+                  </p>
+                )}
+                {isListTxError && (
+                  <p className="text-red-600">
+                    Transaction Failed: {listTxReceiptError?.message || listError?.message}
+                  </p>
+                )}
+              </div>
             </form>
 
             {/* Unlist NFT button (only if currently on sale) */}
             {selectedNFT?.isOnSale && (
-              <Button
-                variant="outline"
-                onClick={handleUnlistNFT}
-                disabled={!selectedNFT || isPending}
-                className="mt-4 w-full"
-              >
-                {isPending ? "Processing..." : "Unlist NFT"}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleUnlistNFT}
+                  disabled={!selectedNFT || isUnlistPending || isUnlistTxLoading}
+                  className="mt-4 w-full"
+                >
+                  {(isUnlistPending || isUnlistTxLoading) ? "Processing..." : "Unlist NFT"}
+                </Button>
+
+                {/* Transaction Status for Unlisting */}
+                <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                  <p className="font-medium">Transaction Status:</p>
+                  {isUnlistTxLoading && (
+                    <p className="text-muted-foreground">Pending confirmation...</p>
+                  )}
+                  {isUnlistTxSuccess && (
+                    <p className="text-green-600">
+                      Transaction Confirmed! Your NFT has been unlisted.
+                    </p>
+                  )}
+                  {isUnlistTxError && (
+                    <p className="text-red-600">
+                      Transaction Failed: {unlistTxReceiptError?.message || unlistError?.message}
+                    </p>
+                  )}
+                </div>
+              </>
             )}
 
             {metadataMap[String(selectedNFT.itemId)]?.description && (
