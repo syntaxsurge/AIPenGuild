@@ -200,7 +200,7 @@ export default function DashboardPage() {
               {loadingItems ? (
                 <div className="flex items-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Calculating stats...
+                  Loading minted & sold...
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -224,7 +224,7 @@ export default function DashboardPage() {
               {loadingItems ? (
                 <div className="flex items-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Checking listings...
+                  Loading listed NFTs...
                 </div>
               ) : (
                 <p className="text-lg font-bold text-primary">{totalListed}</p>
