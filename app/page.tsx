@@ -24,6 +24,16 @@ export default function Home() {
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-extrabold text-primary">Watch Our Introduction</h2>
             <p className="mt-2 text-muted-foreground">Learn more about AIPenGuild in this short video.</p>
+            <div className="mt-6 text-center">
+              <Link
+                href="https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block rounded-md bg-highlight px-6 py-3 font-semibold text-white hover:bg-highlight/90 transition"
+              >
+                View Pitch Deck
+              </Link>
+            </div>
           </div>
           <div className="relative pb-[56.25%] overflow-hidden rounded-lg shadow-lg">
             <iframe
