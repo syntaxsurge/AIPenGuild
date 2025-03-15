@@ -46,6 +46,7 @@ contract AINFTExchange is ERC721URIStorage, Ownable {
   event AIItemListed(uint256 indexed itemId, uint256 price);
   event AIItemSold(uint256 indexed itemId, address seller, address buyer, uint256 amount);
   event AINFTContractRegistered(uint256 indexed collectionId, address collectionContract);
+  event AIItemUnlisted(uint256 indexed itemId);
 
   constructor(address poolAddr, address xpAddr) ERC721('AIDrivenNFT', 'AIDNFT') Ownable(msg.sender) {
     rewardPool = poolAddr;
@@ -81,9 +82,18 @@ contract AINFTExchange is ERC721URIStorage, Ownable {
     itemData[itemId].isOnSale = true;
     itemData[itemId].salePrice = price;
     emit AIItemListed(itemId, price);
-  }
+}
 
-  function purchaseAIItem(uint256 itemId) external payable {
+function unlistAIItem(uint256 itemId) external {
+    require(ownerOf(itemId) == msg.sender, 'Caller not item owner');
+    require(itemData[itemId].isOnSale, 'Item is not listed for sale');
+
+    itemData[itemId].isOnSale = false;
+    itemData[itemId].salePrice = 0;
+    emit AIItemUnlisted(itemId);
+}
+
+function purchaseAIItem(uint256 itemId) external payable {
     require(itemData[itemId].isOnSale, 'Item is not for sale');
     require(msg.value >= itemData[itemId].salePrice, 'Payment not sufficient');
 

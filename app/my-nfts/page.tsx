@@ -190,7 +190,7 @@ export default function MyNFTsPage() {
         outputs: []
       }
       await writeContract({
-        address: aiNftExchange?.address as `0x${string}`,
+        address: aiNftExchange?.address as `0x\${string}`,
         abi: [abiListNFT],
         functionName: "listAIItem",
         args: [selectedNFT.itemId, parseEther(price)]
@@ -204,6 +204,52 @@ export default function MyNFTsPage() {
       toast({
         title: "Error",
         description: error?.message || "An error occurred while listing the NFT",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // 4a) Unlisting NFT for sale
+  const handleUnlistNFT = async () => {
+    if (!wagmiAddress) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet before unlisting an NFT.",
+        variant: "destructive"
+      })
+      return
+    }
+    if (!selectedNFT || !selectedNFT.isOnSale) {
+      toast({
+        title: "Error",
+        description: "No NFT selected or NFT is not listed.",
+        variant: "destructive"
+      })
+      return
+    }
+    try {
+      const abiUnlistNFT = {
+        name: "unlistAIItem",
+        type: "function",
+        stateMutability: "nonpayable",
+        inputs: [{ name: "itemId", type: "uint256" }],
+        outputs: []
+      }
+      await writeContract({
+        address: aiNftExchange?.address as `0x\${string}`,
+        abi: [abiUnlistNFT],
+        functionName: "unlistAIItem",
+        args: [selectedNFT.itemId]
+      })
+
+      toast({
+        title: "Success",
+        description: "Your NFT has been unlisted!"
+      })
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: error?.message || "An error occurred while unlisting the NFT",
         variant: "destructive"
       })
     }
@@ -246,9 +292,8 @@ export default function MyNFTsPage() {
                   <div
                     key={String(nft.itemId)}
                     onClick={() => setSelectedNFT(nft)}
-                    className={`cursor-pointer rounded-lg border-2 p-2 transition-transform hover:scale-105 ${
-                      selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
-                    }`}
+                    className={`cursor-pointer rounded-lg border-2 p-2 transition-transform hover:scale-105 ${selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
+                      }`}
                   >
                     <div className="relative h-32 w-full overflow-hidden rounded-md sm:h-36">
                       <Image
@@ -300,6 +345,18 @@ export default function MyNFTsPage() {
                 {isPending ? "Processing..." : "List for Sale"}
               </Button>
             </form>
+
+            {/* Unlist NFT button (only if currently on sale) */}
+            {selectedNFT?.isOnSale && (
+              <Button
+                variant="outline"
+                onClick={handleUnlistNFT}
+                disabled={!selectedNFT || isPending}
+                className="mt-4 w-full"
+              >
+                {isPending ? "Processing..." : "Unlist NFT"}
+              </Button>
+            )}
 
             {metadataMap[String(selectedNFT.itemId)]?.description && (
               <div className="mt-6">
