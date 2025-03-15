@@ -39,8 +39,10 @@ export default function MarketplacePage() {
     data: buyWriteData,
     error: buyError,
     isPending: isBuyPending,
+    isSuccess: isBuySuccess,
     writeContract: writeBuyContract,
   } = useWriteContract()
+
   const {
     data: buyTxReceipt,
     isLoading: isBuyTxLoading,
@@ -85,6 +87,21 @@ export default function MarketplacePage() {
       setBuyingItemId(null)
     }
   }, [isBuyTxLoading, isBuyTxSuccess, isBuyTxError, buyTxReceiptError, buyError, toast])
+
+  // IMPORTANT: Handle user rejection in MetaMask or immediate errors from `writeBuyContract`
+  useEffect(() => {
+    if (buyError) {
+      // The user might have canceled the transaction or an error occurred
+      setBuyingItemId(null)
+      toast({
+        title: "Transaction Rejected",
+        description:
+          buyError.message ||
+          "User canceled transaction in wallet or an error occurred.",
+        variant: "destructive",
+      })
+    }
+  }, [buyError, toast])
 
   const publicClient = usePublicClient()
   const aiNftExchange = useContract("AINFTExchange")
@@ -507,7 +524,6 @@ export default function MarketplacePage() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
                     </p>
-                    {/* Removed extra green text. Only the Buy button remains. */}
                     {item.isOnSale && (
                       <Button
                         variant="default"
@@ -546,7 +562,6 @@ export default function MarketplacePage() {
                       <p className="text-sm text-muted-foreground">
                         Owner: {item.owner.slice(0,6)}...{item.owner.slice(-4)}
                       </p>
-                      {/* Removed the 'Buy Now' text here as well */}
                     </div>
                     <div className="flex flex-col items-start gap-2 sm:items-end">
                       <span className="text-sm font-bold text-primary">
