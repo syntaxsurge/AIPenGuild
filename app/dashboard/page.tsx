@@ -138,7 +138,7 @@ export default function DashboardPage() {
     fetchAllData();
   }, [address, publicClient, aiExperience, aiNftExchange, toast]);
 
-  const userTitle = getUserTitle(xp);
+  const userTitle = getUserTitle(Number(xp!));
 
   if (!address) {
     return (

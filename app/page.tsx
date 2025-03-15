@@ -13,6 +13,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { XP_TITLES } from "@/lib/experience"
 
 export default function Home() {
   const { resolvedTheme } = useTheme()
@@ -233,22 +234,16 @@ export default function Home() {
                               </tr>
                             </thead>
                             <tbody>
-                              <tr className="even:bg-accent/5">
-                                <td className="px-4 py-2">Explorer</td>
-                                <td className="px-4 py-2">1 - 99</td>
-                              </tr>
-                              <tr className="even:bg-accent/5">
-                                <td className="px-4 py-2">Enthusiast</td>
-                                <td className="px-4 py-2">100 - 299</td>
-                              </tr>
-                              <tr className="even:bg-accent/5">
-                                <td className="px-4 py-2">Connoisseur</td>
-                                <td className="px-4 py-2">300 - 499</td>
-                              </tr>
-                              <tr className="even:bg-accent/5">
-                                <td className="px-4 py-2">Master</td>
-                                <td className="px-4 py-2">500+</td>
-                              </tr>
+                              {XP_TITLES.map((tier) => (
+                                <tr key={tier.label} className="even:bg-accent/5">
+                                  <td className="px-4 py-2">{tier.label}</td>
+                                  <td className="px-4 py-2">
+                                    {tier.max === Infinity
+                                      ? `${tier.min}+`
+                                      : `${tier.min} - ${tier.max}`}
+                                  </td>
+                                </tr>
+                              ))}
                             </tbody>
                           </table>
                         </div>
