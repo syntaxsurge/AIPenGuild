@@ -366,7 +366,7 @@ export default function MintNFTPage() {
                 </p>
               )}
               {isTxError && (
-                <p className="text-red-600">
+                <p className="font-bold text-orange-600 dark:text-orange-500">
                   Transaction Failed: {txError?.message}
                 </p>
               )}
