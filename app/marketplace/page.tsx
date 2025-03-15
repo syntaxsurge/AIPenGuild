@@ -112,6 +112,7 @@ export default function MarketplacePage() {
 
   // Real data from on-chain
   const [listedItems, setListedItems] = useState<MarketplaceItem[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const fetchedRef = useRef(false)
 
   // Filter states for user input
@@ -137,6 +138,7 @@ export default function MarketplacePage() {
     if (!forceRefresh && fetchedRef.current) return
     fetchedRef.current = true
 
+    setIsLoading(true)
     try {
       const totalItemId = await publicClient.readContract({
         address: aiNftExchange.address as `0x${string}`,
@@ -182,6 +184,8 @@ export default function MarketplacePage() {
       setListedItems(newListed)
     } catch (err) {
       console.error("Error fetching marketplace items:", err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -403,7 +407,12 @@ export default function MarketplacePage() {
         </div>
 
         {/* Items */}
-        {filteredItems.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            <span>Loading marketplace items...</span>
+          </div>
+        ) : filteredItems.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground mt-16">
             No items found for the given filters.
           </p>
