@@ -18,7 +18,12 @@ async function main() {
 
   // Deploy AINFTExchange with rewardPool and experience addresses
   const AINFTExchange = await ethers.getContractFactory("AINFTExchange")
-  const exchange = await AINFTExchange.deploy(rewardPool.target, experience.target)
+  const exchange = await AINFTExchange.deploy(
+    rewardPool.target,
+    experience.target,
+    "AIPenGuild",
+    "AIPEN"
+  )
   await exchange.waitForDeployment()
   console.log("AINFTExchange deployed to:", exchange.target)
 

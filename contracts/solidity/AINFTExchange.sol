@@ -48,7 +48,12 @@ contract AINFTExchange is ERC721URIStorage, Ownable {
   event AINFTContractRegistered(uint256 indexed collectionId, address collectionContract);
   event AIItemUnlisted(uint256 indexed itemId);
 
-  constructor(address poolAddr, address xpAddr) ERC721('AIDrivenNFT', 'AIDNFT') Ownable(msg.sender) {
+  constructor(
+    address poolAddr,
+    address xpAddr,
+    string memory _name,
+    string memory _symbol
+  ) ERC721(_name, _symbol) Ownable(msg.sender) {
     rewardPool = poolAddr;
     experienceModule = xpAddr;
   }
