@@ -3,9 +3,19 @@ import { CONTRACT_ADDRESSES } from '@/contracts/addresses'
 import { ABIS } from '@/contracts/abis'
 import { ContractConfig, CoreContractName } from '@/contracts/types'
 
+/**
+ * Provides the contract config object (address, ABI, explorer)
+ * for the given contract name. If no chain is connected,
+ * fallback to MoonbaseAlpha's chain ID (1287).
+ */
 export function useContract(contractName: CoreContractName): ContractConfig | null {
-  const chainId = useChainId()
-  if (!chainId || !CONTRACT_ADDRESSES[chainId]) {
+  let chainId = useChainId()
+  // Fallback to MoonbaseAlpha if not connected
+  if (!chainId) {
+    chainId = 1287
+  }
+
+  if (!CONTRACT_ADDRESSES[chainId]) {
     return null
   }
 

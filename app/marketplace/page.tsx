@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { X, Search, Grid2X2, LayoutList } from "lucide-react"
+import { X, Search, Grid2X2, LayoutList, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -16,8 +16,9 @@ import {
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Badge } from "@/components/ui/badge"
 
+import { useToast } from "@/hooks/use-toast"
+import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { useContract } from "@/hooks/useContract"
-import { usePublicClient } from "wagmi"
 
 interface MarketplaceItem {
   itemId: bigint
@@ -30,6 +31,61 @@ interface MarketplaceItem {
 }
 
 export default function MarketplacePage() {
+  const { toast } = useToast()
+  const { address: wagmiAddress } = useAccount()
+
+  // For the buy transaction (shared across all items, but we’ll track which item locally).
+  const {
+    data: buyWriteData,
+    error: buyError,
+    isPending: isBuyPending,
+    writeContract: writeBuyContract,
+  } = useWriteContract()
+  const {
+    data: buyTxReceipt,
+    isLoading: isBuyTxLoading,
+    isSuccess: isBuyTxSuccess,
+    isError: isBuyTxError,
+    error: buyTxReceiptError,
+  } = useWaitForTransactionReceipt({
+    hash: buyWriteData ?? undefined,
+  })
+
+  // Local state to track which item is being purchased.
+  const [buyingItemId, setBuyingItemId] = useState<bigint | null>(null)
+
+  // Watch buy transaction states for toast notifications and to reset local loading state.
+  useEffect(() => {
+    if (isBuyTxLoading) {
+      toast({
+        title: "Transaction Pending",
+        description: "Your purchase transaction is being confirmed...",
+      })
+    }
+    if (isBuyTxSuccess) {
+      toast({
+        title: "Transaction Successful!",
+        description: "You have purchased the NFT successfully!",
+      })
+      // Once done, reset local state
+      setBuyingItemId(null)
+      // Possibly refetch items here
+      fetchMarketplaceItems(true)
+    }
+    if (isBuyTxError) {
+      toast({
+        title: "Transaction Failed",
+        description:
+          buyTxReceiptError?.message ||
+          buyError?.message ||
+          "Something went wrong.",
+        variant: "destructive",
+      })
+      // Reset local state on error
+      setBuyingItemId(null)
+    }
+  }, [isBuyTxLoading, isBuyTxSuccess, isBuyTxError, buyTxReceiptError, buyError, toast])
+
   const publicClient = usePublicClient()
   const aiNftExchange = useContract("AINFTExchange")
 
@@ -47,7 +103,7 @@ export default function MarketplacePage() {
   const [tempSearch, setTempSearch] = useState("")
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10])
   const [tempBuyNow, setTempBuyNow] = useState(false)
-  const [tempOnAuction, setTempOnAuction] = useState(false) // Not truly used, but we keep it to match UI
+  const [tempOnAuction, setTempOnAuction] = useState(false)
   const [tempNew, setTempNew] = useState(false)
   const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([])
 
@@ -80,62 +136,64 @@ export default function MarketplacePage() {
     setSidebarOpen(false)
   }
 
-  // Fetch items from the exchange (only once)
-  useEffect(() => {
-    async function fetchItems() {
-      if (!aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) return
-      if (fetchedRef.current) return
-      fetchedRef.current = true
-      try {
-        const totalItemId = await publicClient.readContract({
-          address: aiNftExchange.address as `0x${string}`,
-          abi: aiNftExchange.abi,
-          functionName: "getLatestItemId",
-          args: [],
-        })
-        if (typeof totalItemId !== "bigint") return
+  // Fetch items from the exchange
+  async function fetchMarketplaceItems(forceRefresh?: boolean) {
+    if (!aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) return
+    // avoid repeated fetch, unless forced
+    if (!forceRefresh && fetchedRef.current) return
+    fetchedRef.current = true
 
-        const newListed: MarketplaceItem[] = []
-        for (let i = 1; i <= Number(totalItemId); i++) {
-          try {
-            // itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
-            const data = await publicClient.readContract({
-              address: aiNftExchange.address as `0x${string}`,
-              abi: aiNftExchange.abi,
-              functionName: "itemData",
-              args: [BigInt(i)],
-            }) as [bigint, string, bigint, boolean, bigint, string]
+    try {
+      const totalItemId = await publicClient.readContract({
+        address: aiNftExchange.address as `0x${string}`,
+        abi: aiNftExchange.abi,
+        functionName: "getLatestItemId",
+        args: [],
+      })
+      if (typeof totalItemId !== "bigint") return
 
-            // fetch the owner
-            const owner = await publicClient.readContract({
-              address: aiNftExchange.address as `0x${string}`,
-              abi: aiNftExchange.abi,
-              functionName: "ownerOf",
-              args: [BigInt(i)],
-            }) as `0x${string}`
+      const newListed: MarketplaceItem[] = []
+      for (let i = BigInt(1); i <= totalItemId; i++) {
+        try {
+          // itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
+          const data = await publicClient.readContract({
+            address: aiNftExchange.address as `0x${string}`,
+            abi: aiNftExchange.abi,
+            functionName: "itemData",
+            args: [i],
+          }) as [bigint, string, bigint, boolean, bigint, string]
 
-            // We only want items that are minted; if the call fails, it goes to catch
-            // We'll show them all in the marketplace, but we can highlight isOnSale if needed
-            newListed.push({
-              itemId: data[0],
-              creator: data[1],
-              xpValue: data[2],
-              isOnSale: data[3],
-              salePrice: data[4],
-              resourceUrl: data[5],
-              owner,
-            })
-          } catch (_err) {
-            // skip invalid
-          }
+          // fetch the owner
+          const owner = await publicClient.readContract({
+            address: aiNftExchange.address as `0x${string}`,
+            abi: aiNftExchange.abi,
+            functionName: "ownerOf",
+            args: [i],
+          }) as `0x${string}`
+
+          // We only want items that exist. If it doesn't, readContract will fail => catch
+          newListed.push({
+            itemId: data[0],
+            creator: data[1],
+            xpValue: data[2],
+            isOnSale: data[3],
+            salePrice: data[4],
+            resourceUrl: data[5],
+            owner,
+          })
+        } catch (_err) {
+          // skip invalid
         }
-        setListedItems(newListed)
-      } catch (err) {
-        console.error("Error fetching marketplace items:", err)
       }
+      setListedItems(newListed)
+    } catch (err) {
+      console.error("Error fetching marketplace items:", err)
     }
+  }
 
-    fetchItems()
+  useEffect(() => {
+    fetchMarketplaceItems()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiNftExchange, publicClient])
 
   // Compute the final filtered array
@@ -152,44 +210,32 @@ export default function MarketplacePage() {
         return false
       }
 
-      // "On Auction" is not truly implemented, but let's skip if user toggled it
-      // you can add your own logic if there's an "auction" property
+      // "On Auction" is not truly implemented. If user checks "On Auction," we'll skip items not on sale
       if (onAuction) {
-        // We have no real 'onAuction' field. We'll assume "onAuction" = item.isOnSale
-        // so if user checks "onAuction," item must also be on sale
         if (!item.isOnSale) return false
       }
 
-      // "New" filter => itemId is in the top 5 recently minted
-      // This is arbitrary, can be changed
+      // "New" filter => let's define new as top 5 item IDs
       if (showNew) {
-        // For example, let's say any item with itemId > (max - 5) is new
         const maxItemId = listedItems.reduce((acc, cur) => (cur.itemId > acc ? cur.itemId : acc), BigInt(0))
         if (item.itemId < maxItemId - BigInt(5)) {
           return false
         }
       }
 
-      // category filter is not actually stored in data
-      // We'll skip or do a pretend match: if we have categories selected, we do no match
+      // category filter is not actually stored in data. We'll do a fallback:
+      // If categories are selected, require "Art" is in the categories to keep item
       if (selectedCategories.length > 0) {
-        // There's no real category data in item. So let's skip or do a placeholder
-        // We'll do a simple fallback that everything is category "Art"
-        // If "Art" is selected, we keep it, else we skip
-        // This is for demonstration only
         if (!selectedCategories.includes("Art")) {
-          // skip item
           return false
         }
       }
 
-      // search filter => check if itemId matches or resourceUrl includes the search
+      // search filter => check if itemId or resourceUrl
       const itemIdStr = String(item.itemId)
       const lowerSearch = searchTerm.toLowerCase()
       const lowerResource = item.resourceUrl.toLowerCase()
       if (searchTerm) {
-        // if the itemId doesn't contain search, and resourceUrl doesn't contain search,
-        // we exclude
         if (!itemIdStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
           return false
         }
@@ -197,15 +243,69 @@ export default function MarketplacePage() {
 
       return true
     })
-  }, [
-    listedItems,
-    priceRange,
-    buyNow,
-    onAuction,
-    showNew,
-    selectedCategories,
-    searchTerm,
-  ])
+  }, [listedItems, priceRange, buyNow, onAuction, showNew, selectedCategories, searchTerm])
+
+  // Handle "Buy" button
+  async function handleBuy(item: MarketplaceItem) {
+    try {
+      if (!wagmiAddress) {
+        toast({
+          title: "Wallet not connected",
+          description: "Please connect your wallet before buying.",
+          variant: "destructive",
+        })
+        return
+      }
+      if (!item.isOnSale) {
+        toast({
+          title: "Item not for sale",
+          description: "That item is not currently for sale.",
+          variant: "destructive",
+        })
+        return
+      }
+      if (!aiNftExchange) {
+        toast({
+          title: "No Contract Found",
+          description: "AINFTExchange contract not found. Check your chain or config.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Mark this item as being purchased, so only its button changes to "Processing..."
+      setBuyingItemId(item.itemId)
+
+      const purchaseNFT = {
+        name: "purchaseAIItem",
+        type: "function",
+        stateMutability: "payable",
+        inputs: [{ name: "itemId", type: "uint256" }],
+        outputs: [],
+      }
+      // send item.salePrice as value
+      await writeBuyContract({
+        address: aiNftExchange.address as `0x${string}`,
+        abi: [purchaseNFT],
+        functionName: "purchaseAIItem",
+        args: [item.itemId],
+        value: item.salePrice,
+      })
+
+      toast({
+        title: "Purchase Transaction",
+        description: "Transaction submitted... awaiting confirmation.",
+      })
+    } catch (err: any) {
+      // Reset local state if the transaction call fails immediately
+      setBuyingItemId(null)
+      toast({
+        title: "Purchase Failure",
+        description: err.message || "Unable to buy NFT",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
@@ -286,7 +386,7 @@ export default function MarketplacePage() {
                       max={10}
                       step={0.1}
                       value={tempPriceRange}
-                      onValueChange={setTempPriceRange}
+                      onValueChange={(value) => setTempPriceRange([value[0], value[1]])}
                     />
                     <div className="flex justify-between gap-2">
                       <Input
@@ -407,10 +507,24 @@ export default function MarketplacePage() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
                     </p>
+                    {/* Removed extra green text. Only the Buy button remains. */}
                     {item.isOnSale && (
-                      <span className="mt-1 inline-block text-[10px] text-green-600">
-                        Buy Now
-                      </span>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="mt-2 w-full"
+                        onClick={() => handleBuy(item)}
+                        disabled={buyingItemId === item.itemId}
+                      >
+                        {buyingItemId === item.itemId ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          "Buy"
+                        )}
+                      </Button>
                     )}
                   </div>
                 ))}
@@ -432,19 +546,27 @@ export default function MarketplacePage() {
                       <p className="text-sm text-muted-foreground">
                         Owner: {item.owner.slice(0,6)}...{item.owner.slice(-4)}
                       </p>
-                      {item.isOnSale && (
-                        <span className="mt-1 inline-block text-xs text-green-600">
-                          Buy Now
-                        </span>
-                      )}
+                      {/* Removed the 'Buy Now' text here as well */}
                     </div>
                     <div className="flex flex-col items-start gap-2 sm:items-end">
                       <span className="text-sm font-bold text-primary">
                         {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
                       </span>
                       {item.isOnSale && (
-                        <Button variant="default" size="sm">
-                          Buy
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleBuy(item)}
+                          disabled={buyingItemId === item.itemId}
+                        >
+                          {buyingItemId === item.itemId ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Buy"
+                          )}
                         </Button>
                       )}
                     </div>
