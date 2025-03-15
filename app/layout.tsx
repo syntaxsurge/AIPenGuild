@@ -24,7 +24,10 @@ const brandFont = localFont({
 
 export const metadata: Metadata = {
   title: "AIPenGuild",
-  description: "AIPenGuild: The cutting-edge AI-driven NFT marketplace"
+  description: "AIPenGuild: The cutting-edge AI-driven NFT marketplace",
+  icons: {
+    icon: 'images/favicon.ico'
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
