@@ -382,7 +382,9 @@ export default function MyNFTsPage() {
                       {meta.name || `NFT #${String(nft.itemId)}`}
                     </p>
                     {nft.isOnSale && (
-                      <p className="mt-1 text-xs text-red-500">Listed for sale</p>
+                      <p className="mt-1 text-xs font-semibold text-orange-600 dark:text-orange-500">
+                        Listed for sale
+                      </p>
                     )}
                   </div>
                 )
@@ -429,7 +431,7 @@ export default function MyNFTsPage() {
                   </p>
                 )}
                 {isListTxError && (
-                  <p className="text-red-600">
+                  <p className="font-bold text-orange-600 dark:text-orange-500">
                     Transaction Failed: {listTxReceiptError?.message || listError?.message}
                   </p>
                 )}
@@ -460,7 +462,7 @@ export default function MyNFTsPage() {
                     </p>
                   )}
                   {isUnlistTxError && (
-                    <p className="text-red-600">
+                    <p className="font-bold text-orange-600 dark:text-orange-500">
                       Transaction Failed: {unlistTxReceiptError?.message || unlistError?.message}
                     </p>
                   )}
