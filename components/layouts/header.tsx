@@ -29,23 +29,20 @@ function Header() {
               Home
             </Link>
 
-            {/* Rankings dropdown */}
-            <div className="group relative">
-              <button className="flex items-center gap-1 hover:underline">
-                Ranking
-                <IconChevronDown className="h-4 w-4" />
-              </button>
-              <div className="absolute top-full left-0 hidden min-w-[180px] pt-2 group-hover:block">
-                <div className="rounded-md border border-border bg-background p-2 shadow-lg">
-                  <Link href="/ranking/creator" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    Creator Highlights
-                  </Link>
-                  <Link href="/ranking/minter" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    Minter Stats
-                  </Link>
-                </div>
-              </div>
-            </div>
+            {/* Leaderboard link */}
+            <Link href="/leaderboard" className="hover:underline">
+              Leaderboard
+            </Link>
+
+            {/* Dashboard link */}
+            <Link href="/dashboard" className="hover:underline">
+              Dashboard
+            </Link>
+
+            {/* Admin link */}
+            <Link href="/admin" className="hover:underline">
+              Admin
+            </Link>
 
             {/* Marketplace dropdown */}
             <div className="group relative">
