@@ -41,11 +41,18 @@ export default function DashboardPage() {
   const loadedRef = useRef(false);
 
   useEffect(() => {
-    // If any are missing, just skip
-    if (!address || !publicClient || !aiExperience || !aiExperience.address || !aiExperience.abi
-        || !aiNftExchange || !aiNftExchange.address || !aiNftExchange.abi) {
+    // If any are missing, just skip or return
+    if (
+      !address ||
+      !publicClient ||
+      !aiExperience?.address ||
+      !aiExperience?.abi ||
+      !aiNftExchange?.address ||
+      !aiNftExchange?.abi
+    ) {
       return;
     }
+
     if (loadedRef.current) return;
     loadedRef.current = true;
 
@@ -56,17 +63,15 @@ export default function DashboardPage() {
 
         // We'll fetch XP and item stats in parallel
         const [userXp, totalItemId] = await Promise.all([
-          // fetch XP
-          publicClient.readContract({
-            address: aiExperience.address as `0x${string}`,
-            abi: aiExperience.abi,
+          publicClient?.readContract({
+            address: aiExperience?.address as `0x${string}`,
+            abi: aiExperience?.abi,
             functionName: "userExperience",
             args: [address],
           }) as Promise<bigint>,
-          // fetch the total item ID from exchange
-          publicClient.readContract({
-            address: aiNftExchange.address as `0x${string}`,
-            abi: aiNftExchange.abi,
+          publicClient?.readContract({
+            address: aiNftExchange?.address as `0x${string}`,
+            abi: aiNftExchange?.abi,
             functionName: "getLatestItemId",
             args: [],
           }) as Promise<bigint>,
@@ -88,17 +93,17 @@ export default function DashboardPage() {
                 const itemIndex = BigInt(i);
 
                 // get owner
-                const owner = await publicClient.readContract({
-                  address: aiNftExchange.address as `0x${string}`,
-                  abi: aiNftExchange.abi,
+                const owner = await publicClient?.readContract({
+                  address: aiNftExchange?.address as `0x${string}`,
+                  abi: aiNftExchange?.abi,
                   functionName: "ownerOf",
                   args: [itemIndex],
                 }) as `0x${string}`;
 
-                // get itemData
-                const data = await publicClient.readContract({
-                  address: aiNftExchange.address as `0x${string}`,
-                  abi: aiNftExchange.abi,
+                // get itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
+                const data = await publicClient?.readContract({
+                  address: aiNftExchange?.address as `0x${string}`,
+                  abi: aiNftExchange?.abi,
                   functionName: "itemData",
                   args: [itemIndex],
                 }) as [bigint, string, bigint, boolean, bigint, string];
@@ -114,15 +119,20 @@ export default function DashboardPage() {
                 };
 
                 // check if minted by user => item.creator
-                if (item.creator.toLowerCase() === address.toLowerCase()) {
+                if (
+                  item.creator?.toLowerCase() === address?.toLowerCase()
+                ) {
                   minted++;
                   // if minted by user but user no longer owns => user sold it
-                  if (item.owner?.toLowerCase() !== address.toLowerCase()) {
+                  if (item.owner?.toLowerCase() !== address?.toLowerCase()) {
                     sold++;
                   }
                 }
                 // if user owns the item AND it's on sale
-                if (item.owner?.toLowerCase() === address.toLowerCase() && item.isOnSale) {
+                if (
+                  item.owner?.toLowerCase() === address?.toLowerCase() &&
+                  item.isOnSale
+                ) {
                   listed++;
                 }
               } catch {
