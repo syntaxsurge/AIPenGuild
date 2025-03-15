@@ -1,5 +1,6 @@
-"use client"
-import HeroSection from "@/sections/home/Hero"
+'use client'
+
+import HeroSection from "@/sections/home/hero"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { useTheme } from "next-themes"

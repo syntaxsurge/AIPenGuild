@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { InteractiveHoverButton } from "@/components/ui/interactivebutton"
+import { InteractiveHoverButton } from "@/components/ui/interactive-button"
 import { cn } from "@/lib/utils"
 
 export default function HeroSection() {

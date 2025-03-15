@@ -1,11 +1,12 @@
-"use client"
+'use client'
+
 import React, { useState, useEffect } from "react"
 import Image from "next/image"
 import { Brain, Wand, Upload, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { parseEther } from "viem"
-import { useContract } from "@/hooks/useContract"
+import { useContract } from "@/hooks/use-contract"
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"

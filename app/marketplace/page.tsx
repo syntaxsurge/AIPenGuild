@@ -1,4 +1,5 @@
-"use client"
+'use client'
+
 import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -18,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 
 import { useToast } from "@/hooks/use-toast"
 import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
-import { useContract } from "@/hooks/useContract"
+import { useContract } from "@/hooks/use-contract"
 
 interface MarketplaceItem {
   itemId: bigint

@@ -1,7 +1,8 @@
-"use client"
+'use client'
+
 import React, { useEffect, useState, useRef } from "react"
 import { usePublicClient } from "wagmi"
-import { useContract } from "@/hooks/useContract"
+import { useContract } from "@/hooks/use-contract"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"

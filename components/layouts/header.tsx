@@ -1,5 +1,6 @@
-"use client"
-import ConnectWalletBtn from "@/components/connect-wallet-btn"
+'use client'
+
+import ConnectWalletBtn from "@/components/connect-wallet-button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { IconMenu2, IconChevronDown } from "@tabler/icons-react"
 import Link from "next/link"

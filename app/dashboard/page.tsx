@@ -1,7 +1,8 @@
-"use client"
+'use client'
+
 import React, { useEffect, useState } from "react"
 import { useAccount, usePublicClient } from "wagmi"
-import { useContract } from "@/hooks/useContract"
+import { useContract } from "@/hooks/use-contract"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 
