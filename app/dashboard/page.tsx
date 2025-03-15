@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useAccount, usePublicClient } from "wagmi";
@@ -16,7 +16,7 @@ interface AIItem {
   isOnSale: boolean;
   salePrice: bigint;
   resourceUrl: string;
-  owner: string; // Guaranteed to exist
+  owner?: string;
 }
 
 export default function DashboardPage() {
@@ -28,136 +28,130 @@ export default function DashboardPage() {
   const aiNftExchange = useContract("AINFTExchange");
 
   const [xp, setXp] = useState<bigint | null>(null);
-  const [loadingXp, setLoadingXp] = useState(true);
+  const [loadingXp, setLoadingXp] = useState(false);
 
   const [totalMinted, setTotalMinted] = useState(0);
   const [totalSold, setTotalSold] = useState(0);
   const [totalListed, setTotalListed] = useState(0);
-  const [loadingItems, setLoadingItems] = useState(true);
+  const [loadingItems, setLoadingItems] = useState(false);
 
-  const fetchedItemsRef = useRef(false);
+  // We unify fetching both XP and minted/sold items in a single effect
+  // so they can load in parallel. We'll run this once when we have
+  // address + contracts.
+  const loadedRef = useRef(false);
 
   useEffect(() => {
-    // 1) Fetch XP from AIExperience
-    async function fetchXp() {
-      if (!address || !aiExperience?.address || !aiExperience?.abi || !publicClient) {
-        setLoadingXp(false);
-        return;
-      }
+    // If any are missing, just skip
+    if (!address || !publicClient || !aiExperience || !aiExperience.address || !aiExperience.abi
+        || !aiNftExchange || !aiNftExchange.address || !aiNftExchange.abi) {
+      return;
+    }
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+
+    async function fetchAllData() {
       try {
         setLoadingXp(true);
-        const userXp = await publicClient.readContract({
-          address: aiExperience.address as `0x${string}`,
-          abi: aiExperience.abi,
-          functionName: "userExperience",
-          args: [address]
-        }) as bigint;
-        setXp(userXp);
-      } catch (err) {
-        console.error("[Dashboard] Error fetching user XP:", err);
-        toast({
-          title: "Error",
-          description: "Failed to fetch XP. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoadingXp(false);
-      }
-    }
-
-    fetchXp();
-  }, [address, aiExperience, publicClient, toast]);
-
-  // 2) Summaries from AINFTExchange:
-  // We'll check how many the user minted, how many they sold, and how many they've currently listed.
-  useEffect(() => {
-    async function fetchItemStats() {
-      if (!address || !aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) {
-        setLoadingItems(false);
-        return;
-      }
-      try {
-        if (fetchedItemsRef.current) return;
-        fetchedItemsRef.current = true;
         setLoadingItems(true);
 
-        // get total itemId
-        const latestItemId = await publicClient.readContract({
-          address: aiNftExchange.address as `0x\${string}`,
-          abi: aiNftExchange.abi,
-          functionName: "getLatestItemId",
-          args: []
-        }) as bigint;
-        const total = Number(latestItemId);
+        // We'll fetch XP and item stats in parallel
+        const [userXp, totalItemId] = await Promise.all([
+          // fetch XP
+          publicClient.readContract({
+            address: aiExperience.address as `0x${string}`,
+            abi: aiExperience.abi,
+            functionName: "userExperience",
+            args: [address],
+          }) as Promise<bigint>,
+          // fetch the total item ID from exchange
+          publicClient.readContract({
+            address: aiNftExchange.address as `0x${string}`,
+            abi: aiNftExchange.abi,
+            functionName: "getLatestItemId",
+            args: [],
+          }) as Promise<bigint>,
+        ]);
 
+        setXp(userXp); // user XP
+
+        // fetch minted/sold/listed
+        const totalId = Number(totalItemId);
         let minted = 0;
         let sold = 0;
         let listed = 0;
 
-        for (let i = 1; i <= total; i++) {
-          try {
-            const itemIndex = BigInt(i);
-            const data = await publicClient.readContract({
-              address: aiNftExchange.address as `0x${string}`,
-              abi: aiNftExchange.abi,
-              functionName: "itemData",
-              args: [itemIndex]
-            }) as [bigint, string, bigint, boolean, bigint, string];
+        const itemPromises = [];
+        for (let i = 1; i <= totalId; i++) {
+          itemPromises.push(
+            (async () => {
+              try {
+                const itemIndex = BigInt(i);
 
-            const owner = await publicClient.readContract({
-              address: aiNftExchange.address as `0x${string}`,
-              abi: aiNftExchange.abi,
-              functionName: "ownerOf",
-              args: [itemIndex]
-            }) as `0x${string}`;
+                // get owner
+                const owner = await publicClient.readContract({
+                  address: aiNftExchange.address as `0x${string}`,
+                  abi: aiNftExchange.abi,
+                  functionName: "ownerOf",
+                  args: [itemIndex],
+                }) as `0x${string}`;
 
-            const item: AIItem = {
-              itemId: data[0],
-              creator: data[1],
-              xpValue: data[2],
-              isOnSale: data[3],
-              salePrice: data[4],
-              resourceUrl: data[5],
-              owner
-            };
+                // get itemData
+                const data = await publicClient.readContract({
+                  address: aiNftExchange.address as `0x${string}`,
+                  abi: aiNftExchange.abi,
+                  functionName: "itemData",
+                  args: [itemIndex],
+                }) as [bigint, string, bigint, boolean, bigint, string];
 
-            // minted by user
-            if (item.creator.toLowerCase() === address.toLowerCase()) {
-              minted++;
-              // if minted by user but does not belong to user => user sold it
-              if (item.owner.toLowerCase() !== address.toLowerCase()) {
-                sold++;
+                const item: AIItem = {
+                  itemId: data[0],
+                  creator: data[1],
+                  xpValue: data[2],
+                  isOnSale: data[3],
+                  salePrice: data[4],
+                  resourceUrl: data[5],
+                  owner,
+                };
+
+                // check if minted by user => item.creator
+                if (item.creator.toLowerCase() === address.toLowerCase()) {
+                  minted++;
+                  // if minted by user but user no longer owns => user sold it
+                  if (item.owner?.toLowerCase() !== address.toLowerCase()) {
+                    sold++;
+                  }
+                }
+                // if user owns the item AND it's on sale
+                if (item.owner?.toLowerCase() === address.toLowerCase() && item.isOnSale) {
+                  listed++;
+                }
+              } catch {
+                // skip invalid items
               }
-            }
-            // if user is the owner & the item is for sale => user has it listed
-            if (
-              item.owner.toLowerCase() === address.toLowerCase() &&
-              item.isOnSale
-            ) {
-              listed++;
-            }
-          } catch (_err) {
-            // skip
-          }
+            })()
+          );
         }
+
+        await Promise.all(itemPromises);
 
         setTotalMinted(minted);
         setTotalSold(sold);
         setTotalListed(listed);
       } catch (err) {
-        console.error("[Dashboard] Error fetching item stats:", err);
+        console.error("[Dashboard] Error fetching data:", err);
         toast({
           title: "Error",
-          description: "Failed to fetch item stats. Please try again.",
-          variant: "destructive"
+          description: "Failed to fetch dashboard data. Please try again.",
+          variant: "destructive",
         });
       } finally {
+        setLoadingXp(false);
         setLoadingItems(false);
       }
     }
 
-    fetchItemStats();
-  }, [address, aiNftExchange, publicClient, toast]);
+    fetchAllData();
+  }, [address, aiExperience, aiNftExchange, publicClient, toast]);
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
@@ -172,7 +166,7 @@ export default function DashboardPage() {
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* Card: XP */}
+          {/* XP Card */}
           <Card className="border border-border bg-background shadow-sm">
             <CardHeader className="p-4 bg-accent text-accent-foreground">
               <CardTitle className="text-base font-semibold">Your Experience Points (XP)</CardTitle>
@@ -185,13 +179,13 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-2xl font-bold text-primary">
-                  {xp ? xp.toString() : "0"}
+                  {xp !== null ? xp.toString() : "0"}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Card: Minted & Sold */}
+          {/* Minted & Sold */}
           <Card className="border border-border bg-background shadow-sm">
             <CardHeader className="p-4 bg-accent text-accent-foreground">
               <CardTitle className="text-base font-semibold">Your Minted & Sold NFTs</CardTitle>
@@ -215,7 +209,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Card: Listed NFTs */}
+          {/* Listed */}
           <Card className="border border-border bg-background shadow-sm">
             <CardHeader className="p-4 bg-accent text-accent-foreground">
               <CardTitle className="text-base font-semibold">Your Listed NFTs</CardTitle>
@@ -232,7 +226,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Card: My NFTs link */}
+          {/* My NFTs link */}
           <Card className="border border-border bg-background shadow-sm">
             <CardHeader className="p-4 bg-accent text-accent-foreground">
               <CardTitle className="text-base font-semibold">View Owned NFTs</CardTitle>
