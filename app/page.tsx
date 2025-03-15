@@ -211,24 +211,24 @@ export default function Home() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {/* Perks or Achievements */}
-                    <AccordionItem value="perks">
+                    {/* Titles */}
+                    <AccordionItem value="titles">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        2. What are Perks or Achievements?
+                        2. What are Titles?
                       </AccordionTrigger>
                       <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground space-y-3">
                         <p>
-                          Perks or Achievements are fun titles displayed on your profile
+                          Titles are fun designations displayed on your profile
                           or in the Leaderboard once you pass certain XP milestones. For
                           example, if your XP surpasses a specific threshold, you might
                           see <em>&quot;Enthusiast&quot;</em> next to your name. Below is an example
-                          table of the perk tiers currently recognized on the platform:
+                          table of the title tiers currently recognized on the platform:
                         </p>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm md:text-base border border-border">
                             <thead className="bg-secondary text-secondary-foreground">
                               <tr>
-                                <th className="px-4 py-2">Perk/Achievement</th>
+                                <th className="px-4 py-2">Title</th>
                                 <th className="px-4 py-2">XP Range</th>
                               </tr>
                             </thead>
@@ -322,9 +322,8 @@ export default function Home() {
                             purchase in your wallet. Ownership (and XP) will transfer to you.
                           </li>
                           <li>
-                            <strong>Track your XP &amp; Perks</strong> in the &quot;Leaderboard&quot;
-                            or &quot;Dashboard.&quot; You’ll see your total XP and the perk or
-                            achievement you’ve earned.
+                            <strong>Track your XP &amp; Title</strong> in the &quot;Leaderboard&quot;
+                            or &quot;Dashboard.&quot; You will see your total XP and the title you have earned.
                           </li>
                           <li>
                             <strong>Admin Panel</strong> (if you have access) to manage reward pool

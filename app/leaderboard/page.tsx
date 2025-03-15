@@ -115,7 +115,7 @@ export default function LeaderboardPage() {
     <main className="mx-auto max-w-4xl min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
       <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">XP Leaderboard</h1>
       <p className="mb-8 text-center text-sm text-muted-foreground">
-        See the top XP holders on AIPenGuild. Addresses with high XP gain achievements and perks.
+        See the top XP holders on AIPenGuild. Addresses with high XP gain title.
       </p>
 
       {/* Filters */}
@@ -166,7 +166,7 @@ export default function LeaderboardPage() {
                   <th className="py-2">Rank</th>
                   <th>Address</th>
                   <th>XP</th>
-                  <th>Perk / Achievement</th>
+                  <th>Title</th>
                 </tr>
               </thead>
               <tbody>
