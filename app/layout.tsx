@@ -10,13 +10,13 @@ import { AOSInit } from "@/components/aos"
 
 const brandFont = localFont({
   src: [
-    { path: "./fonts/IBMPlexMono-Bold.ttf", weight: "700" },
-    { path: "./fonts/IBMPlexMono-ExtraLight.ttf", weight: "200" },
-    { path: "./fonts/IBMPlexMono-Light.ttf", weight: "300" },
-    { path: "./fonts/IBMPlexMono-Medium.ttf", weight: "500" },
-    { path: "./fonts/IBMPlexMono-Regular.ttf", weight: "400" },
-    { path: "./fonts/IBMPlexMono-SemiBold.ttf", weight: "600" },
-    { path: "./fonts/IBMPlexMono-Thin.ttf", weight: "100" }
+    { path: "../public/fonts/IBMPlexMono-Bold.ttf", weight: "700" },
+    { path: "../public/fonts/IBMPlexMono-ExtraLight.ttf", weight: "200" },
+    { path: "../public/fonts/IBMPlexMono-Light.ttf", weight: "300" },
+    { path: "../public/fonts/IBMPlexMono-Medium.ttf", weight: "500" },
+    { path: "../public/fonts/IBMPlexMono-Regular.ttf", weight: "400" },
+    { path: "../public/fonts/IBMPlexMono-SemiBold.ttf", weight: "600" },
+    { path: "../public/fonts/IBMPlexMono-Thin.ttf", weight: "100" }
   ],
   display: "swap",
   variable: "--font-ibm-plex-mono"
