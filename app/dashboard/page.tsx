@@ -1,28 +1,15 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useAccount, usePublicClient } from "wagmi";
-import { Loader2, Gauge, Crown, PieChart, Folder } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react"
+import Link from "next/link"
+import { useAccount, usePublicClient } from "wagmi"
+import { Loader2, Gauge, Crown, PieChart, Folder } from "lucide-react"
+import { getUserTitle } from "@/lib/experience"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useContract } from "@/hooks/use-contract";
-
-/**
- * A helper to map XP to a user "title."
- */
-function getUserTitle(xp: bigint | null): string {
-  if (xp === null) return "N/A";
-  const numericXp = Number(xp);
-
-  if (numericXp >= 5000) return "Legendary Creator";
-  if (numericXp >= 3000) return "Master Collector";
-  if (numericXp >= 1000) return "Rising Star";
-  if (numericXp >= 200)  return "Enthusiast";
-  return "Newcomer";
-}
 
 export default function DashboardPage() {
   const { address } = useAccount();

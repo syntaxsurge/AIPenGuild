@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { useToast } from "@/hooks/use-toast"
+import { getUserTitle } from "@/lib/experience"
 
 /**
  * We'll gather addresses by scanning all minted items from the AINFTExchange,
@@ -176,7 +177,18 @@ export default function LeaderboardPage() {
                     <td>{entry.address.slice(0, 6)}...{entry.address.slice(-4)}</td>
                     <td>{entry.xp.toString()} XP</td>
                     <td>
-                      {renderAchievement(entry.xp)}
+                      {(() => {
+                        const numericXp = Number(entry.xp);
+                        const userTitle = getUserTitle(numericXp);
+                        let colorClass = "text-muted-foreground";
+  
+                        if (numericXp >= 5000) colorClass = "text-green-600";
+                        else if (numericXp >= 3000) colorClass = "text-blue-600";
+                        else if (numericXp >= 1000) colorClass = "text-purple-600";
+                        else if (numericXp >= 200) colorClass = "text-yellow-600";
+  
+                        return <span className={colorClass}>{userTitle}</span>;
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -189,12 +201,3 @@ export default function LeaderboardPage() {
   )
 }
 
-function renderAchievement(xp: bigint) {
-  // Example: Provide a basic threshold system.
-  const numericXp = Number(xp)
-  if (numericXp >= 5000) return <span className="text-green-600">Legendary Creator</span>
-  if (numericXp >= 3000) return <span className="text-blue-600">Master Collector</span>
-  if (numericXp >= 1000) return <span className="text-purple-600">Rising Star</span>
-  if (numericXp >= 200) return <span className="text-yellow-600">Enthusiast</span>
-  return <span className="text-muted-foreground">Newcomer</span>
-}
