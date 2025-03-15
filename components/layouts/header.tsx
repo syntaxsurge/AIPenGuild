@@ -27,40 +27,40 @@ function Header() {
         <div className={`${open ? "block" : "hidden"} border-t border-border md:border-none md:block`}>
           <div className="flex flex-col gap-4 px-4 py-4 text-sm uppercase md:flex-row md:items-center md:justify-end md:py-0">
             <Link href="/" className="hover:underline">
-              Home
+              HOME
             </Link>
 
             {/* Leaderboard link */}
             <Link href="/leaderboard" className="hover:underline">
-              Leaderboard
+              LEADERBOARD
             </Link>
 
             {/* Dashboard link */}
             <Link href="/dashboard" className="hover:underline">
-              Dashboard
+              DASHBOARD
             </Link>
 
             {/* Admin link */}
             <Link href="/admin" className="hover:underline">
-              Admin
+              ADMIN
             </Link>
 
             {/* Marketplace dropdown */}
             <div className="group relative">
               <button className="flex items-center gap-1 hover:underline">
-                Marketplace
+                MARKETPLACE
                 <IconChevronDown className="h-4 w-4" />
               </button>
               <div className="absolute top-full left-0 hidden min-w-[180px] pt-2 group-hover:block">
                 <div className="rounded-md border border-border bg-background p-2 shadow-lg">
                   <Link href="/marketplace" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    Explore
+                    EXPLORE
                   </Link>
                   <Link href="/my-nfts" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    My NFTs
+                    MY NFTS
                   </Link>
                   <Link href="/mint" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    Create AI NFT
+                    CREATE AI NFT
                   </Link>
                 </div>
               </div>
