@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useAccount, usePublicClient, useWaitForTransactionReceipt } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,7 @@ export default function AdminPage() {
   const publicClient = usePublicClient()
   const aiRewardPool = useContract("AIRewardPool")
   const { toast } = useToast()
+  const router = useRouter();
 
   const [isOwner, setIsOwner] = useState(false)
   const [ownerLoading, setOwnerLoading] = useState(true)
@@ -213,14 +215,8 @@ export default function AdminPage() {
   }
 
   if (!isOwner) {
-    return (
-      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">403 Access Denied</h1>
-        <p className="text-center text-sm text-destructive">
-          You do not have permission to view this page. Only the contract owner can access the Admin Panel.
-        </p>
-      </main>
-    )
+    router.push("/errors/403");
+    return null;
   }
 
   // If user is indeed the contract owner
