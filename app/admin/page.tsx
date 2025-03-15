@@ -12,21 +12,28 @@ import { useWriteContract } from "wagmi"
 import { parseEther } from "viem"
 
 export default function AdminPage() {
+  const router = useRouter()
+
+  // Wagmi states
   const { address: wagmiAddress, isDisconnected } = useAccount()
   const publicClient = usePublicClient()
-  const aiRewardPool = useContract("AIRewardPool")
   const { toast } = useToast()
-  const router = useRouter();
 
+  // Contract config
+  const aiRewardPool = useContract("AIRewardPool")
+
+  // State to track if the user is the owner
   const [isOwner, setIsOwner] = useState(false)
   const [ownerLoading, setOwnerLoading] = useState(true)
 
-  // We'll store the pool balance
+  // Pool balance states
   const [poolBalance, setPoolBalance] = useState<bigint>(0n)
   const [loadingBalance, setLoadingBalance] = useState(false)
 
-  // For withdrawing from reward pool
+  // Withdraw input
   const [withdrawAmount, setWithdrawAmount] = useState("")
+
+  // Write contract states
   const {
     data: withdrawData,
     error: withdrawError,
@@ -45,7 +52,7 @@ export default function AdminPage() {
     hash: withdrawData ?? undefined
   })
 
-  // Check if user is AIRewardPool's owner
+  // 1) Check ownership (once address is known)
   useEffect(() => {
     async function checkOwner() {
       if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient || !wagmiAddress) {
@@ -60,61 +67,110 @@ export default function AdminPage() {
           functionName: "owner",
           args: []
         }) as `0x${string}`
-        if (contractOwner.toLowerCase() === wagmiAddress.toLowerCase()) {
-          setIsOwner(true)
-        } else {
-          setIsOwner(false)
-        }
-      } catch (err: any) {
-        console.error("Owner check error:", err)
+
+        setIsOwner(contractOwner.toLowerCase() === wagmiAddress.toLowerCase())
+      } catch {
         setIsOwner(false)
       }
       setOwnerLoading(false)
     }
-    checkOwner()
-  }, [aiRewardPool, publicClient, wagmiAddress])
 
-  // Load reward pool balance once, or after successful withdrawal
-  async function loadBalance() {
-    if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient) return
-    try {
-      setLoadingBalance(true)
-      const val = await publicClient.readContract({
-        address: aiRewardPool.address as `0x${string}`,
-        abi: aiRewardPool.abi,
-        functionName: "getPoolBalance",
-        args: []
-      })
-      if (typeof val === "bigint") {
-        setPoolBalance(val)
-      }
-    } catch (err: any) {
-      console.error("Error loading pool balance:", err)
-      toast({
-        title: "Error",
-        description: err.message || "Cannot load reward pool balance.",
-        variant: "destructive"
-      })
-    } finally {
-      setLoadingBalance(false)
+    // If there's a connected address, check ownership
+    if (!isDisconnected && wagmiAddress) {
+      checkOwner()
+    } else {
+      setIsOwner(false)
+      setOwnerLoading(false)
     }
-  }
+  }, [aiRewardPool, publicClient, wagmiAddress, isDisconnected])
 
+  // 2) Load pool balance
   useEffect(() => {
-    // Load balance once on mount, if the user is possibly the correct owner
+    async function loadBalance() {
+      if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient) return
+      try {
+        setLoadingBalance(true)
+        const val = await publicClient.readContract({
+          address: aiRewardPool.address as `0x${string}`,
+          abi: aiRewardPool.abi,
+          functionName: "getPoolBalance",
+          args: []
+        })
+        if (typeof val === "bigint") {
+          setPoolBalance(val)
+        }
+      } catch (err: any) {
+        console.error("Error loading pool balance:", err)
+        toast({
+          title: "Error",
+          description: err.message || "Cannot load reward pool balance.",
+          variant: "destructive"
+        })
+      } finally {
+        setLoadingBalance(false)
+      }
+    }
+
+    // Load balance once user possibly is the owner or not
     if (!isDisconnected && aiRewardPool?.address) {
       loadBalance()
     }
-  }, [aiRewardPool?.address, isDisconnected])
+  }, [aiRewardPool?.address, isDisconnected, toast, publicClient])
 
-  // Re-check balance after successful withdraw
+  // 3) Watch withdrawal transaction events
   useEffect(() => {
-    if (isTxSuccess) {
-      loadBalance()
+    if (isTxLoading) {
+      toast({
+        title: "Transaction Pending",
+        description: "Your withdrawal transaction is being confirmed..."
+      })
     }
-  }, [isTxSuccess])
+    if (isTxSuccess) {
+      toast({
+        title: "Withdrawal Successful",
+        description: "Funds withdrawn from reward pool"
+      })
+      setWithdrawAmount("")
+      // Reload balance
+      if (!loadingBalance) {
+        // Trigger a fresh load
+        (async () => {
+          if (aiRewardPool?.address && aiRewardPool?.abi && publicClient) {
+            try {
+              setLoadingBalance(true)
+              const val = await publicClient.readContract({
+                address: aiRewardPool.address as `0x${string}`,
+                abi: aiRewardPool.abi,
+                functionName: "getPoolBalance",
+                args: []
+              })
+              if (typeof val === "bigint") {
+                setPoolBalance(val)
+              }
+            } catch {}
+            setLoadingBalance(false)
+          }
+        })()
+      }
+    }
+    if (isTxError) {
+      toast({
+        title: "Transaction Failed",
+        description: txError?.message || withdrawError?.message || "Something went wrong",
+        variant: "destructive"
+      })
+    }
+  }, [isTxLoading, isTxSuccess, isTxError, withdrawError, txError, toast, aiRewardPool?.address, aiRewardPool?.abi, publicClient, loadingBalance])
 
-  // Handle withdraw transaction
+  // 4) If user is not the owner (and done loading), redirect
+  //    We must declare the effect unconditionally, so the hooks order remains stable.
+  useEffect(() => {
+    if (!ownerLoading && !isOwner) {
+      router.push("/errors/403")
+    }
+  }, [ownerLoading, isOwner, router])
+
+  // 5) Handle withdrawal
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!aiRewardPool?.address || !aiRewardPool?.abi) {
@@ -165,37 +221,7 @@ export default function AdminPage() {
     }
   }
 
-  // Watch events for withdraw transaction
-  useEffect(() => {
-    if (isTxLoading) {
-      toast({
-        title: "Transaction Pending",
-        description: "Your withdrawal transaction is being confirmed..."
-      })
-    }
-    if (isTxSuccess) {
-      toast({
-        title: "Withdrawal Successful",
-        description: "Funds withdrawn from reward pool"
-      })
-      setWithdrawAmount("")
-    }
-    if (isTxError) {
-      toast({
-        title: "Transaction Failed",
-        description: txError?.message || withdrawError?.message || "Something went wrong",
-        variant: "destructive"
-      })
-    }
-  }, [
-    isTxLoading,
-    isTxSuccess,
-    isTxError,
-    withdrawError,
-    txError,
-    toast
-  ])
-
+  // A) If not connected at all
   if (isDisconnected) {
     return (
       <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
@@ -205,6 +231,7 @@ export default function AdminPage() {
     )
   }
 
+  // B) If we're still loading ownership
   if (ownerLoading) {
     return (
       <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
@@ -214,12 +241,13 @@ export default function AdminPage() {
     )
   }
 
+  // C) If at this point, user is not owner, we return null
+  //    The effect above will have pushed them to /errors/403
   if (!isOwner) {
-    router.push("/errors/403");
-    return null;
+    return null
   }
 
-  // If user is indeed the contract owner
+  // D) If user is indeed the contract owner, show the panel
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
       <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
@@ -234,9 +262,7 @@ export default function AdminPage() {
               {loadingBalance ? "Loading..." : `${(Number(poolBalance) / 1e18).toFixed(4)} ETH`}
             </div>
           </div>
-
           <hr className="border-border" />
-
           <div>
             <p className="text-sm text-muted-foreground mb-2">
               Withdraw funds from the reward pool (owner only).
