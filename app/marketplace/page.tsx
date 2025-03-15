@@ -1,25 +1,23 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import React, { useState, useEffect, useRef } from "react"
 import { X, Search, Grid2X2, LayoutList, Loader2 } from "lucide-react"
-
+import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { useToast } from "@/hooks/use-toast"
+import { useContract } from "@/hooks/use-contract"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { DualRangeSlider } from "@/components/ui/dual-range-slider"
-import { Badge } from "@/components/ui/badge"
-
-import { useToast } from "@/hooks/use-toast"
-import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
-import { useContract } from "@/hooks/use-contract"
 
 interface MarketplaceItem {
   itemId: bigint
@@ -580,7 +578,7 @@ export default function MarketplacePage() {
                           AI NFT #{String(item.itemId)}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Owner: {item.owner.slice(0,6)}...{item.owner.slice(-4)}
+                          Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
                         </p>
                       </div>
                       <div className="flex flex-col items-start gap-2 sm:items-end">

@@ -224,16 +224,16 @@ export default function Home() {
             See which artists and minters are dominating the scene. Earn XP, craft phenomenal NFTs, and climb to the top!
           </motion.p>
           <Link
-            href="/ranking/creator"
+            href="/leaderboard"
             className="inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Creator Highlights
+            Leaderboard
           </Link>
           <Link
-            href="/ranking/minter"
+            href="/dashboard"
             className="ml-3 inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Minter Stats
+            Dashboard
           </Link>
         </div>
       </section>
