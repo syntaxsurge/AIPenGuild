@@ -1,28 +1,33 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from "react";
-import { useAccount, usePublicClient } from "wagmi";
 import Link from "next/link";
+import { useAccount, usePublicClient } from "wagmi";
+import { Loader2, Gauge, Crown, PieChart, Folder } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useContract } from "@/hooks/use-contract";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 
-interface AIItem {
-  itemId: bigint;
-  creator: string;
-  xpValue: bigint;
-  isOnSale: boolean;
-  salePrice: bigint;
-  resourceUrl: string;
-  owner?: string;
+/**
+ * A helper to map XP to a user "title."
+ */
+function getUserTitle(xp: bigint | null): string {
+  if (xp === null) return "N/A";
+  const numericXp = Number(xp);
+
+  if (numericXp >= 5000) return "Legendary Creator";
+  if (numericXp >= 3000) return "Master Collector";
+  if (numericXp >= 1000) return "Rising Star";
+  if (numericXp >= 200)  return "Enthusiast";
+  return "Newcomer";
 }
 
 export default function DashboardPage() {
   const { address } = useAccount();
-  const { toast } = useToast();
   const publicClient = usePublicClient();
+  const { toast } = useToast();
 
   const aiExperience = useContract("AIExperience");
   const aiNftExchange = useContract("AINFTExchange");
@@ -35,13 +40,9 @@ export default function DashboardPage() {
   const [totalListed, setTotalListed] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false);
 
-  // We unify fetching both XP and minted/sold items in a single effect
-  // so they can load in parallel. We'll run this once when we have
-  // address + contracts.
   const loadedRef = useRef(false);
 
   useEffect(() => {
-    // If any are missing, just skip or return
     if (
       !address ||
       !publicClient ||
@@ -61,7 +62,7 @@ export default function DashboardPage() {
         setLoadingXp(true);
         setLoadingItems(true);
 
-        // We'll fetch XP and item stats in parallel
+        // Parallel fetch: XP + total item count
         const [userXp, totalItemId] = await Promise.all([
           publicClient?.readContract({
             address: aiExperience?.address as `0x${string}`,
@@ -77,22 +78,21 @@ export default function DashboardPage() {
           }) as Promise<bigint>,
         ]);
 
-        setXp(userXp); // user XP
+        setXp(userXp);
 
-        // fetch minted/sold/listed
         const totalId = Number(totalItemId);
-        let minted = 0;
-        let sold = 0;
-        let listed = 0;
+        let mintedCount = 0;
+        let soldCount = 0;
+        let listedCount = 0;
 
-        const itemPromises = [];
+        const itemFetches = [];
         for (let i = 1; i <= totalId; i++) {
-          itemPromises.push(
+          itemFetches.push(
             (async () => {
               try {
                 const itemIndex = BigInt(i);
 
-                // get owner
+                // ownerOf
                 const owner = await publicClient?.readContract({
                   address: aiNftExchange?.address as `0x${string}`,
                   abi: aiNftExchange?.abi,
@@ -100,7 +100,7 @@ export default function DashboardPage() {
                   args: [itemIndex],
                 }) as `0x${string}`;
 
-                // get itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
+                // itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
                 const data = await publicClient?.readContract({
                   address: aiNftExchange?.address as `0x${string}`,
                   abi: aiNftExchange?.abi,
@@ -108,32 +108,20 @@ export default function DashboardPage() {
                   args: [itemIndex],
                 }) as [bigint, string, bigint, boolean, bigint, string];
 
-                const item: AIItem = {
-                  itemId: data[0],
-                  creator: data[1],
-                  xpValue: data[2],
-                  isOnSale: data[3],
-                  salePrice: data[4],
-                  resourceUrl: data[5],
-                  owner,
-                };
+                const creator = data[1];
+                const isOnSale = data[3];
 
-                // check if minted by user => item.creator
-                if (
-                  item.creator?.toLowerCase() === address?.toLowerCase()
-                ) {
-                  minted++;
-                  // if minted by user but user no longer owns => user sold it
-                  if (item.owner?.toLowerCase() !== address?.toLowerCase()) {
-                    sold++;
+                // minted by user?
+                if (creator.toLowerCase() === address?.toLowerCase()) {
+                  mintedCount++;
+                  // if user minted it but doesn't currently own => user sold it
+                  if (owner.toLowerCase() !== address.toLowerCase()) {
+                    soldCount++;
                   }
                 }
-                // if user owns the item AND it's on sale
-                if (
-                  item.owner?.toLowerCase() === address?.toLowerCase() &&
-                  item.isOnSale
-                ) {
-                  listed++;
+                // if user owns & isOnSale => user listed it
+                if (owner.toLowerCase() === address?.toLowerCase() && isOnSale) {
+                  listedCount++;
                 }
               } catch {
                 // skip invalid items
@@ -142,11 +130,11 @@ export default function DashboardPage() {
           );
         }
 
-        await Promise.all(itemPromises);
+        await Promise.all(itemFetches);
 
-        setTotalMinted(minted);
-        setTotalSold(sold);
-        setTotalListed(listed);
+        setTotalMinted(mintedCount);
+        setTotalSold(soldCount);
+        setTotalListed(listedCount);
       } catch (err) {
         console.error("[Dashboard] Error fetching data:", err);
         toast({
@@ -161,96 +149,119 @@ export default function DashboardPage() {
     }
 
     fetchAllData();
-  }, [address, aiExperience, aiNftExchange, publicClient, toast]);
+  }, [address, publicClient, aiExperience, aiNftExchange, toast]);
 
-  return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-      <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">Dashboard</h1>
-      <p className="mb-8 text-center text-sm text-muted-foreground">
-        Your personal control center for AIPenGuild.
-      </p>
+  const userTitle = getUserTitle(xp);
 
-      {!address ? (
-        <p className="text-center text-sm text-muted-foreground">
+  if (!address) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8 text-foreground">
+        <h1 className="mb-2 text-4xl font-extrabold text-primary">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
           Please connect your wallet to view your dashboard.
         </p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* XP Card */}
-          <Card className="border border-border bg-background shadow-sm">
-            <CardHeader className="p-4 bg-accent text-accent-foreground">
-              <CardTitle className="text-base font-semibold">Your Experience Points (XP)</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {loadingXp ? (
-                <div className="flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading XP...
-                </div>
-              ) : (
-                <div className="text-2xl font-bold text-primary">
-                  {xp !== null ? xp.toString() : "0"}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      </main>
+    );
+  }
 
-          {/* Minted & Sold */}
-          <Card className="border border-border bg-background shadow-sm">
-            <CardHeader className="p-4 bg-accent text-accent-foreground">
-              <CardTitle className="text-base font-semibold">Your Minted & Sold NFTs</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {loadingItems ? (
-                <div className="flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading minted & sold...
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <p>
-                    <strong>Minted:</strong> {totalMinted}
-                  </p>
-                  <p>
-                    <strong>Sold:</strong> {totalSold}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+  return (
+    <main className="mx-auto min-h-screen max-w-5xl px-4 py-12 sm:px-6 md:px-8 bg-background text-foreground">
+      {/* Page Title */}
+      <div className="mb-8 text-center">
+        <h1 className="mb-4 text-4xl font-extrabold text-primary">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          Your personal control center for AIPenGuild.
+        </p>
+      </div>
 
-          {/* Listed */}
-          <Card className="border border-border bg-background shadow-sm">
-            <CardHeader className="p-4 bg-accent text-accent-foreground">
-              <CardTitle className="text-base font-semibold">Your Listed NFTs</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {loadingItems ? (
-                <div className="flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading listed NFTs...
-                </div>
-              ) : (
-                <p className="text-lg font-bold text-primary">{totalListed}</p>
-              )}
-            </CardContent>
-          </Card>
+      {/* Cards in 2x2 Grid */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* XP Card */}
+        <Card className="border border-border shadow-md">
+          <CardHeader className="p-4 bg-secondary text-secondary-foreground flex items-center gap-2">
+            <Gauge className="h-5 w-5" />
+            <CardTitle className="text-base font-semibold">Experience Points</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 text-center">
+            {loadingXp ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading XP...</span>
+              </div>
+            ) : (
+              <span className="text-3xl font-bold">
+                {xp !== null ? xp.toString() : "0"}
+              </span>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* My NFTs link */}
-          <Card className="border border-border bg-background shadow-sm">
-            <CardHeader className="p-4 bg-accent text-accent-foreground">
-              <CardTitle className="text-base font-semibold">View Owned NFTs</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <Link href="/my-nfts">
-                <Button variant="outline" className="w-full">
-                  Go to My NFTs
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        {/* Title Card */}
+        <Card className="border border-border shadow-md">
+          <CardHeader className="p-4 bg-secondary text-secondary-foreground flex items-center gap-2">
+            <Crown className="h-5 w-5" />
+            <CardTitle className="text-base font-semibold">Your Title</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 text-center">
+            {loadingXp ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Checking title...</span>
+              </div>
+            ) : (
+              <span className="text-2xl font-bold">
+                {userTitle}
+              </span>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* NFT Stats Card */}
+        <Card className="border border-border shadow-md">
+          <CardHeader className="p-4 bg-secondary text-secondary-foreground flex items-center gap-2">
+            <PieChart className="h-5 w-5" />
+            <CardTitle className="text-base font-semibold">NFT Stats</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {loadingItems ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading stats...</span>
+              </div>
+            ) : (
+              <div className="space-y-2 text-sm sm:text-base">
+                <p>
+                  <strong>Minted:</strong> {totalMinted}
+                </p>
+                <p>
+                  <strong>Sold:</strong> {totalSold}
+                </p>
+                <p>
+                  <strong>Listed:</strong> {totalListed}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Owned NFTs / CTA Card */}
+        <Card className="border border-border shadow-md">
+          <CardHeader className="p-4 bg-secondary text-secondary-foreground flex items-center gap-2">
+            <Folder className="h-5 w-5" />
+            <CardTitle className="text-base font-semibold">Owned NFTs</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="mb-4 text-sm text-muted-foreground">
+              View and manage all the NFTs you own.
+            </p>
+            <Link href="/my-nfts">
+              <Button variant="default" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                View Owned NFTs
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }
