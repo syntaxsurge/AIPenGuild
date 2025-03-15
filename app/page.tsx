@@ -24,7 +24,7 @@ export default function Home() {
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-extrabold text-primary">Watch Our Introduction</h2>
             <p className="mt-2 text-muted-foreground">Learn more about AIPenGuild in this short video.</p>
-            <div className="mt-6 flex items-center justify-center gap-4">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit"
                 target="_blank"
@@ -40,6 +40,14 @@ export default function Home() {
                 className="inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground hover:bg-primary/90 transition"
               >
                 GitHub Repository
+              </Link>
+              <Link
+                href="https://www.youtube.com/watch?v=MH4DsjtsO8c"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block rounded-md bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700 transition"
+              >
+                YouTube Demo
               </Link>
             </div>
           </div>
