@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
 import { useContract } from "@/hooks/use-contract"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,8 +11,8 @@ import { Loader2 } from "lucide-react"
 import { getUserTitle } from "@/lib/experience"
 
 /**
- * We'll gather addresses by scanning all minted items from the NFTMarketplace,
- * read userExperience(address) from UserExperience, store them in a map,
+ * We'll gather addresses by scanning all minted items from the NFTMarketplaceHub,
+ * read userExperience(address) from UserExperiencePoints, store them in a map,
  * then show the top 10 addresses with the highest XP. We'll also allow:
  *  - Address search
  *  - XP Range filter
@@ -25,8 +25,8 @@ interface LeaderboardEntry {
 
 export default function LeaderboardPage() {
   const { toast } = useToast()
-  const userExperience = useContract("UserExperience")
-  const nftMarketplace = useContract("NFTMarketplace")
+  const userExperiencePoints = useContract("UserExperiencePoints")
+  const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const publicClient = usePublicClient()
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -39,12 +39,12 @@ export default function LeaderboardPage() {
 
   // We'll track minted item owners up to getLatestItemId(), store them in a set, then query XP from UserExperience.
   async function loadLeaderboard() {
-    if (!userExperience || !nftMarketplace || !publicClient) return
+    if (!userExperiencePoints || !nftMarketplaceHub || !publicClient) return
     try {
       setLoading(true)
       const itemCount = await publicClient.readContract({
-        address: nftMarketplace.address as `0x${string}`,
-        abi: nftMarketplace.abi,
+        address: nftMarketplaceHub.address as `0x${string}`,
+        abi: nftMarketplaceHub.abi,
         functionName: "getLatestItemId",
         args: []
       })
@@ -54,8 +54,8 @@ export default function LeaderboardPage() {
       for (let i = 1n; i <= itemCount; i++) {
         try {
           const owner = await publicClient.readContract({
-            address: nftMarketplace.address as `0x${string}`,
-            abi: nftMarketplace.abi,
+            address: nftMarketplaceHub.address as `0x${string}`,
+            abi: nftMarketplaceHub.abi,
             functionName: "ownerOf",
             args: [i]
           }) as `0x${string}`
@@ -69,8 +69,8 @@ export default function LeaderboardPage() {
       for (const addr of ownersSet) {
         try {
           const xpVal = await publicClient.readContract({
-            address: userExperience.address as `0x${string}`,
-            abi: userExperience.abi,
+            address: userExperiencePoints.address as `0x${string}`,
+            abi: userExperiencePoints.abi,
             functionName: "userExperience",
             args: [addr]
           })

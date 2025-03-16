@@ -30,7 +30,7 @@ export default function MyNFTsPage() {
   const { address: wagmiAddress } = useAccount()
   const publicClient = usePublicClient()
   const { toast } = useToast()
-  const nftMarketplace = useContract("NFTMarketplace")
+  const nftMarketplaceHub = useContract("NFTMarketplaceHub")
 
   // For listing
   const {
@@ -126,10 +126,10 @@ export default function MyNFTsPage() {
   useEffect(() => {
     async function fetchTokenCount() {
       try {
-        if (!nftMarketplace?.address || !nftMarketplace?.abi || !publicClient) return
+        if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi || !publicClient) return
         const val = await publicClient.readContract({
-          address: nftMarketplace.address as `0x${string}`,
-          abi: nftMarketplace.abi,
+          address: nftMarketplaceHub.address as `0x${string}`,
+          abi: nftMarketplaceHub.abi,
           functionName: "getLatestItemId",
           args: []
         })
@@ -140,15 +140,15 @@ export default function MyNFTsPage() {
         console.error("Error reading getLatestItemId:", err)
       }
     }
-    if (wagmiAddress && nftMarketplace?.address) {
+    if (wagmiAddress && nftMarketplaceHub?.address) {
       fetchTokenCount()
     }
-  }, [wagmiAddress, nftMarketplace, publicClient])
+  }, [wagmiAddress, nftMarketplaceHub, publicClient])
 
   // 2) Fetch the user’s owned tokens
   useEffect(() => {
     async function fetchOwnedNFTs() {
-      if (!wagmiAddress || !currentTokenId || !nftMarketplace?.address || !nftMarketplace?.abi || !publicClient) {
+      if (!wagmiAddress || !currentTokenId || !nftMarketplaceHub?.address || !nftMarketplaceHub?.abi || !publicClient) {
         return
       }
       try {
@@ -161,16 +161,16 @@ export default function MyNFTsPage() {
         for (let i = 1; i <= totalMinted; i++) {
           try {
             const owner = await publicClient.readContract({
-              address: nftMarketplace.address as `0x\${string}`,
-              abi: nftMarketplace.abi,
+              address: nftMarketplaceHub.address as `0x\${string}`,
+              abi: nftMarketplaceHub.abi,
               functionName: "ownerOf",
               args: [BigInt(i)]
             }) as `0x\${string}`
 
             if (owner.toLowerCase() === wagmiAddress.toLowerCase()) {
               const details = await publicClient.readContract({
-                address: nftMarketplace.address as `0x\${string}`,
-                abi: nftMarketplace.abi,
+                address: nftMarketplaceHub.address as `0x\${string}`,
+                abi: nftMarketplaceHub.abi,
                 functionName: "nftData",
                 args: [BigInt(i)]
               }) as [bigint, string, bigint, boolean, bigint, string]
@@ -195,7 +195,7 @@ export default function MyNFTsPage() {
       }
     }
     fetchOwnedNFTs()
-  }, [wagmiAddress, currentTokenId, nftMarketplace, publicClient])
+  }, [wagmiAddress, currentTokenId, nftMarketplaceHub, publicClient])
 
   // 3) Load metadata
   useEffect(() => {
@@ -273,7 +273,7 @@ export default function MyNFTsPage() {
         outputs: []
       }
       await writeListContract({
-        address: nftMarketplace?.address as `0x${string}`,
+        address: nftMarketplaceHub?.address as `0x${string}`,
         abi: [abiListNFT],
         functionName: "listNFTItem",
         args: [selectedNFT.itemId, parseEther(price)]
@@ -315,7 +315,7 @@ export default function MyNFTsPage() {
         outputs: []
       }
       await writeUnlistContract({
-        address: nftMarketplace?.address as `0x${string}`,
+        address: nftMarketplaceHub?.address as `0x${string}`,
         abi: [abiUnlistNFT],
         functionName: "unlistNFTItem",
         args: [selectedNFT.itemId]

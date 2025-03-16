@@ -1,4 +1,9 @@
-export type CoreContractName = 'NFTMarketplace' | 'RewardPool' | 'UserExperience' | 'NFTCreatorCollection'
+export type CoreContractName =
+  | 'NFTMarketplaceHub'
+  | 'PlatformRewardPool'
+  | 'UserExperiencePoints'
+  | 'NFTCreatorCollection'
+
 export type ContractName = CoreContractName | 'explorer'
 
 export type ChainAddresses = {

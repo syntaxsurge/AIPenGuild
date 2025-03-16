@@ -16,8 +16,8 @@ export default function DashboardPage() {
   const publicClient = usePublicClient();
   const { toast } = useToast();
 
-  const userExperience = useContract("UserExperience");
-  const nftMarketplace = useContract("NFTMarketplace");
+  const userExperiencePoints = useContract("UserExperiencePoints");
+  const nftMarketplaceHub = useContract("NFTMarketplaceHub");
 
   const [xp, setXp] = useState<bigint | null>(null);
   const [loadingXp, setLoadingXp] = useState(false);
@@ -33,10 +33,10 @@ export default function DashboardPage() {
     if (
       !address ||
       !publicClient ||
-        !userExperience?.address ||
-        !userExperience?.abi ||
-        !nftMarketplace?.address ||
-        !nftMarketplace?.abi
+        !userExperiencePoints?.address ||
+        !userExperiencePoints?.abi ||
+        !nftMarketplaceHub?.address ||
+        !nftMarketplaceHub?.abi
     ) {
       return;
     }
@@ -52,14 +52,14 @@ export default function DashboardPage() {
         // Parallel fetch: XP + total item count
         const [userXp, totalItemId] = await Promise.all([
           publicClient?.readContract({
-            address: userExperience?.address as `0x\${string}`,
-            abi: userExperience?.abi,
+            address: userExperiencePoints?.address as `0x\${string}`,
+            abi: userExperiencePoints?.abi,
             functionName: "userExperience",
             args: [address],
           }) as Promise<bigint>,
           publicClient?.readContract({
-            address: nftMarketplace?.address as `0x\${string}`,
-            abi: nftMarketplace?.abi,
+            address: nftMarketplaceHub?.address as `0x\${string}`,
+            abi: nftMarketplaceHub?.abi,
             functionName: "getLatestItemId",
             args: [],
           }) as Promise<bigint>,
@@ -81,16 +81,16 @@ export default function DashboardPage() {
 
                 // ownerOf
                 const owner = await publicClient?.readContract({
-                  address: nftMarketplace?.address as `0x\${string}`,
-                  abi: nftMarketplace?.abi,
+                  address: nftMarketplaceHub?.address as `0x\${string}`,
+                  abi: nftMarketplaceHub?.abi,
                   functionName: "ownerOf",
                   args: [itemIndex],
                 }) as `0x${string}`;
 
                 // itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
                 const data = await publicClient?.readContract({
-                  address: nftMarketplace?.address as `0x\${string}`,
-                  abi: nftMarketplace?.abi,
+                  address: nftMarketplaceHub?.address as `0x\${string}`,
+                  abi: nftMarketplaceHub?.abi,
                   functionName: "nftData",
                   args: [itemIndex],
                 }) as [bigint, string, bigint, boolean, bigint, string];
@@ -136,7 +136,7 @@ export default function DashboardPage() {
     }
 
     fetchAllData();
-  }, [address, publicClient, userExperience, nftMarketplace, toast]);
+  }, [address, publicClient, userExperiencePoints, nftMarketplaceHub, toast]);
 
   const userTitle = getUserTitle(Number(xp!));
 

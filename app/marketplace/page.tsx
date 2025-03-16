@@ -56,7 +56,7 @@ export default function MarketplacePage() {
 
   // Contract references
   const publicClient = usePublicClient()
-  const nftMarketplace = useContract("NFTMarketplace")
+  const nftMarketplaceHub = useContract("NFTMarketplaceHub")
 
   // On-page states
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -129,15 +129,15 @@ export default function MarketplacePage() {
   }
 
   async function fetchMarketplaceItems(forceRefresh?: boolean) {
-    if (!nftMarketplace?.address || !nftMarketplace?.abi || !publicClient) return
+    if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi || !publicClient) return
     if (!forceRefresh && fetchedRef.current) return
     fetchedRef.current = true
 
     setIsLoading(true)
     try {
       const totalItemId = await publicClient.readContract({
-        address: nftMarketplace.address as `0x${string}`,
-        abi: nftMarketplace.abi,
+        address: nftMarketplaceHub.address as `0x${string}`,
+        abi: nftMarketplaceHub.abi,
         functionName: "getLatestItemId",
         args: [],
       })
@@ -148,16 +148,16 @@ export default function MarketplacePage() {
         try {
           // read NFT item data
           const data = await publicClient.readContract({
-            address: nftMarketplace.address as `0x${string}`,
-            abi: nftMarketplace.abi,
+            address: nftMarketplaceHub.address as `0x${string}`,
+            abi: nftMarketplaceHub.abi,
             functionName: "nftData",
             args: [i],
           }) as [bigint, string, bigint, boolean, bigint, string]
 
           // read owner
           const owner = await publicClient.readContract({
-            address: nftMarketplace.address as `0x${string}`,
-            abi: nftMarketplace.abi,
+            address: nftMarketplaceHub.address as `0x${string}`,
+            abi: nftMarketplaceHub.abi,
             functionName: "ownerOf",
             args: [i],
           }) as `0x${string}`
@@ -186,7 +186,7 @@ export default function MarketplacePage() {
   useEffect(() => {
     fetchMarketplaceItems()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nftMarketplace, publicClient])
+  }, [nftMarketplaceHub, publicClient])
 
   // Compute final filtered array
   const filteredItems = React.useMemo(() => {
@@ -228,10 +228,10 @@ export default function MarketplacePage() {
         })
         return
       }
-      if (!nftMarketplace?.address) {
+      if (!nftMarketplaceHub?.address) {
         toast({
           title: "No Contract Found",
-          description: "NFTMarketplace contract not found. Check your chain or config.",
+          description: "NFTMarketplaceHub contract not found. Check your chain or config.",
           variant: "destructive",
         })
         return
@@ -257,7 +257,7 @@ export default function MarketplacePage() {
       }
 
       await writeBuyContract({
-        address: nftMarketplace.address as `0x${string}`,
+        address: nftMarketplaceHub.address as `0x${string}`,
         abi: [purchaseABI],
         functionName: "purchaseNFTItem",
         args: [item.itemId],

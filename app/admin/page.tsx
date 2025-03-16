@@ -20,7 +20,7 @@ export default function AdminPage() {
   const { toast } = useToast()
 
   // Contract config
-  const rewardPool = useContract("RewardPool")
+  const platformRewardPool = useContract("PlatformRewardPool")
 
   // State to track if the user is the owner
   const [isOwner, setIsOwner] = useState(false)
@@ -55,15 +55,15 @@ export default function AdminPage() {
   // 1) Check ownership (once address is known)
   useEffect(() => {
     async function checkOwner() {
-      if (!rewardPool?.address || !rewardPool?.abi || !publicClient || !wagmiAddress) {
+      if (!platformRewardPool?.address || !platformRewardPool?.abi || !publicClient || !wagmiAddress) {
         setIsOwner(false)
         setOwnerLoading(false)
         return
       }
       try {
         const contractOwner = await publicClient.readContract({
-          address: rewardPool.address as `0x${string}`,
-          abi: rewardPool.abi,
+          address: platformRewardPool.address as `0x${string}`,
+          abi: platformRewardPool.abi,
           functionName: "owner",
           args: []
         }) as `0x${string}`
@@ -82,17 +82,17 @@ export default function AdminPage() {
       setIsOwner(false)
       setOwnerLoading(false)
     }
-  }, [rewardPool, publicClient, wagmiAddress, isDisconnected])
+  }, [platformRewardPool, publicClient, wagmiAddress, isDisconnected])
 
   // 2) Load pool balance
   useEffect(() => {
     async function loadBalance() {
-      if (!rewardPool?.address || !rewardPool?.abi || !publicClient) return
+      if (!platformRewardPool?.address || !platformRewardPool?.abi || !publicClient) return
       try {
         setLoadingBalance(true)
         const val = await publicClient.readContract({
-          address: rewardPool.address as `0x${string}`,
-          abi: rewardPool.abi,
+          address: platformRewardPool.address as `0x${string}`,
+          abi: platformRewardPool.abi,
           functionName: "getPoolBalance",
           args: []
         })
@@ -112,10 +112,10 @@ export default function AdminPage() {
     }
 
     // Load balance once user possibly is the owner or not
-    if (!isDisconnected && rewardPool?.address) {
+    if (!isDisconnected && platformRewardPool?.address) {
       loadBalance()
     }
-  }, [rewardPool?.address, isDisconnected, toast, publicClient])
+  }, [platformRewardPool?.address, isDisconnected, toast, publicClient])
 
   // 3) Watch withdrawal transaction events
   useEffect(() => {
@@ -135,12 +135,12 @@ export default function AdminPage() {
       if (!loadingBalance) {
         // Trigger a fresh load
         (async () => {
-          if (rewardPool?.address && rewardPool?.abi && publicClient) {
+          if (platformRewardPool?.address && platformRewardPool?.abi && publicClient) {
             try {
               setLoadingBalance(true)
               const val = await publicClient.readContract({
-                address: rewardPool.address as `0x\${string}`,
-                abi: rewardPool.abi,
+                address: platformRewardPool.address as `0x\${string}`,
+                abi: platformRewardPool.abi,
                 functionName: "getPoolBalance",
                 args: []
               })
@@ -160,7 +160,7 @@ export default function AdminPage() {
         variant: "destructive"
       })
     }
-  }, [isTxLoading, isTxSuccess, isTxError, withdrawError, txError, toast, rewardPool?.address, rewardPool?.abi, publicClient, loadingBalance])
+  }, [isTxLoading, isTxSuccess, isTxError, withdrawError, txError, toast, platformRewardPool?.address, platformRewardPool?.abi, publicClient, loadingBalance])
 
   // 4) If user is not the owner (and done loading), redirect
   //    We must declare the effect unconditionally, so the hooks order remains stable.
@@ -173,10 +173,10 @@ export default function AdminPage() {
   // 5) Handle withdrawal
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!rewardPool?.address || !rewardPool?.abi) {
+    if (!platformRewardPool?.address || !platformRewardPool?.abi) {
       toast({
         title: "Error",
-        description: "Unable to find RewardPool contract or ABI.",
+        description: "Unable to find PlatformRewardPool contract or ABI.",
         variant: "destructive"
       })
       return
@@ -203,7 +203,7 @@ export default function AdminPage() {
 
     try {
       await writeWithdrawContract({
-        address: rewardPool.address as `0x\${string}`,
+        address: platformRewardPool.address as `0x\${string}`,
         abi: [withdrawABI],
         functionName: "withdrawPoolFunds",
         args: [weiAmount]

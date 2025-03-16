@@ -4,28 +4,28 @@ async function main() {
   const [deployer] = await ethers.getSigners()
   console.log("Deploying contracts with account:", deployer.address)
 
-  // Deploy RewardPool
-  const RewardPool = await ethers.getContractFactory("RewardPool")
-  const rewardPool = await RewardPool.deploy()
+  // Deploy PlatformRewardPool
+  const PlatformRewardPool = await ethers.getContractFactory("PlatformRewardPool")
+  const rewardPool = await PlatformRewardPool.deploy()
   await rewardPool.waitForDeployment()
-  console.log("RewardPool deployed to:", rewardPool.target)
+  console.log("PlatformRewardPool deployed to:", rewardPool.target)
 
-  // Deploy UserExperience
-  const UserExperience = await ethers.getContractFactory("UserExperience")
-  const experience = await UserExperience.deploy()
+  // Deploy UserExperiencePoints
+  const UserExperiencePoints = await ethers.getContractFactory("UserExperiencePoints")
+  const experience = await UserExperiencePoints.deploy()
   await experience.waitForDeployment()
-  console.log("UserExperience deployed to:", experience.target)
+  console.log("UserExperiencePoints deployed to:", experience.target)
 
-  // Deploy NFTMarketplace with rewardPool and experience addresses
-  const NFTMarketplace = await ethers.getContractFactory("NFTMarketplace")
-  const marketplace = await NFTMarketplace.deploy(
+  // Deploy NFTMarketplaceHub with rewardPool and experience addresses
+  const NFTMarketplaceHub = await ethers.getContractFactory("NFTMarketplaceHub")
+  const marketplace = await NFTMarketplaceHub.deploy(
     rewardPool.target,
     experience.target,
     "AIPenGuild",
     "AIPEN"
   )
   await marketplace.waitForDeployment()
-  console.log("NFTMarketplace deployed to:", marketplace.target)
+  console.log("NFTMarketplaceHub deployed to:", marketplace.target)
 
   // Deploy NFTCreatorCollection with initial parameters and the marketplace address
   const NFTCreatorCollection = await ethers.getContractFactory("NFTCreatorCollection")
@@ -40,10 +40,10 @@ async function main() {
   console.log("NFTCreatorCollection deployed to:", creatorCollection.target)
 
   // Now set collection #0 in the marketplace
-  console.log("Registering primary collection 0 with NFTMarketplace...")
+  console.log("Registering primary collection 0 with NFTMarketplaceHub...")
   const setCollectionTx = await marketplace.setNFTCollection(0, creatorCollection.target)
   await setCollectionTx.wait()
-  console.log("Registered collection 0 ->", creatorCollection.target, " in NFTMarketplace!")
+  console.log("Registered collection 0 ->", creatorCollection.target, " in NFTMarketplaceHub!")
 }
 
 main()

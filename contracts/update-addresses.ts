@@ -10,14 +10,14 @@ async function updateAddresses() {
     const addresses: { [key: string]: string } = {}
 
     for (const line of lines) {
-      if (line.includes("RewardPool deployed to:")) {
-        addresses.RewardPool = line.split("RewardPool deployed to:")[1].trim()
+      if (line.includes("PlatformRewardPool deployed to:")) {
+        addresses.PlatformRewardPool = line.split("PlatformRewardPool deployed to:")[1].trim()
       }
-      if (line.includes("UserExperience deployed to:")) {
-        addresses.UserExperience = line.split("UserExperience deployed to:")[1].trim()
+      if (line.includes("UserExperiencePoints deployed to:")) {
+        addresses.UserExperiencePoints = line.split("UserExperiencePoints deployed to:")[1].trim()
       }
-      if (line.includes("NFTMarketplace deployed to:")) {
-        addresses.NFTMarketplace = line.split("NFTMarketplace deployed to:")[1].trim()
+      if (line.includes("NFTMarketplaceHub deployed to:")) {
+        addresses.NFTMarketplaceHub = line.split("NFTMarketplaceHub deployed to:")[1].trim()
       }
       if (line.includes("NFTCreatorCollection deployed to:")) {
         addresses.NFTCreatorCollection = line.split("NFTCreatorCollection deployed to:")[1].trim()

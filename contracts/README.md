@@ -65,9 +65,9 @@ This folder contains the smart contracts and HardHat configuration for AIPenGuil
    ```
 
 ## Contract Overview
-- **RewardPool.sol**: Manages the reward pool for the platform.
-- **UserExperience.sol**: Handles the assignment and modification of experience points.
-- **NFTMarketplace.sol**: NFT exchange contract that manages minting, listing, and trading of NFTs.
+- **PlatformRewardPool.sol**: Manages the reward pool for the platform.
+- **UserExperiencePoints.sol**: Handles the assignment and modification of experience points.
+- **NFTMarketplaceHub.sol**: NFT exchange contract that manages minting, listing, and trading of NFTs.
 - **NFTCreatorCollection.sol**: NFT collection contract for creators to launch and manage their collections.
 
 For further details on contract interactions, refer to the in-code documentation.
