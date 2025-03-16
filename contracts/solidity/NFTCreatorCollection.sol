@@ -6,7 +6,7 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface INFTMarketplace {
+interface INFTMarketplaceHub {
     function generateNFTItem(address recipient, uint256 collectionId, string memory imageUrl) external payable;
     function getRewardPool() external view returns (address);
     function setNFTCollection(uint256 collectionId, address collectionAddr) external;
@@ -90,7 +90,7 @@ contract NFTCreatorCollection is Ownable {
 
         // Distribute platform fee (10%)
         uint256 platformFee = (msg.value * 10) / 100;
-        address rewardPool = INFTMarketplace(marketplace).getRewardPool();
+        address rewardPool = INFTMarketplaceHub(marketplace).getRewardPool();
 
         (bool feeSuccess, ) = rewardPool.call{value: platformFee}("");
         require(feeSuccess, "Fee payment failed");
@@ -98,7 +98,7 @@ contract NFTCreatorCollection is Ownable {
         (bool creatorPaid, ) = payable(owner()).call{value: msg.value - platformFee}("");
         require(creatorPaid, "Creator payment failed");
 
-        INFTMarketplace(marketplace).generateNFTItem(msg.sender, collectionId, imageUrl);
+        INFTMarketplaceHub(marketplace).generateNFTItem(msg.sender, collectionId, imageUrl);
         info.currentSupply++;
     }
 }

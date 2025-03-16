@@ -6,7 +6,7 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RewardPool is Ownable {
+contract PlatformRewardPool is Ownable {
     event PoolDeposit(address indexed depositor, uint256 amount);
     event PoolWithdrawal(address indexed recipient, uint256 amount);
 

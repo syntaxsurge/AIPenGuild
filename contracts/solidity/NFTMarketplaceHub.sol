@@ -7,7 +7,7 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface IUserExperience {
+interface IUserExperiencePoints {
     function assignRandomXP(uint256 itemId) external returns (uint256);
     function modifyUserXP(address user, uint256 itemId, bool add) external;
 }
@@ -16,7 +16,7 @@ interface INFTCreatorCollection {
     function owner() external view returns (address);
 }
 
-contract NFTMarketplace is ERC721URIStorage, Ownable {
+contract NFTMarketplaceHub is ERC721URIStorage, Ownable {
     uint256 private itemCounter;
     address public immutable rewardPool;
     address public immutable experienceModule;
@@ -55,8 +55,8 @@ contract NFTMarketplace is ERC721URIStorage, Ownable {
         uint256 newId = _nextItemId();
         _safeMint(recipient, newId);
 
-        uint256 xpAssigned = IUserExperience(experienceModule).assignRandomXP(newId);
-        IUserExperience(experienceModule).modifyUserXP(recipient, newId, true);
+        uint256 xpAssigned = IUserExperiencePoints(experienceModule).assignRandomXP(newId);
+        IUserExperiencePoints(experienceModule).modifyUserXP(recipient, newId, true);
 
         address colOwner = INFTCreatorCollection(nftCollections[collectionId]).owner();
 
@@ -95,8 +95,8 @@ contract NFTMarketplace is ERC721URIStorage, Ownable {
         require(msg.value >= nftData[itemId].salePrice, "Payment not sufficient");
 
         address seller = ownerOf(itemId);
-        IUserExperience(experienceModule).modifyUserXP(seller, itemId, false);
-        IUserExperience(experienceModule).modifyUserXP(msg.sender, itemId, true);
+        IUserExperiencePoints(experienceModule).modifyUserXP(seller, itemId, false);
+        IUserExperiencePoints(experienceModule).modifyUserXP(msg.sender, itemId, true);
 
         _transfer(seller, msg.sender, itemId);
 

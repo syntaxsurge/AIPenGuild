@@ -6,7 +6,7 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract UserExperience is Ownable {
+contract UserExperiencePoints is Ownable {
     mapping(address => uint256) public userExperience;
     mapping(uint256 => uint256) public itemExperience;
     mapping(address => mapping(uint256 => bool)) public hasGainedXP;
