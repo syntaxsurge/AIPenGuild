@@ -32,7 +32,7 @@ export default function MarketplacePage() {
   const { toast } = useToast()
   const { address: wagmiAddress } = useAccount()
 
-  // For the buy transaction (shared across all items, but we’ll track which item locally).
+  // For the buy transaction (shared across all items)
   const {
     data: buyWriteData,
     error: buyError,
@@ -51,10 +51,29 @@ export default function MarketplacePage() {
     hash: buyWriteData ?? undefined,
   })
 
-  // Local state to track which item is being purchased.
+  // Local state to track which item is being purchased
   const [buyingItemId, setBuyingItemId] = useState<bigint | null>(null)
 
-  // Watch buy transaction states for toast notifications and to reset local loading state.
+  // Contract references
+  const publicClient = usePublicClient()
+  const nftMarketplace = useContract("NFTMarketplace")
+
+  // On-page states
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [listedItems, setListedItems] = useState<MarketplaceItem[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const fetchedRef = useRef(false)
+
+  // Filter states
+  const [tempSearch, setTempSearch] = useState("")
+  const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10])
+
+  // Final filter states
+  const [searchTerm, setSearchTerm] = useState("")
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10])
+
+  // Watch transaction states
   useEffect(() => {
     if (isBuyTxLoading) {
       toast({
@@ -67,107 +86,82 @@ export default function MarketplacePage() {
         title: "Transaction Successful!",
         description: "You have purchased the NFT successfully!",
       })
-      // Once done, reset local state
       setBuyingItemId(null)
-      // Possibly refetch items here
+      // Reload the marketplace items
       fetchMarketplaceItems(true)
     }
     if (isBuyTxError) {
       toast({
         title: "Transaction Failed",
         description:
-          buyTxReceiptError?.message ||
-          buyError?.message ||
-          "Something went wrong.",
+          buyTxReceiptError?.message || buyError?.message || "Something went wrong.",
         variant: "destructive",
       })
-      // Reset local state on error
       setBuyingItemId(null)
     }
-  }, [isBuyTxLoading, isBuyTxSuccess, isBuyTxError, buyTxReceiptError, buyError, toast])
+  }, [
+    isBuyTxLoading,
+    isBuyTxSuccess,
+    isBuyTxError,
+    buyTxReceiptError,
+    buyError,
+    toast
+  ])
 
-  // IMPORTANT: Handle user rejection in MetaMask or immediate errors from `writeBuyContract`
+  // Handle user rejection in MetaMask or immediate errors from `writeBuyContract`
   useEffect(() => {
     if (buyError) {
-      // The user might have canceled the transaction or an error occurred
       setBuyingItemId(null)
       toast({
         title: "Transaction Rejected",
         description:
-          buyError.message ||
-          "User canceled transaction in wallet or an error occurred.",
+          buyError.message || "User canceled transaction or an error occurred.",
         variant: "destructive",
       })
     }
   }, [buyError, toast])
 
-  const publicClient = usePublicClient()
-  const aiNftExchange = useContract("AINFTExchange")
-
-  // Toggle between grid or list layout
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-
-  // Sidebar open for mobile
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  // Real data from on-chain
-  const [listedItems, setListedItems] = useState<MarketplaceItem[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const fetchedRef = useRef(false)
-
-  // Filter states for user input
-  const [tempSearch, setTempSearch] = useState("")
-  const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10])
-
-  // Final filter states
-  const [searchTerm, setSearchTerm] = useState("")
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10])
-
   // "Apply Filters" merges all temp states into final states
   function handleApplyFilters() {
     setSearchTerm(tempSearch)
     setPriceRange(tempPriceRange)
-    // Close sidebar if on mobile
     setSidebarOpen(false)
   }
 
-  // Fetch items from the exchange
   async function fetchMarketplaceItems(forceRefresh?: boolean) {
-    if (!aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) return
-    // avoid repeated fetch, unless forced
+    if (!nftMarketplace?.address || !nftMarketplace?.abi || !publicClient) return
     if (!forceRefresh && fetchedRef.current) return
     fetchedRef.current = true
 
     setIsLoading(true)
     try {
       const totalItemId = await publicClient.readContract({
-        address: aiNftExchange.address as `0x${string}`,
-        abi: aiNftExchange.abi,
+        address: nftMarketplace.address as `0x${string}`,
+        abi: nftMarketplace.abi,
         functionName: "getLatestItemId",
         args: [],
       })
       if (typeof totalItemId !== "bigint") return
 
       const newListed: MarketplaceItem[] = []
-      for (let i = BigInt(1); i <= totalItemId; i++) {
+      for (let i = 1n; i <= totalItemId; i++) {
         try {
-          // itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
+          // read NFT item data
           const data = await publicClient.readContract({
-            address: aiNftExchange.address as `0x${string}`,
-            abi: aiNftExchange.abi,
-            functionName: "itemData",
+            address: nftMarketplace.address as `0x${string}`,
+            abi: nftMarketplace.abi,
+            functionName: "nftData",
             args: [i],
           }) as [bigint, string, bigint, boolean, bigint, string]
 
-          // fetch the owner
+          // read owner
           const owner = await publicClient.readContract({
-            address: aiNftExchange.address as `0x${string}`,
-            abi: aiNftExchange.abi,
+            address: nftMarketplace.address as `0x${string}`,
+            abi: nftMarketplace.abi,
             functionName: "ownerOf",
             args: [i],
           }) as `0x${string}`
 
-          // We only want items that exist. If it doesn't, readContract will fail => catch
           newListed.push({
             itemId: data[0],
             creator: data[1],
@@ -177,7 +171,7 @@ export default function MarketplacePage() {
             resourceUrl: data[5],
             owner,
           })
-        } catch (_err) {
+        } catch {
           // skip invalid
         }
       }
@@ -192,18 +186,17 @@ export default function MarketplacePage() {
   useEffect(() => {
     fetchMarketplaceItems()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aiNftExchange, publicClient])
+  }, [nftMarketplace, publicClient])
 
-  // Compute the final filtered array
+  // Compute final filtered array
   const filteredItems = React.useMemo(() => {
     return listedItems.filter((item) => {
-      // Price range filter
+      // Price range check
       const numericPrice = Number(item.salePrice) / 1e18
       if (numericPrice < priceRange[0] || numericPrice > priceRange[1]) {
         return false
       }
-
-      // search filter => check if itemId or resourceUrl
+      // Search filter check
       const itemIdStr = String(item.itemId)
       const lowerSearch = searchTerm.toLowerCase()
       const lowerResource = item.resourceUrl.toLowerCase()
@@ -235,10 +228,10 @@ export default function MarketplacePage() {
         })
         return
       }
-      if (!aiNftExchange) {
+      if (!nftMarketplace?.address) {
         toast({
           title: "No Contract Found",
-          description: "AINFTExchange contract not found. Check your chain or config.",
+          description: "NFTMarketplace contract not found. Check your chain or config.",
           variant: "destructive",
         })
         return
@@ -253,23 +246,22 @@ export default function MarketplacePage() {
         return
       }
 
-      // Mark this item as being purchased, so only its button changes to "Processing..."
       setBuyingItemId(item.itemId)
 
-      const purchaseNFT = {
-        name: "purchaseAIItem",
+      const purchaseABI = {
+        name: "purchaseNFTItem",
         type: "function",
         stateMutability: "payable",
         inputs: [{ name: "itemId", type: "uint256" }],
-        outputs: [],
+        outputs: []
       }
-      // send item.salePrice as value
+
       await writeBuyContract({
-        address: aiNftExchange.address as `0x${string}`,
-        abi: [purchaseNFT],
-        functionName: "purchaseAIItem",
+        address: nftMarketplace.address as `0x${string}`,
+        abi: [purchaseABI],
+        functionName: "purchaseNFTItem",
         args: [item.itemId],
-        value: item.salePrice,
+        value: item.salePrice
       })
 
       toast({
@@ -277,7 +269,6 @@ export default function MarketplacePage() {
         description: "Transaction submitted... awaiting confirmation.",
       })
     } catch (err: any) {
-      // Reset local state if the transaction call fails immediately
       setBuyingItemId(null)
       toast({
         title: "Purchase Failure",
@@ -291,15 +282,19 @@ export default function MarketplacePage() {
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
       {/* Sidebar (Filters) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:relative md:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:relative md:translate-x-0`}
       >
         <Card className="h-full border-r border-border rounded-none">
           <CardHeader className="p-4 border-b border-border bg-secondary text-secondary-foreground">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-bold">Filters</CardTitle>
-              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setSidebarOpen(false)}
+              >
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -318,21 +313,20 @@ export default function MarketplacePage() {
               </div>
             </div>
 
-            {/* Accordion Filter for Price Range only */}
+            {/* Accordion Filter for Price Range */}
             <Accordion type="multiple" className="w-full">
-              {/* Price */}
               <AccordionItem value="price">
                 <AccordionTrigger>Price Range</AccordionTrigger>
                 <AccordionContent>
-                  <div className="space-y-4 mt-2">
+                  <div className="mt-2 space-y-4">
                     <DualRangeSlider
                       min={0}
                       max={10}
                       step={0.1}
                       value={tempPriceRange}
-                      onValueChange={(value) => setTempPriceRange([value[0], value[1]])}
+                      onValueChange={(val) => setTempPriceRange([val[0], val[1]])}
                     />
-                    <div className="flex justify-between gap-2">
+                    <div className="flex justify-between gap-2 text-sm">
                       <Input
                         type="number"
                         step="0.1"
@@ -370,7 +364,7 @@ export default function MarketplacePage() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col px-4 py-6 sm:px-6 md:px-8">
-        {/* Header / Links */}
+        {/* Header */}
         <header className="mb-4 flex items-center justify-between flex-wrap gap-2">
           <h1 className="text-3xl font-extrabold text-primary">AIPenGuild Marketplace</h1>
           <div className="flex items-center gap-2">
@@ -382,13 +376,18 @@ export default function MarketplacePage() {
             <Link href="/mint">
               <Button size="sm">Generate AI NFT</Button>
             </Link>
-            <Button variant="outline" size="sm" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="md:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
               Filters
             </Button>
           </div>
         </header>
 
-        {/* View Mode toggle */}
+        {/* View Mode Toggle */}
         <div className="mb-6 flex items-center justify-end gap-2">
           <Button
             variant={viewMode === "grid" ? "default" : "ghost"}
@@ -413,7 +412,7 @@ export default function MarketplacePage() {
             <span>Loading marketplace items...</span>
           </div>
         ) : filteredItems.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground mt-16">
+          <p className="mt-16 text-center text-sm text-muted-foreground">
             No items found for the given filters.
           </p>
         ) : (
@@ -421,7 +420,8 @@ export default function MarketplacePage() {
             {viewMode === "grid" ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                 {filteredItems.map((item) => {
-                  const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
+                  const isOwner =
+                    wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
                   return (
                     <div
                       key={String(item.itemId)}
@@ -431,8 +431,10 @@ export default function MarketplacePage() {
                         <MarketplaceImage resourceUrl={item.resourceUrl} />
                       </div>
                       <div className="mt-3 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold">AIPenGuild NFT #{String(item.itemId)}</h2>
-                        <span className="text-xs text-primary font-bold">
+                        <h2 className="text-sm font-semibold">
+                          AIPenGuild NFT #{String(item.itemId)}
+                        </h2>
+                        <span className="text-xs font-bold text-primary">
                           {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
                         </span>
                       </div>
@@ -449,7 +451,7 @@ export default function MarketplacePage() {
                         >
                           {buyingItemId === item.itemId ? (
                             <>
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                               Processing...
                             </>
                           ) : (
@@ -458,12 +460,7 @@ export default function MarketplacePage() {
                         </Button>
                       )}
                       {item.isOnSale && isOwner && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="mt-2 w-full"
-                          disabled
-                        >
+                        <Button variant="secondary" size="sm" className="mt-2 w-full" disabled>
                           You own this NFT. You cannot buy it.
                         </Button>
                       )}
@@ -474,7 +471,8 @@ export default function MarketplacePage() {
             ) : (
               <div className="flex flex-col gap-4">
                 {filteredItems.map((item) => {
-                  const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
+                  const isOwner =
+                    wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
                   return (
                     <div
                       key={String(item.itemId)}
@@ -504,7 +502,7 @@ export default function MarketplacePage() {
                           >
                             {buyingItemId === item.itemId ? (
                               <>
-                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                 Processing...
                               </>
                             ) : (
@@ -513,11 +511,7 @@ export default function MarketplacePage() {
                           </Button>
                         )}
                         {item.isOnSale && isOwner && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled
-                          >
+                          <Button variant="secondary" size="sm" disabled>
                             You own this NFT. You cannot buy it.
                           </Button>
                         )}
@@ -535,7 +529,7 @@ export default function MarketplacePage() {
 }
 
 /**
- * Helper to display the NFT image. If IPFS or HTTP, we do <Image> with remote patterns.
+ * Helper component to display the NFT image. If IPFS or HTTP, we do <Image> with remote patterns.
  */
 function MarketplaceImage({ resourceUrl }: { resourceUrl: string }) {
   let imageUrl = resourceUrl

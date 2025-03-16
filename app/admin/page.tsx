@@ -20,7 +20,7 @@ export default function AdminPage() {
   const { toast } = useToast()
 
   // Contract config
-  const aiRewardPool = useContract("AIRewardPool")
+  const rewardPool = useContract("RewardPool")
 
   // State to track if the user is the owner
   const [isOwner, setIsOwner] = useState(false)
@@ -55,15 +55,15 @@ export default function AdminPage() {
   // 1) Check ownership (once address is known)
   useEffect(() => {
     async function checkOwner() {
-      if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient || !wagmiAddress) {
+      if (!rewardPool?.address || !rewardPool?.abi || !publicClient || !wagmiAddress) {
         setIsOwner(false)
         setOwnerLoading(false)
         return
       }
       try {
         const contractOwner = await publicClient.readContract({
-          address: aiRewardPool.address as `0x${string}`,
-          abi: aiRewardPool.abi,
+          address: rewardPool.address as `0x${string}`,
+          abi: rewardPool.abi,
           functionName: "owner",
           args: []
         }) as `0x${string}`
@@ -82,17 +82,17 @@ export default function AdminPage() {
       setIsOwner(false)
       setOwnerLoading(false)
     }
-  }, [aiRewardPool, publicClient, wagmiAddress, isDisconnected])
+  }, [rewardPool, publicClient, wagmiAddress, isDisconnected])
 
   // 2) Load pool balance
   useEffect(() => {
     async function loadBalance() {
-      if (!aiRewardPool?.address || !aiRewardPool?.abi || !publicClient) return
+      if (!rewardPool?.address || !rewardPool?.abi || !publicClient) return
       try {
         setLoadingBalance(true)
         const val = await publicClient.readContract({
-          address: aiRewardPool.address as `0x${string}`,
-          abi: aiRewardPool.abi,
+          address: rewardPool.address as `0x${string}`,
+          abi: rewardPool.abi,
           functionName: "getPoolBalance",
           args: []
         })
@@ -112,10 +112,10 @@ export default function AdminPage() {
     }
 
     // Load balance once user possibly is the owner or not
-    if (!isDisconnected && aiRewardPool?.address) {
+    if (!isDisconnected && rewardPool?.address) {
       loadBalance()
     }
-  }, [aiRewardPool?.address, isDisconnected, toast, publicClient])
+  }, [rewardPool?.address, isDisconnected, toast, publicClient])
 
   // 3) Watch withdrawal transaction events
   useEffect(() => {
@@ -135,19 +135,19 @@ export default function AdminPage() {
       if (!loadingBalance) {
         // Trigger a fresh load
         (async () => {
-          if (aiRewardPool?.address && aiRewardPool?.abi && publicClient) {
+          if (rewardPool?.address && rewardPool?.abi && publicClient) {
             try {
               setLoadingBalance(true)
               const val = await publicClient.readContract({
-                address: aiRewardPool.address as `0x${string}`,
-                abi: aiRewardPool.abi,
+                address: rewardPool.address as `0x\${string}`,
+                abi: rewardPool.abi,
                 functionName: "getPoolBalance",
                 args: []
               })
               if (typeof val === "bigint") {
                 setPoolBalance(val)
               }
-            } catch {}
+            } catch { }
             setLoadingBalance(false)
           }
         })()
@@ -160,7 +160,7 @@ export default function AdminPage() {
         variant: "destructive"
       })
     }
-  }, [isTxLoading, isTxSuccess, isTxError, withdrawError, txError, toast, aiRewardPool?.address, aiRewardPool?.abi, publicClient, loadingBalance])
+  }, [isTxLoading, isTxSuccess, isTxError, withdrawError, txError, toast, rewardPool?.address, rewardPool?.abi, publicClient, loadingBalance])
 
   // 4) If user is not the owner (and done loading), redirect
   //    We must declare the effect unconditionally, so the hooks order remains stable.
@@ -173,10 +173,10 @@ export default function AdminPage() {
   // 5) Handle withdrawal
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!aiRewardPool?.address || !aiRewardPool?.abi) {
+    if (!rewardPool?.address || !rewardPool?.abi) {
       toast({
         title: "Error",
-        description: "Unable to find AIRewardPool contract or ABI.",
+        description: "Unable to find RewardPool contract or ABI.",
         variant: "destructive"
       })
       return
@@ -203,7 +203,7 @@ export default function AdminPage() {
 
     try {
       await writeWithdrawContract({
-        address: aiRewardPool.address as `0x${string}`,
+        address: rewardPool.address as `0x\${string}`,
         abi: [withdrawABI],
         functionName: "withdrawPoolFunds",
         args: [weiAmount]

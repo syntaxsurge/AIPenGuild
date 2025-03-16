@@ -11,8 +11,8 @@ import { Loader2 } from "lucide-react"
 import { getUserTitle } from "@/lib/experience"
 
 /**
- * We'll gather addresses by scanning all minted items from the AINFTExchange,
- * read userExperience(address) from AIExperience, store them in a map,
+ * We'll gather addresses by scanning all minted items from the NFTMarketplace,
+ * read userExperience(address) from UserExperience, store them in a map,
  * then show the top 10 addresses with the highest XP. We'll also allow:
  *  - Address search
  *  - XP Range filter
@@ -25,8 +25,8 @@ interface LeaderboardEntry {
 
 export default function LeaderboardPage() {
   const { toast } = useToast()
-  const aiExperience = useContract("AIExperience")
-  const aiExchange = useContract("AINFTExchange")
+  const userExperience = useContract("UserExperience")
+  const nftMarketplace = useContract("NFTMarketplace")
   const publicClient = usePublicClient()
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -36,16 +36,15 @@ export default function LeaderboardPage() {
   // Filter states
   const [addressSearch, setAddressSearch] = useState("")
   const [xpRange, setXpRange] = useState<[number, number]>([0, 500]) // sample default range
-  // We'll store the entire unfiltered result in memory, then filter it in the UI.
 
-  // We'll track minted item owners up to getLatestItemId(), store them in a set, then query XP from AIExperience.
+  // We'll track minted item owners up to getLatestItemId(), store them in a set, then query XP from UserExperience.
   async function loadLeaderboard() {
-    if (!aiExperience || !aiExchange || !publicClient) return
+    if (!userExperience || !nftMarketplace || !publicClient) return
     try {
       setLoading(true)
       const itemCount = await publicClient.readContract({
-        address: aiExchange.address as `0x${string}`,
-        abi: aiExchange.abi,
+        address: nftMarketplace.address as `0x${string}`,
+        abi: nftMarketplace.abi,
         functionName: "getLatestItemId",
         args: []
       })
@@ -55,23 +54,23 @@ export default function LeaderboardPage() {
       for (let i = 1n; i <= itemCount; i++) {
         try {
           const owner = await publicClient.readContract({
-            address: aiExchange.address as `0x${string}`,
-            abi: aiExchange.abi,
+            address: nftMarketplace.address as `0x${string}`,
+            abi: nftMarketplace.abi,
             functionName: "ownerOf",
             args: [i]
-          }) as `0x${string}` // FIX: cast as `0x${string}`
+          }) as `0x${string}`
 
           ownersSet.add(owner.toLowerCase())
         } catch {}
       }
 
-      // Now we have all owners. For each, read userExperience from AIExperience
+      // Now we have all owners. For each, read userExperience from UserExperience
       const results: LeaderboardEntry[] = []
       for (const addr of ownersSet) {
         try {
           const xpVal = await publicClient.readContract({
-            address: aiExperience.address as `0x${string}`,
-            abi: aiExperience.abi,
+            address: userExperience.address as `0x${string}`,
+            abi: userExperience.abi,
             functionName: "userExperience",
             args: [addr]
           })
@@ -191,12 +190,12 @@ export default function LeaderboardPage() {
                         const numericXp = Number(entry.xp);
                         const userTitle = getUserTitle(numericXp);
                         let colorClass = "text-muted-foreground";
-  
+
                         if (numericXp >= 5000) colorClass = "text-green-600";
                         else if (numericXp >= 3000) colorClass = "text-blue-600";
                         else if (numericXp >= 1000) colorClass = "text-purple-600";
                         else if (numericXp >= 200) colorClass = "text-yellow-600";
-  
+
                         return <span className={colorClass}>{userTitle}</span>;
                       })()}
                     </td>

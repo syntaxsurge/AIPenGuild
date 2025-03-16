@@ -26,7 +26,7 @@ async function uploadFileToIpfs(file: File): Promise<string> {
 export default function MintNFTPage() {
   const { address: wagmiAddress } = useAccount()
   const { toast } = useToast()
-  const creatorCollection = useContract("CreatorCollection")
+  const creatorCollection = useContract("NFTCreatorCollection")
 
   const {
     data: writeData,
@@ -121,7 +121,7 @@ export default function MintNFTPage() {
       if (!creatorCollection) {
         toast({
           title: "No Contract Found",
-          description: "CreatorCollection contract not found. Check your chain or config.",
+          description: "NFTCreatorCollection contract not found. Check your chain or config.",
           variant: "destructive"
         })
         return
@@ -170,7 +170,7 @@ export default function MintNFTPage() {
       }
 
       await writeContract({
-        address: creatorCollection?.address as `0x${string}`,
+        address: creatorCollection?.address as `0x\${string}`,
         abi: [mintFromCollectionABI],
         functionName: "mintFromCollection",
         args: [0, finalImageUrl],

@@ -1,4 +1,4 @@
-export type CoreContractName = 'AINFTExchange' | 'AIRewardPool' | 'AIExperience' | 'CreatorCollection'
+export type CoreContractName = 'NFTMarketplace' | 'RewardPool' | 'UserExperience' | 'NFTCreatorCollection'
 export type ContractName = CoreContractName | 'explorer'
 
 export type ChainAddresses = {

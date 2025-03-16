@@ -30,7 +30,7 @@ export default function MyNFTsPage() {
   const { address: wagmiAddress } = useAccount()
   const publicClient = usePublicClient()
   const { toast } = useToast()
-  const aiNftExchange = useContract("AINFTExchange")
+  const nftMarketplace = useContract("NFTMarketplace")
 
   // For listing
   const {
@@ -126,10 +126,10 @@ export default function MyNFTsPage() {
   useEffect(() => {
     async function fetchTokenCount() {
       try {
-        if (!aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) return
+        if (!nftMarketplace?.address || !nftMarketplace?.abi || !publicClient) return
         const val = await publicClient.readContract({
-          address: aiNftExchange.address as `0x${string}`,
-          abi: aiNftExchange.abi,
+          address: nftMarketplace.address as `0x${string}`,
+          abi: nftMarketplace.abi,
           functionName: "getLatestItemId",
           args: []
         })
@@ -140,15 +140,15 @@ export default function MyNFTsPage() {
         console.error("Error reading getLatestItemId:", err)
       }
     }
-    if (wagmiAddress && aiNftExchange?.address) {
+    if (wagmiAddress && nftMarketplace?.address) {
       fetchTokenCount()
     }
-  }, [wagmiAddress, aiNftExchange, publicClient])
+  }, [wagmiAddress, nftMarketplace, publicClient])
 
   // 2) Fetch the user’s owned tokens
   useEffect(() => {
     async function fetchOwnedNFTs() {
-      if (!wagmiAddress || !currentTokenId || !aiNftExchange?.address || !aiNftExchange?.abi || !publicClient) {
+      if (!wagmiAddress || !currentTokenId || !nftMarketplace?.address || !nftMarketplace?.abi || !publicClient) {
         return
       }
       try {
@@ -161,17 +161,17 @@ export default function MyNFTsPage() {
         for (let i = 1; i <= totalMinted; i++) {
           try {
             const owner = await publicClient.readContract({
-              address: aiNftExchange.address as `0x${string}`,
-              abi: aiNftExchange.abi,
+              address: nftMarketplace.address as `0x\${string}`,
+              abi: nftMarketplace.abi,
               functionName: "ownerOf",
               args: [BigInt(i)]
-            }) as `0x${string}`
+            }) as `0x\${string}`
 
             if (owner.toLowerCase() === wagmiAddress.toLowerCase()) {
               const details = await publicClient.readContract({
-                address: aiNftExchange.address as `0x${string}`,
-                abi: aiNftExchange.abi,
-                functionName: "itemData",
+                address: nftMarketplace.address as `0x\${string}`,
+                abi: nftMarketplace.abi,
+                functionName: "nftData",
                 args: [BigInt(i)]
               }) as [bigint, string, bigint, boolean, bigint, string]
 
@@ -195,7 +195,7 @@ export default function MyNFTsPage() {
       }
     }
     fetchOwnedNFTs()
-  }, [wagmiAddress, currentTokenId, aiNftExchange, publicClient])
+  }, [wagmiAddress, currentTokenId, nftMarketplace, publicClient])
 
   // 3) Load metadata
   useEffect(() => {
@@ -205,7 +205,8 @@ export default function MyNFTsPage() {
 
       for (const nft of ownedNFTs) {
         let finalImageUrl = nft.resourceUrl
-        let name = `AI NFT #${String(nft.itemId)}`
+        let name = `NFT #${String(nft.itemId)
+          }`
         let description = ""
 
         try {
@@ -262,7 +263,7 @@ export default function MyNFTsPage() {
     }
     try {
       const abiListNFT = {
-        name: "listAIItem",
+        name: "listNFTItem",
         type: "function",
         stateMutability: "nonpayable",
         inputs: [
@@ -272,9 +273,9 @@ export default function MyNFTsPage() {
         outputs: []
       }
       await writeListContract({
-        address: aiNftExchange?.address as `0x${string}`,
+        address: nftMarketplace?.address as `0x${string}`,
         abi: [abiListNFT],
-        functionName: "listAIItem",
+        functionName: "listNFTItem",
         args: [selectedNFT.itemId, parseEther(price)]
       })
       // Toast for listing is handled in useEffect
@@ -307,16 +308,16 @@ export default function MyNFTsPage() {
     }
     try {
       const abiUnlistNFT = {
-        name: "unlistAIItem",
+        name: "unlistNFTItem",
         type: "function",
         stateMutability: "nonpayable",
         inputs: [{ name: "itemId", type: "uint256" }],
         outputs: []
       }
       await writeUnlistContract({
-        address: aiNftExchange?.address as `0x${string}`,
+        address: nftMarketplace?.address as `0x${string}`,
         abi: [abiUnlistNFT],
-        functionName: "unlistAIItem",
+        functionName: "unlistNFTItem",
         args: [selectedNFT.itemId]
       })
       // Toast for unlisting is handled in useEffect
@@ -366,20 +367,19 @@ export default function MyNFTsPage() {
                   <div
                     key={String(nft.itemId)}
                     onClick={() => setSelectedNFT(nft)}
-                    className={`cursor-pointer rounded-lg border-2 p-2 transition-transform hover:scale-105 ${
-                      selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
-                    }`}
+                    className={`cursor - pointer rounded - lg border - 2 p - 2 transition - transform hover: scale - 105 ${selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
+                      } `}
                   >
                     <div className="relative h-32 w-full overflow-hidden rounded-md sm:h-36">
                       <Image
                         src={displayUrl}
-                        alt={`NFT #${nft.itemId}`}
+                        alt={`NFT #${nft.itemId} `}
                         fill
                         className="object-cover"
                       />
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground line-clamp-1 font-semibold">
-                      {meta.name || `NFT #${String(nft.itemId)}`}
+                      {meta.name || `NFT #${String(nft.itemId)} `}
                     </p>
                     {nft.isOnSale && (
                       <p className="mt-1 text-xs font-semibold text-orange-600 dark:text-orange-500">

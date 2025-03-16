@@ -4,46 +4,46 @@ async function main() {
   const [deployer] = await ethers.getSigners()
   console.log("Deploying contracts with account:", deployer.address)
 
-  // Deploy AIRewardPool
-  const AIRewardPool = await ethers.getContractFactory("AIRewardPool")
-  const rewardPool = await AIRewardPool.deploy()
+  // Deploy RewardPool
+  const RewardPool = await ethers.getContractFactory("RewardPool")
+  const rewardPool = await RewardPool.deploy()
   await rewardPool.waitForDeployment()
-  console.log("AIRewardPool deployed to:", rewardPool.target)
+  console.log("RewardPool deployed to:", rewardPool.target)
 
-  // Deploy AIExperience
-  const AIExperience = await ethers.getContractFactory("AIExperience")
-  const experience = await AIExperience.deploy()
+  // Deploy UserExperience
+  const UserExperience = await ethers.getContractFactory("UserExperience")
+  const experience = await UserExperience.deploy()
   await experience.waitForDeployment()
-  console.log("AIExperience deployed to:", experience.target)
+  console.log("UserExperience deployed to:", experience.target)
 
-  // Deploy AINFTExchange with rewardPool and experience addresses
-  const AINFTExchange = await ethers.getContractFactory("AINFTExchange")
-  const exchange = await AINFTExchange.deploy(
+  // Deploy NFTMarketplace with rewardPool and experience addresses
+  const NFTMarketplace = await ethers.getContractFactory("NFTMarketplace")
+  const marketplace = await NFTMarketplace.deploy(
     rewardPool.target,
     experience.target,
     "AIPenGuild",
     "AIPEN"
   )
-  await exchange.waitForDeployment()
-  console.log("AINFTExchange deployed to:", exchange.target)
+  await marketplace.waitForDeployment()
+  console.log("NFTMarketplace deployed to:", marketplace.target)
 
-  // Deploy AICreatorCollection with initial parameters and the exchange address
-  const AICreatorCollection = await ethers.getContractFactory("AICreatorCollection")
-  const creatorCollection = await AICreatorCollection.deploy(
+  // Deploy NFTCreatorCollection with initial parameters and the marketplace address
+  const NFTCreatorCollection = await ethers.getContractFactory("NFTCreatorCollection")
+  const creatorCollection = await NFTCreatorCollection.deploy(
     "Default Collection",
     "This is a default NFT collection",
     ethers.parseEther("0.1"),
     100,
-    exchange.target
+    marketplace.target
   )
   await creatorCollection.waitForDeployment()
-  console.log("AICreatorCollection deployed to:", creatorCollection.target)
+  console.log("NFTCreatorCollection deployed to:", creatorCollection.target)
 
-  // Now set collection #0 in the exchange
-  console.log("Registering primary collection 0 with AINFTExchange...")
-  const setAiCollectionTx = await exchange.setAiCollection(0, creatorCollection.target)
-  await setAiCollectionTx.wait()
-  console.log("Registered collection 0 ->", creatorCollection.target, " in AINFTExchange!")
+  // Now set collection #0 in the marketplace
+  console.log("Registering primary collection 0 with NFTMarketplace...")
+  const setCollectionTx = await marketplace.setNFTCollection(0, creatorCollection.target)
+  await setCollectionTx.wait()
+  console.log("Registered collection 0 ->", creatorCollection.target, " in NFTMarketplace!")
 }
 
 main()

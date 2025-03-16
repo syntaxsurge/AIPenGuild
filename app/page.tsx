@@ -260,8 +260,8 @@ export default function Home() {
                       </AccordionTrigger>
                       <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
                         The XP assigned for each newly minted NFT is random (ranging from
-                        1 to 100). This random XP value is stored in the <code>AIExperience</code>
-                        contract. When you own a newly minted NFT, that random XP is credited
+                        1 to 100). This random XP value is stored in the contract. 
+                        When you own a newly minted NFT, that random XP is credited
                         to your address. The XP updates automatically if you transfer or sell
                         the NFT to someone else. It&apos;s all governed by that random assignment in the
                         smart contract.

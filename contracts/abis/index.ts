@@ -1,12 +1,12 @@
-import AINFTExchangeArtifact from "../artifacts/solidity/AINFTExchange.sol/AINFTExchange.json"
-import AIRewardPoolArtifact from "../artifacts/solidity/AIRewardPool.sol/AIRewardPool.json"
-import AIExperienceArtifact from "../artifacts/solidity/AIExperience.sol/AIExperience.json"
-import AICreatorCollectionArtifact from "../artifacts/solidity/AICreatorCollection.sol/AICreatorCollection.json"
+import NFTMarketplaceArtifact from "../artifacts/solidity/NFTMarketplace.sol/NFTMarketplace.json"
+import RewardPoolArtifact from "../artifacts/solidity/RewardPool.sol/RewardPool.json"
+import UserExperienceArtifact from "../artifacts/solidity/UserExperience.sol/UserExperience.json"
+import NFTCreatorCollectionArtifact from "../artifacts/solidity/NFTCreatorCollection.sol/NFTCreatorCollection.json"
 
 // Use .abi to ensure we pass an array-based ABI
 export const ABIS = {
-  AINFTExchange: AINFTExchangeArtifact.abi,
-  AIRewardPool: AIRewardPoolArtifact.abi,
-  AIExperience: AIExperienceArtifact.abi,
-  CreatorCollection: AICreatorCollectionArtifact.abi
+  NFTMarketplace: NFTMarketplaceArtifact.abi,
+  RewardPool: RewardPoolArtifact.abi,
+  UserExperience: UserExperienceArtifact.abi,
+  NFTCreatorCollection: NFTCreatorCollectionArtifact.abi
 }
