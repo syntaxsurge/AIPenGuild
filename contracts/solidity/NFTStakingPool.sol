@@ -22,7 +22,7 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../solidity/NFTMarketplaceHub.sol"; // for IERC721 usage
+import "../solidity/NFTMarketplaceHub.sol";
 import "../solidity/UserExperiencePoints.sol";
 
 /**

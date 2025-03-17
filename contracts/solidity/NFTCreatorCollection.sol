@@ -25,7 +25,6 @@
 
 pragma solidity ^0.8.2;
 
-// Importing OpenZeppelin's Ownable contract for ownership checks.
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
