@@ -6,10 +6,10 @@ import { useAccount, usePublicClient, useWaitForTransactionReceipt } from "wagmi
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { useContract } from "@/hooks/use-contract"
 import { useWriteContract } from "wagmi"
 import { parseEther } from "viem"
+import { useToast } from "@/hooks/use-toast-notifications"
+import { useContract } from "@/hooks/use-smart-contract"
 
 export default function AdminPage() {
   const router = useRouter()

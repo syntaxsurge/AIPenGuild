@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from "react"
 import { usePublicClient } from "wagmi"
-import { useContract } from "@/hooks/use-contract"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { getUserTitle } from "@/lib/experience"
+import { useContract } from "@/hooks/use-smart-contract"
+import { useToast } from "@/hooks/use-toast-notifications"
 
 /**
  * We'll gather addresses by scanning all minted items from the NFTMarketplaceHub,
@@ -61,7 +61,7 @@ export default function LeaderboardPage() {
           }) as `0x${string}`
 
           ownersSet.add(owner.toLowerCase())
-        } catch {}
+        } catch { }
       }
 
       // Now we have all owners. For each, read userExperience from UserExperience
@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
           if (typeof xpVal === "bigint") {
             results.push({ address: addr, xp: xpVal })
           }
-        } catch {}
+        } catch { }
       }
 
       // Sort descending by xp

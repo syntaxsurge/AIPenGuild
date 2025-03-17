@@ -6,6 +6,6 @@ import {
   ThemeProviderProps,
 } from "next-themes";
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+export function GlobalThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }

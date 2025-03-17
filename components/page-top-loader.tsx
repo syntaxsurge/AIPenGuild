@@ -1,7 +1,8 @@
 'use client'
 
 import NextTopLoader from 'nextjs-toploader'
-export default function TopLoader() {
+
+export default function PageTopLoader() {
   return (
     <NextTopLoader
       color={'#7856ff'}

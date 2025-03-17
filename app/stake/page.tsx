@@ -4,10 +4,10 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useContract } from "@/hooks/use-contract";
+import { useToast } from "@/hooks/use-toast-notifications";
+import { useContract } from "@/hooks/use-smart-contract";
 
 interface NFTItem {
   itemId: bigint;

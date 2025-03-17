@@ -5,11 +5,10 @@ import Link from "next/link"
 import { useAccount, usePublicClient } from "wagmi"
 import { Loader2, Gauge, Crown, PieChart, Folder } from "lucide-react"
 import { getUserTitle } from "@/lib/experience"
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useContract } from "@/hooks/use-contract";
+import { useToast } from "@/hooks/use-toast-notifications";
+import { useContract } from "@/hooks/use-smart-contract";
 
 export default function DashboardPage() {
   const { address } = useAccount();

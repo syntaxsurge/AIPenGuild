@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { IconMoonFilled, IconSun } from "@tabler/icons-react";
 
-export function ThemeToggle() {
+export function ThemeToggleButton() {
   const { resolvedTheme, setTheme } = useTheme();
   const otherTheme = resolvedTheme === "dark" ? "light" : "dark";
   const [mounted, setMounted] = useState(false);

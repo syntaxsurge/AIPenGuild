@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { IconChevronDown } from '@tabler/icons-react'
 
-export default function ConnectWalletBtn() {
+export default function WalletConnectButton() {
   return (
     <ConnectButton.Custom>
       {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {

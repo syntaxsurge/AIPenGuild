@@ -3,10 +3,10 @@ import type { Metadata } from "next"
 import Header from "@/components/layouts/header"
 import localFont from "next/font/local"
 import Providers from "@/providers"
+import { AOSAnimationInitializer } from "@/components/aos-animation-initializer"
+import PageTopLoader from "@/components/page-top-loader"
 import "@rainbow-me/rainbowkit/styles.css"
 import "./globals.css"
-import TopLoader from "@/components/top-loader"
-import { AOSInit } from "@/components/aos"
 
 const brandFont = localFont({
   src: [
@@ -35,8 +35,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${brandFont.className} ${brandFont.variable} custom-selection antialiased`}>
         <Providers>
-          <AOSInit />
-          <TopLoader />
+          <AOSAnimationInitializer />
+          <PageTopLoader />
           <Header />
           <main className="flex flex-col gap-2 pt-[120px] min-h-screen">
             {children}

@@ -5,7 +5,7 @@ import { RainbowKitProvider, getDefaultWallets, getDefaultConfig, darkTheme } fr
 import { trustWallet, ledgerWallet } from '@rainbow-me/rainbowkit/wallets'
 import { moonbaseAlpha, moonbeam } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WagmiProvider, createConfig, http } from 'wagmi'
+import { WagmiProvider, http } from 'wagmi'
 import { defineChain } from 'viem'
 
 const { wallets } = getDefaultWallets()
@@ -56,7 +56,7 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient()
 
-export function WalletProviders({ children }: { children: any }) {
+export function RainbowKitWalletProvider({ children }: { children: any }) {
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {

@@ -3,7 +3,7 @@
 import Aos from 'aos'
 import { useEffect } from 'react'
 
-export const AOSInit = () => {
+export function AOSAnimationInitializer() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       Aos.init({

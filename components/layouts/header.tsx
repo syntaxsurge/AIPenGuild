@@ -1,7 +1,7 @@
 'use client'
 
-import ConnectWalletBtn from "@/components/connect-wallet-button"
-import { ThemeToggle } from "@/components/theme-toggle"
+import WalletConnectButton from "@/components/wallet-connect-button"
+import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { IconMenu2, IconChevronDown } from "@tabler/icons-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -77,9 +77,9 @@ function Header() {
             {/* Connect Wallet, Theme Toggle */}
             <div className="flex flex-col items-start gap-4 md:ml-6 md:flex-row md:items-center">
               <div className="flex items-center justify-center gap-3">
-                <ThemeToggle />
+                <ThemeToggleButton />
               </div>
-              <ConnectWalletBtn />
+<WalletConnectButton />
             </div>
           </div>
         </div>
