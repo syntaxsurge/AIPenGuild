@@ -1,4 +1,4 @@
-import { AOSAnimationInitializer } from "@/components/aos-animation-initializer"
+import { AnimateOnScrollInitializer } from "@/components/animate-on-scroll-initializer"
 import Header from "@/components/layouts/header"
 import PageTopLoader from "@/components/page-top-loader"
 import Providers from "@/providers"
@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${brandFont.className} ${brandFont.variable} custom-selection antialiased`}>
         <Providers>
-          <AOSAnimationInitializer />
+          <AnimateOnScrollInitializer />
           <PageTopLoader />
           <Header />
           <main className="flex flex-col gap-2 pt-[120px] min-h-screen">

@@ -3,7 +3,7 @@
 import Aos from 'aos'
 import { useEffect } from 'react'
 
-export function AOSAnimationInitializer() {
+export function AnimateOnScrollInitializer() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       Aos.init({
