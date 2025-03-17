@@ -9,11 +9,17 @@ export interface XPTier {
  * 'max' can be Infinity for an open-ended upper bound.
  */
 export const XP_TITLES: XPTier[] = [
-  { label: "Newcomer",    min: 0,   max: 0 },
-  { label: "Explorer",    min: 1,   max: 99 },
-  { label: "Enthusiast",  min: 100, max: 299 },
-  { label: "Connoisseur", min: 300, max: 499 },
-  { label: "Master",      min: 500, max: Infinity }
+  { label: "Newcomer",      min: 0,       max: 99 },
+  { label: "Apprentice",    min: 100,     max: 999 },
+  { label: "Adept",         min: 1000,    max: 4999 },
+  { label: "Enthusiast",    min: 5000,    max: 9999 },
+  { label: "Connoisseur",   min: 10000,   max: 24999 },
+  { label: "Expert",        min: 25000,   max: 49999 },
+  { label: "Master",        min: 50000,   max: 99999 },
+  { label: "Grandmaster",   min: 100000,  max: 249999 },
+  { label: "Legend",        min: 250000,  max: 499999 },
+  { label: "Mythical",      min: 500000,  max: 999999 },
+  { label: "Immortal",      min: 1000000, max: Infinity }
 ]
 
 /**
@@ -27,5 +33,5 @@ export function getUserTitle(xp: number): string {
     }
   }
   // Fallback if none match
-  return "Legend"
+  return "Immortal"
 }
