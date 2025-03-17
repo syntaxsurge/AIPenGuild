@@ -1,22 +1,22 @@
 'use client'
 
-import Link from "next/link"
-import Image from "next/image"
-import React, { useState, useEffect, useRef } from "react"
-import { X, Search, Grid2X2, LayoutList, Loader2 } from "lucide-react"
-import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
-import { useToast } from "@/hooks/use-toast-notifications"
-import { useContract } from "@/hooks/use-smart-contract"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { DualRangeSlider } from "@/components/ui/dual-range-slider"
-import { Input } from "@/components/ui/input"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DualRangeSlider } from "@/components/ui/dual-range-slider"
+import { Input } from "@/components/ui/input"
+import { useContract } from "@/hooks/use-smart-contract"
+import { useToast } from "@/hooks/use-toast-notifications"
+import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import React, { useEffect, useRef, useState } from "react"
+import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 
 interface MarketplaceItem {
   itemId: bigint

@@ -1,15 +1,14 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from "react"
-import { useAccount, usePublicClient, useWaitForTransactionReceipt } from "wagmi"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useWriteContract } from "wagmi"
-import Image from "next/image"
-import { parseEther } from "viem"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import Image from "next/image"
+import React, { useEffect, useRef, useState } from "react"
+import { parseEther } from "viem"
+import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 
 interface NFTDetails {
   itemId: bigint

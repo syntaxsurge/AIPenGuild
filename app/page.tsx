@@ -1,19 +1,19 @@
 'use client'
 
-import Image from "next/image"
-import { motion } from "framer-motion"
-import { useTheme } from "next-themes"
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { InteractiveHoverButton } from "@/components/ui/interactive-button"
-import { XP_TITLES } from "@/lib/experience"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { InteractiveHoverButton } from "@/components/ui/interactive-button"
+import { XP_TITLES } from "@/lib/experience"
+import { cn } from "@/lib/utils"
+import { motion } from "framer-motion"
+import { useTheme } from "next-themes"
+import Image from "next/image"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
 export default function Home() {
   const { resolvedTheme } = useTheme()

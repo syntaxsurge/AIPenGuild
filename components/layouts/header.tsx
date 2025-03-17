@@ -1,12 +1,12 @@
 'use client'
 
-import WalletConnectButton from "@/components/wallet-connect-button"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
-import { IconMenu2, IconChevronDown } from "@tabler/icons-react"
-import Link from "next/link"
+import WalletConnectButton from "@/components/wallet-connect-button"
+import { IconChevronDown, IconMenu2 } from "@tabler/icons-react"
 import Image from "next/image"
-import { useAccount } from "wagmi"
+import Link from "next/link"
 import { useState } from "react"
+import { useAccount } from "wagmi"
 
 function Header() {
   const [open, setOpen] = useState(false)

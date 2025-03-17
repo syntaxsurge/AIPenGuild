@@ -1,11 +1,11 @@
-import { GoogleAnalytics } from "@next/third-parties/google"
-import type { Metadata } from "next"
-import Header from "@/components/layouts/header"
-import localFont from "next/font/local"
-import Providers from "@/providers"
 import { AOSAnimationInitializer } from "@/components/aos-animation-initializer"
+import Header from "@/components/layouts/header"
 import PageTopLoader from "@/components/page-top-loader"
+import Providers from "@/providers"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import "@rainbow-me/rainbowkit/styles.css"
+import type { Metadata } from "next"
+import localFont from "next/font/local"
 import "./globals.css"
 
 const brandFont = localFont({

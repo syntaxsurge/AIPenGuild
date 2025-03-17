@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from "react"
-import Link from "next/link"
-import { useAccount, usePublicClient } from "wagmi"
-import { Loader2, Gauge, Crown, PieChart, Folder } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useContract } from "@/hooks/use-smart-contract"
+import { useToast } from "@/hooks/use-toast-notifications"
 import { getUserTitle } from "@/lib/experience"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast-notifications";
-import { useContract } from "@/hooks/use-smart-contract";
+import { Crown, Folder, Gauge, Loader2, PieChart } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useRef, useState } from "react"
+import { useAccount, usePublicClient } from "wagmi"
 
 export default function DashboardPage() {
   const { address } = useAccount();

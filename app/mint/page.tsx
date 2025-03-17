@@ -1,15 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
-import Image from "next/image"
-import { Brain, Wand, Upload, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { parseEther } from "viem"
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { Brain, Loader2, Upload, Wand } from "lucide-react"
+import Image from "next/image"
+import React, { useEffect, useState } from "react"
+import { parseEther } from "viem"
+import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 
 async function uploadFileToIpfs(file: File): Promise<string> {
   const formData = new FormData()

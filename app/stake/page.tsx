@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
-import { Loader2 } from "lucide-react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast-notifications";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useContract } from "@/hooks/use-smart-contract";
+import { useToast } from "@/hooks/use-toast-notifications";
+import { Loader2 } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 
 interface NFTItem {
   itemId: bigint;

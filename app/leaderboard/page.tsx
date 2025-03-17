@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useEffect, useState } from "react"
-import { usePublicClient } from "wagmi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
-import { Loader2 } from "lucide-react"
-import { getUserTitle } from "@/lib/experience"
+import { Input } from "@/components/ui/input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { getUserTitle } from "@/lib/experience"
+import { Loader2 } from "lucide-react"
+import React, { useEffect, useState } from "react"
+import { usePublicClient } from "wagmi"
 
 /**
  * We'll gather addresses by scanning all minted items from the NFTMarketplaceHub,

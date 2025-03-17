@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
 import { IconMoonFilled, IconSun } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function ThemeToggleButton() {
   const { resolvedTheme, setTheme } = useTheme();

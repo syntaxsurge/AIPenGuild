@@ -1,15 +1,14 @@
 'use client'
 
-import React, { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAccount, usePublicClient, useWaitForTransactionReceipt } from "wagmi"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useWriteContract } from "wagmi"
-import { parseEther } from "viem"
-import { useToast } from "@/hooks/use-toast-notifications"
 import { useContract } from "@/hooks/use-smart-contract"
+import { useToast } from "@/hooks/use-toast-notifications"
+import { useRouter } from "next/navigation"
+import React, { useEffect, useState } from "react"
+import { parseEther } from "viem"
+import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 
 export default function AdminPage() {
   const router = useRouter()

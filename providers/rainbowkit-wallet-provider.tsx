@@ -1,12 +1,12 @@
 'use client'
 
-import * as React from 'react'
-import { RainbowKitProvider, getDefaultWallets, getDefaultConfig, darkTheme } from '@rainbow-me/rainbowkit'
-import { trustWallet, ledgerWallet } from '@rainbow-me/rainbowkit/wallets'
-import { moonbaseAlpha, moonbeam } from 'wagmi/chains'
+import { RainbowKitProvider, darkTheme, getDefaultConfig, getDefaultWallets } from '@rainbow-me/rainbowkit'
+import { ledgerWallet, trustWallet } from '@rainbow-me/rainbowkit/wallets'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WagmiProvider, http } from 'wagmi'
+import * as React from 'react'
 import { defineChain } from 'viem'
+import { WagmiProvider, http } from 'wagmi'
+import { moonbaseAlpha, moonbeam } from 'wagmi/chains'
 
 const { wallets } = getDefaultWallets()
 
