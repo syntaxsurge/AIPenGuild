@@ -67,6 +67,9 @@ function Header() {
                   <Link href="/mint" className="block rounded-sm px-4 py-2 hover:bg-muted">
                     CREATE AI NFT
                   </Link>
+                  <Link href="/stake" className="block rounded-sm px-4 py-2 hover:bg-muted">
+                    STAKE NFTS
+                  </Link>
                 </div>
               </div>
             </div>
