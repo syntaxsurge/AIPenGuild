@@ -3,6 +3,7 @@ export type CoreContractName =
   | 'PlatformRewardPool'
   | 'UserExperiencePoints'
   | 'NFTCreatorCollection'
+  | 'NFTStakingPool'  // <--- ADDED
 
 export type ContractName = CoreContractName | 'explorer'
 

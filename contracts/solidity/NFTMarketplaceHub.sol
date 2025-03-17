@@ -3,321 +3,252 @@
  *
  * NFTMarketplaceHub.sol
  *
- * This smart contract serves as a marketplace hub for NFTs (Non-Fungible Tokens).
- * It manages the creation, listing, sale, and transfer of NFTs.
+ * This contract serves as a marketplace hub for NFTs (Non-Fungible Tokens).
+ * It manages:
+ *   - Creating new NFT items from a registered collection,
+ *   - Listing, unlisting, and purchasing NFTs,
+ *   - Handling fees that go to the reward pool,
+ *   - Integrating with a UserExperiencePoints contract to track XP for owners.
  *
  * Non-technical Explanation:
  * --------------------------
- * Think of this contract like a digital marketplace where different NFT collections can
- * be registered. Each item in the marketplace is a unique token with a specific "itemId."
- * You can list your items for sale, unlist them, and buy them. A fee is collected whenever
- * an item is sold, and that fee goes to a "PlatformRewardPool" (another contract).
- * The contract also integrates with an "experience module" to track the XP (experience points)
- * of users owning NFTs.
+ * Think of it as the main "store" or "hub" for all NFTs. Collections can register themselves
+ * here, so that minted items can appear in this marketplace. The contract:
+ *   1) Mints new NFTs (with a unique itemId) whenever a registered collection calls generateNFTItem().
+ *   2) Lets NFT owners list their items for sale.
+ *   3) Lets buyers purchase those items, sending fees to the platform's reward pool and the rest to the seller.
+ *   4) Notifies a separate XP system whenever ownership changes, awarding or removing XP from addresses.
  */
 
 pragma solidity ^0.8.2;
 
-// Importing OpenZeppelin ERC721 token contract extension (ERC721URIStorage) and Ownable for ownership checks.
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./UserExperiencePoints.sol";
 
-/**
- * @dev Interface for the user experience points (XP) contract. This contract helps assign and modify XP.
- */
-interface IUserExperiencePoints {
-    /**
-     * @dev Assigns random XP to an item (NFT). Returns the newly assigned XP.
-     */
-    function assignRandomXP(uint256 itemId) external returns (uint256);
-
-    /**
-     * @dev Modifies a user's XP.
-     * If "add" is true, the XP is credited, otherwise it is removed.
-     */
-    function modifyUserXP(address user, uint256 itemId, bool add) external;
-}
-
-/**
- * @dev Interface for the NFTCreatorCollection. This interface is used to get the owner of a particular collection.
- */
 interface INFTCreatorCollection {
-    /**
-     * @dev Returns the address of the owner of this collection.
-     */
-    function owner() external view returns (address);
+  function owner() external view returns (address);
 }
 
 /**
  * @title NFTMarketplaceHub
- * @notice This contract acts as an NFT exchange platform, allowing for minting, listing, unlisting, and purchasing of NFT items.
- * @dev Inherits ERC721URIStorage for storing token URI data and Ownable for controlling certain restricted functions.
+ * @notice Main marketplace contract to create, list, buy, and track NFTs.
+ * @dev Inherits from ERC721URIStorage for NFT logic, and Ownable for admin controls.
  */
 contract NFTMarketplaceHub is ERC721URIStorage, Ownable {
-    // A simple counter used to increment the unique ID for each new NFT item.
-    uint256 private itemCounter;
+  // A counter to assign unique itemIds to newly created NFTs
+  uint256 private itemCounter;
 
-    // The address of the reward pool contract where fees are sent when an item is sold.
-    address public immutable rewardPool;
+  // The address of the reward pool (where a fraction of each sale goes)
+  address public immutable rewardPool;
 
-    // The address of the experience module contract that tracks user XP.
-    address public immutable experienceModule;
+  // The address of the experience module that tracks user XP
+  address public immutable experienceModule;
 
-    // A constant that represents the marketplace fee, expressed as a percentage (10%).
-    uint256 public constant FEE_PERCENT = 10;
+  // A constant that defines the platform fee as a percentage (10%)
+  uint256 public constant FEE_PERCENT = 10;
 
-    /**
-     * @dev Struct representing each NFT item.
-     * itemId    : the ID for this item (unique for each NFT).
-     * creator   : the address that created this NFT (collection owner).
-     * xpValue   : the XP (experience points) assigned to this NFT item.
-     * isOnSale  : indicates if the item is currently on sale.
-     * salePrice : the price at which the item is listed for sale.
-     * resourceUrl : a link or reference to the NFT media (e.g. an image or resource).
-     */
-    struct NFTItem {
-        uint256 itemId;
-        address creator;
-        uint256 xpValue;
-        bool isOnSale;
-        uint256 salePrice;
-        string resourceUrl;
-    }
+  /**
+   * @dev Each NFT item is stored with:
+   *   itemId:      A unique numeric identifier
+   *   creator:     The address that created this NFT (collection owner)
+   *   xpValue:     The random XP assigned at creation (for reference)
+   *   isOnSale:    Whether or not this NFT is currently for sale
+   *   salePrice:   If isOnSale is true, how much it costs (in wei)
+   *   resourceUrl: The metadata or link to the NFT's image or file
+   */
+  struct NFTItem {
+    uint256 itemId;
+    address creator;
+    uint256 xpValue;
+    bool isOnSale;
+    uint256 salePrice;
+    string resourceUrl;
+  }
 
-    /**
-     * @dev A mapping from an NFT item ID to its corresponding NFT data (NFTItem struct).
-     */
-    mapping(uint256 => NFTItem) public nftData;
+  /**
+   * @dev A mapping from an itemId to its NFTItem data.
+   */
+  mapping(uint256 => NFTItem) public nftData;
 
-    /**
-     * @dev A mapping that associates a collectionId (just a number) with the address of its collection contract.
-     * Example: 0 -> address of the primary collection.
-     */
-    mapping(uint256 => address) public nftCollections;
+  /**
+   * @dev Maps a collectionId (a simple numeric ID) to the contract address that
+   * actually defines that collection (like NFTCreatorCollection).
+   */
+  mapping(uint256 => address) public nftCollections;
 
-    /**
-     * @dev Emitted when a new NFT item is generated.
-     * @param itemId The ID of the newly created item.
-     * @param collectionContract The address of the collection contract this item belongs to.
-     * @param xpGained The XP assigned to this item.
-     * @param imageURL The URL/resource used for the NFT.
-     */
-    event NFTItemGenerated(uint256 indexed itemId, address indexed collectionContract, uint256 xpGained, string imageURL);
+  // Events for tracking creation, listing, unlisting, sale, and new contract registrations
+  event NFTItemGenerated(uint256 indexed itemId, address indexed collectionContract, uint256 xpGained, string imageURL);
+  event NFTItemListed(uint256 indexed itemId, uint256 price);
+  event NFTItemUnlisted(uint256 indexed itemId);
+  event NFTItemSold(uint256 indexed itemId, address seller, address buyer, uint256 amount);
+  event NFTContractRegistered(uint256 indexed collectionId, address collectionContract);
 
-    /**
-     * @dev Emitted when an NFT item is listed for sale.
-     * @param itemId The ID of the NFT item.
-     * @param price The price at which the NFT is listed.
-     */
-    event NFTItemListed(uint256 indexed itemId, uint256 price);
+  /**
+   * @dev The constructor receives the addresses for the reward pool and the XP contract,
+   * plus the typical parameters for an ERC721 (name, symbol).
+   */
+  constructor(
+    address poolAddr,
+    address xpAddr,
+    string memory _name,
+    string memory _symbol
+  ) ERC721(_name, _symbol) {
+    rewardPool = poolAddr;
+    experienceModule = xpAddr;
+  }
 
-    /**
-     * @dev Emitted when an NFT item is unlisted from sale.
-     * @param itemId The ID of the NFT item.
-     */
-    event NFTItemUnlisted(uint256 indexed itemId);
+  /**
+   * @notice Called by a registered collection to mint a brand-new NFT item.
+   *         The calling collection must be recognized in nftCollections[collectionId].
+   * @param recipient The address that will receive (own) the newly minted NFT.
+   * @param collectionId The ID referencing which collection is creating this NFT.
+   * @param imageUrl A string referencing the NFT's resource or metadata (e.g. IPFS link).
+   */
+  function generateNFTItem(address recipient, uint256 collectionId, string memory imageUrl) external payable {
+    // Ensure that the caller is the recognized contract for this collectionId
+    require(nftCollections[collectionId] == msg.sender, "Not authorized collection");
+    
+    // We increment itemCounter to get a fresh itemId
+    uint256 newId = _nextItemId();
 
-    /**
-     * @dev Emitted when an NFT item is sold.
-     * @param itemId The ID of the NFT item.
-     * @param seller The address that previously owned the NFT.
-     * @param buyer The address that purchased the NFT.
-     * @param amount The amount of Ether paid for the NFT.
-     */
-    event NFTItemSold(uint256 indexed itemId, address seller, address buyer, uint256 amount);
+    // Mint an ERC721 token to 'recipient'
+    _safeMint(recipient, newId);
 
-    /**
-     * @dev Emitted when a new NFT-derived contract (a new collection) is registered.
-     * @param collectionId The ID (just a number) under which this collection was registered.
-     * @param collectionContract The address of the NFT collection contract.
-     */
-    event NFTContractRegistered(uint256 indexed collectionId, address collectionContract);
+    // Assign random XP to this NFT by calling the XP contract
+    uint256 xpAssigned = IUserExperiencePoints(experienceModule).assignRandomXP(newId);
 
-    /**
-     * @dev Constructor: Sets up the marketplace with references to the reward pool and experience module.
-     * @param poolAddr The address of the reward pool contract.
-     * @param xpAddr The address of the experience points contract.
-     * @param _name The name for the NFT token standard (ERC721).
-     * @param _symbol The symbol for the NFT token standard (ERC721).
-     */
-    constructor(
-        address poolAddr,
-        address xpAddr,
-        string memory _name,
-        string memory _symbol
-    ) ERC721(_name, _symbol) Ownable(msg.sender) {
-        rewardPool = poolAddr;
-        experienceModule = xpAddr;
-    }
+    // The new owner is credited with that XP
+    IUserExperiencePoints(experienceModule).modifyUserXP(recipient, newId, true);
 
-    /**
-     * @notice Generates a new NFT item for a particular collection. Only the collection contract can call this.
-     * @dev The function mints an NFT with a unique itemId, assigns XP to it, and updates relevant data structures.
-     * @param recipient The address that will receive the newly minted NFT.
-     * @param collectionId The ID that links to the collection contract in the marketplace.
-     * @param imageUrl A string that points to or describes the NFT's resource (e.g., an image URL).
-     */
-    function generateNFTItem(address recipient, uint256 collectionId, string memory imageUrl) external payable {
-        // Ensure the caller is the registered collection contract for this collectionId.
-        require(nftCollections[collectionId] == msg.sender, "Not authorized collection");
+    // The collection contract can specify the "creator" who conceptually made it
+    address colOwner = INFTCreatorCollection(nftCollections[collectionId]).owner();
 
-        // Get the next available item ID by incrementing our itemCounter.
-        uint256 newId = _nextItemId();
+    // Store the item data
+    nftData[newId] = NFTItem({
+      itemId: newId,
+      creator: colOwner,
+      xpValue: xpAssigned,
+      isOnSale: false,
+      salePrice: 0,
+      resourceUrl: imageUrl
+    });
 
-        // Mint the NFT to the recipient. This calls the inherited ERC721 _safeMint function.
-        _safeMint(recipient, newId);
+    // Emit an event about the newly created item
+    emit NFTItemGenerated(newId, nftCollections[collectionId], xpAssigned, imageUrl);
+  }
 
-        // Assign random XP to this new item using the experience module.
-        uint256 xpAssigned = IUserExperiencePoints(experienceModule).assignRandomXP(newId);
+  /**
+   * @notice List an owned NFT for sale at a specified price.
+   * @param itemId The ID of the NFT item (token) to list.
+   * @param price The listing price (in wei).
+   */
+  function listNFTItem(uint256 itemId, uint256 price) external {
+    // Only the true owner of this NFT can list it
+    require(ownerOf(itemId) == msg.sender, "Caller not item owner");
+    // Must have a positive price
+    require(price > 0, "Price must be greater than zero");
 
-        // Increase the recipient's total XP by adding the XP from this item.
-        IUserExperiencePoints(experienceModule).modifyUserXP(recipient, newId, true);
+    nftData[itemId].isOnSale = true;
+    nftData[itemId].salePrice = price;
 
-        // Retrieve the collection's owner address from the collection contract.
-        address colOwner = INFTCreatorCollection(nftCollections[collectionId]).owner();
+    emit NFTItemListed(itemId, price);
+  }
 
-        // Populate the NFTItem struct in our mapping.
-        nftData[newId] = NFTItem({
-            itemId: newId,
-            creator: colOwner,
-            xpValue: xpAssigned,
-            isOnSale: false,
-            salePrice: 0,
-            resourceUrl: imageUrl
-        });
+  /**
+   * @notice Unlist an NFT that is currently for sale.
+   *         This removes the salePrice and marks the NFT as not for sale.
+   * @param itemId The ID of the NFT to unlist.
+   */
+  function unlistNFTItem(uint256 itemId) external {
+    require(ownerOf(itemId) == msg.sender, "Caller not item owner");
+    require(nftData[itemId].isOnSale, "Item is not listed for sale");
 
-        // Emit an event to show that this new NFT item has been generated.
-        emit NFTItemGenerated(newId, nftCollections[collectionId], xpAssigned, imageUrl);
-    }
+    nftData[itemId].isOnSale = false;
+    nftData[itemId].salePrice = 0;
 
-    /**
-     * @notice Lists an NFT item on the marketplace for a given price.
-     * @dev The caller must be the owner of the NFT.
-     * @param itemId The ID of the NFT item to list.
-     * @param price The sale price for this NFT in wei (1 ETH = 10^18 wei).
-     */
-    function listNFTItem(uint256 itemId, uint256 price) external {
-        // Only the current owner can list the NFT.
-        require(ownerOf(itemId) == msg.sender, "Caller not item owner");
-        require(price > 0, "Price must be greater than zero");
+    emit NFTItemUnlisted(itemId);
+  }
 
-        // Mark the NFT as on sale and set the sale price.
-        nftData[itemId].isOnSale = true;
-        nftData[itemId].salePrice = price;
+  /**
+   * @notice Purchase an NFT that is currently on sale by sending Ether >= salePrice.
+   * @param itemId The ID of the NFT item to buy.
+   */
+  function purchaseNFTItem(uint256 itemId) external payable {
+    // Must be for sale
+    require(nftData[itemId].isOnSale, "Item is not for sale");
+    // Must send enough ETH
+    require(msg.value >= nftData[itemId].salePrice, "Payment not sufficient");
 
-        // Emit an event that the item has been listed.
-        emit NFTItemListed(itemId, price);
-    }
+    // The current owner who is selling
+    address seller = ownerOf(itemId);
 
-    /**
-     * @notice Unlists an NFT item from the marketplace (removes it from sale).
-     * @dev The caller must be the current owner of the NFT.
-     * @param itemId The ID of the NFT item to unlist.
-     */
-    function unlistNFTItem(uint256 itemId) external {
-        // Only the owner can unlist the NFT.
-        require(ownerOf(itemId) == msg.sender, "Caller not item owner");
-        // The NFT should currently be on sale.
-        require(nftData[itemId].isOnSale, "Item is not listed for sale");
+    // Remove XP from the seller for this item
+    IUserExperiencePoints(experienceModule).modifyUserXP(seller, itemId, false);
+    // Give XP to the buyer
+    IUserExperiencePoints(experienceModule).modifyUserXP(msg.sender, itemId, true);
 
-        // Mark the NFT as not on sale.
-        nftData[itemId].isOnSale = false;
-        nftData[itemId].salePrice = 0;
+    // Transfer the token from seller to buyer
+    _transfer(seller, msg.sender, itemId);
 
-        // Emit an event that the item has been unlisted.
-        emit NFTItemUnlisted(itemId);
-    }
+    // Calculate the platform fee
+    uint256 feeAmount = (msg.value * FEE_PERCENT) / 100;
+    uint256 sellerAmount = msg.value - feeAmount;
 
-    /**
-     * @notice Purchases an NFT item if it is currently listed for sale.
-     * @dev The buyer sends Ether to the contract. A portion goes to the reward pool (fee),
-     *      and the remainder goes to the seller.
-     * @param itemId The ID of the NFT item to purchase.
-     */
-    function purchaseNFTItem(uint256 itemId) external payable {
-        // Ensure the item is on sale.
-        require(nftData[itemId].isOnSale, "Item is not for sale");
-        // The buyer must send enough ETH to cover the item's sale price.
-        require(msg.value >= nftData[itemId].salePrice, "Payment not sufficient");
+    // Send the fee to rewardPool
+    (bool sentFee, ) = rewardPool.call{value: feeAmount}("");
+    require(sentFee, "Fee transfer failed");
 
-        // Identify the current seller (the owner of the NFT).
-        address seller = ownerOf(itemId);
+    // Send the remainder to the seller
+    (bool sentSeller, ) = payable(seller).call{value: sellerAmount}("");
+    require(sentSeller, "Seller payment failed");
 
-        // Remove XP from the seller for this item, and add XP for the buyer.
-        IUserExperiencePoints(experienceModule).modifyUserXP(seller, itemId, false);
-        IUserExperiencePoints(experienceModule).modifyUserXP(msg.sender, itemId, true);
+    // Mark it no longer for sale
+    nftData[itemId].isOnSale = false;
+    nftData[itemId].salePrice = 0;
 
-        // Transfer the NFT from the seller to the buyer.
-        _transfer(seller, msg.sender, itemId);
+    emit NFTItemSold(itemId, seller, msg.sender, msg.value);
+  }
 
-        // Calculate the fee to take from the sale (FEE_PERCENT%).
-        uint256 feeAmount = (msg.value * FEE_PERCENT) / 100;
-        // The rest (seller's amount) is what's left after the fee.
-        uint256 sellerAmount = msg.value - feeAmount;
+  /**
+   * @notice Register a new NFT-derived contract (like NFTCreatorCollection) with a numeric ID.
+   * @param collectionAddr The address of the contract that can mint items with this new ID.
+   * @return The numeric ID assigned to that contract.
+   */
+  function registerNFTDerivedContract(address collectionAddr) external returns (uint256) {
+    itemCounter++;
+    nftCollections[itemCounter] = collectionAddr;
 
-        // Transfer the fee to the reward pool contract.
-        (bool sentFee, ) = rewardPool.call{value: feeAmount}("");
-        require(sentFee, "Fee transfer failed");
+    emit NFTContractRegistered(itemCounter, collectionAddr);
+    return itemCounter;
+  }
 
-        // Transfer the remainder to the seller.
-        (bool sentSeller, ) = payable(seller).call{value: sellerAmount}("");
-        require(sentSeller, "Seller payment failed");
+  /**
+   * @notice Returns the largest itemId minted so far.
+   */
+  function getLatestItemId() external view returns (uint256) {
+    return itemCounter;
+  }
 
-        // Mark the NFT as not for sale anymore.
-        nftData[itemId].isOnSale = false;
-        nftData[itemId].salePrice = 0;
+  /**
+   * @notice As an admin (owner), link or update a known collection contract address for a given collection ID.
+   */
+  function setNFTCollection(uint256 collectionId, address collectionAddr) external onlyOwner {
+    nftCollections[collectionId] = collectionAddr;
+  }
 
-        // Emit an event that the item has been sold.
-        emit NFTItemSold(itemId, seller, msg.sender, msg.value);
-    }
+  /**
+   * @notice Returns the address of the reward pool in use.
+   */
+  function getRewardPool() external view returns (address) {
+    return rewardPool;
+  }
 
-    /**
-     * @notice Registers a new NFT-derived contract (like a new NFT collection).
-     * @dev This returns a numeric ID for the collection.
-     * @param collectionAddr The address of the new collection contract.
-     * @return The collectionId that was just assigned to this new contract.
-     */
-    function registerNFTDerivedContract(address collectionAddr) external returns (uint256) {
-        // Increments the counter, then sets the mapping for that collection ID to the contract's address.
-        itemCounter++;
-        nftCollections[itemCounter] = collectionAddr;
-
-        // Emit an event showing that a new NFT contract is registered.
-        emit NFTContractRegistered(itemCounter, collectionAddr);
-        return itemCounter;
-    }
-
-    /**
-     * @notice Returns the latest item ID that has been created in this marketplace.
-     * @return The current value of the itemCounter.
-     */
-    function getLatestItemId() external view returns (uint256) {
-        return itemCounter;
-    }
-
-    /**
-     * @notice Allows the contract owner to set or update the address of a collection contract for a given collection ID.
-     * @param collectionId The numeric ID used to identify the collection.
-     * @param collectionAddr The address of the collection contract to associate with this ID.
-     */
-    function setNFTCollection(uint256 collectionId, address collectionAddr) external onlyOwner {
-        nftCollections[collectionId] = collectionAddr;
-    }
-
-    /**
-     * @notice Returns the address of the reward pool.
-     * @return The stored rewardPool address.
-     */
-    function getRewardPool() external view returns (address) {
-        return rewardPool;
-    }
-
-    /**
-     * @dev Internal function to increment the item counter and return the new item ID.
-     * @return The new item ID (as an incremented counter).
-     */
-    function _nextItemId() private returns (uint256) {
-        itemCounter++;
-        return itemCounter;
-    }
+  /**
+   * @dev Helper that increments itemCounter and returns a fresh itemId.
+   */
+  function _nextItemId() private returns (uint256) {
+    itemCounter++;
+    return itemCounter;
+  }
 }

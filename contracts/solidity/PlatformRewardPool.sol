@@ -3,65 +3,61 @@
  *
  * PlatformRewardPool.sol
  *
- * This contract acts as a "bank" for the platform fees collected from NFT sales
- * or minting processes. It holds the funds until the owner (platform) chooses to withdraw.
+ * This contract accumulates platform fees from NFT sales/minting. Only the owner
+ * can withdraw those fees.
  *
  * Non-technical Explanation:
  * --------------------------
- * Imagine this as a special wallet that accumulates the fees from the marketplace
- * and collections. Only the contract owner has the ability to withdraw the funds
- * stored here.
+ * Think of this as the platform's "piggy bank" for fees. Whenever a sale or mint
+ * charges a 10% platform fee, it goes here. The platform owners can later withdraw
+ * these funds.
  */
 
 pragma solidity ^0.8.2;
 
-// Importing OpenZeppelin's Ownable contract, so only the owner can call certain functions.
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title PlatformRewardPool
- * @notice A simple contract to hold and manage funds collected as fees from the platform's marketplace.
- * @dev Inherits Ownable to restrict certain functions to only the owner.
+ * @notice Holds and manages the Ether collected as platform fees.
+ * @dev Inherits Ownable, so only the contract owner can withdraw funds.
  */
 contract PlatformRewardPool is Ownable {
     /**
-     * @dev Emitted whenever someone sends Ether (fees) to the pool contract.
-     * @param depositor The address that sent funds.
-     * @param amount The amount (in wei) that was deposited.
+     * @dev Event triggered when the pool receives Ether.
+     * @param depositor The address that sent the Ether.
+     * @param amount The amount received (in wei).
      */
     event PoolDeposit(address indexed depositor, uint256 amount);
 
     /**
-     * @dev Emitted whenever the owner withdraws Ether from the pool contract.
-     * @param recipient The owner (platform) receiving the withdrawn funds.
-     * @param amount The amount (in wei) that was withdrawn.
+     * @dev Event triggered when the owner withdraws Ether from the pool.
+     * @param recipient The owner receiving the withdrawn funds.
+     * @param amount The amount (in wei) withdrawn.
      */
     event PoolWithdrawal(address indexed recipient, uint256 amount);
 
     /**
-     * @dev The constructor that sets the initial owner of the contract.
+     * @dev The constructor uses Ownable's default mechanism to set the initial owner.
      */
-    constructor() Ownable(msg.sender) {}
+    constructor() {
+        // Nothing extra needed; Ownable sets owner=msg.sender automatically.
+    }
 
     /**
-     * @dev A "receive" function that runs automatically whenever the contract is
-     *      sent Ether with no accompanying function call data. This allows the
-     *      contract to simply accept Ether from external transfers.
+     * @dev A receive() function that is automatically called whenever Ether is sent
+     * with no function data.
      */
     receive() external payable {
         emit PoolDeposit(msg.sender, msg.value);
     }
 
     /**
-     * @notice Allows the owner to withdraw a specified amount of Ether from this pool.
-     * @dev Only the contract owner can call this.
+     * @notice Lets the owner withdraw a specified amount of Ether from the pool.
      * @param amount The amount (in wei) to withdraw.
      */
     function withdrawPoolFunds(uint256 amount) external onlyOwner {
-        // Ensure the contract has enough balance to withdraw.
         require(address(this).balance >= amount, "Insufficient pool balance");
-
-        // Transfer the specified amount to the owner.
         (bool success, ) = payable(owner()).call{value: amount}("");
         require(success, "Withdrawal failed");
 
@@ -69,8 +65,7 @@ contract PlatformRewardPool is Ownable {
     }
 
     /**
-     * @notice Retrieves the current Ether balance of this contract.
-     * @return The amount of Ether (in wei) stored in this contract.
+     * @notice Return how much Ether is currently stored in this contract.
      */
     function getPoolBalance() public view returns (uint256) {
         return address(this).balance;
