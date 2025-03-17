@@ -22,13 +22,18 @@ async function updateAddresses() {
       if (line.includes("NFTCreatorCollection deployed to:")) {
         addresses.NFTCreatorCollection = line.split("NFTCreatorCollection deployed to:")[1].trim()
       }
+      if (line.includes("NFTStakingPool deployed to:")) {
+        addresses.NFTStakingPool = line.split("NFTStakingPool deployed to:")[1].trim()
+      }
     }
 
     let content = fs.readFileSync(addressesPath, "utf8")
+
     for (const [key, address] of Object.entries(addresses)) {
-      const regex = new RegExp(`${key}: ".*?"`)
+      const regex = new RegExp(`${key}:\\s*"[^"]+"`)
       content = content.replace(regex, `${key}: "${address}"`)
     }
+
     fs.writeFileSync(addressesPath, content)
     console.log("Addresses updated successfully.")
   } catch (error) {
