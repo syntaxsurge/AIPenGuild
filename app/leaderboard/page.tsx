@@ -7,23 +7,8 @@ import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { getUserTitle } from "@/lib/experience"
 import { Loader2 } from "lucide-react"
-import React, { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { usePublicClient } from "wagmi"
-
-/**
- * We'll gather addresses by scanning all minted items from the NFTMarketplaceHub,
- * also checking stakers from NFTStakingPool so that staked NFTs are counted.
- * Then read userExperience(address) from UserExperiencePoints, store them in a map,
- * and show the top 10 addresses with the highest XP.
- *
- * We also allow:
- *  - Address search
- *  - XP Range filter
- *
- * If "sometimes it works, sometimes it doesn't," we do a single multicall approach for item queries
- * to ensure we don't skip items due to partial failures. We'll also remove the "fetched" check
- * so that we reliably load the data whenever the page renders.
- */
 
 interface LeaderboardEntry {
   address: string
@@ -37,23 +22,27 @@ export default function LeaderboardPage() {
   const nftStakingPool = useContract("NFTStakingPool")
   const publicClient = usePublicClient()
 
+  // The primary state for storing the fetched data
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(false)
+  // Display a spinner (loading) or show the table
+  const [loading, setLoading] = useState(true)
 
   // Filter states
   const [addressSearch, setAddressSearch] = useState("")
-  // Default filter range
   const [xpRange, setXpRange] = useState<[number, number]>([0, 1000000])
 
-  // 1) load leaderboard
+  // A ref to ensure we don't spam the RPC endpoint
+  const loadedRef = useRef(false)
+
+  // The main fetch function
   async function loadLeaderboard() {
-    if (!userExperiencePoints || !nftMarketplaceHub || !nftStakingPool || !publicClient) return
     try {
       setLoading(true)
 
-      const totalItems = await publicClient.readContract({
-        address: nftMarketplaceHub.address as `0x${string}`,
-        abi: nftMarketplaceHub.abi,
+      // 1) read the total minted items from the marketplace
+      const totalItems = await publicClient?.readContract({
+        address: nftMarketplaceHub?.address as `0x${string}`,
+        abi: nftMarketplaceHub?.abi,
         functionName: "getLatestItemId",
         args: []
       }) as bigint
@@ -63,76 +52,73 @@ export default function LeaderboardPage() {
         return
       }
 
-      // We'll do a single multicall to fetch [ownerOf(i), stakes(i)] for each i.
-      // That means 2 calls per itemId -> we build them in an array.
-      const calls: {
-        address: `0x${string}`
-        abi: any
-        functionName: string
-        args: [bigint]
-      }[] = []
-
+      // We'll do a single multicall to fetch:
+      //   ownerOf(i) and stakes(i) for each item i
+      const calls = []
       for (let i = 1n; i <= totalItems; i++) {
         calls.push({
-          address: nftMarketplaceHub.address as `0x${string}`,
-          abi: nftMarketplaceHub.abi,
+          address: nftMarketplaceHub?.address as `0x${string}`,
+          abi: nftMarketplaceHub?.abi,
           functionName: "ownerOf",
           args: [i]
         })
         calls.push({
-          address: nftStakingPool.address as `0x${string}`,
-          abi: nftStakingPool.abi,
+          address: nftStakingPool?.address as `0x${string}`,
+          abi: nftStakingPool?.abi,
           functionName: "stakes",
           args: [i]
         })
       }
 
-      // Execute them all in a single multicall
-      const multicallRes = await publicClient.multicall({
+      const multicallRes = await publicClient?.multicall({
         contracts: calls,
         allowFailure: true
-      })
+      });
 
-      // We'll gather addresses from the ownerOf calls + stakers
-      const ownersSet = new Set<string>()
+      // Ensure multicallRes is defined before proceeding
+      if (!multicallRes) {
+        console.error("multicallRes is undefined");
+        return;
+      }
 
-      // Each item has 2 calls in order: [ownerOf(i), stakes(i)], so we group them
-      let index = 0
+      // Gather all unique addresses from ownerOf and stakes calls
+      const ownersSet = new Set<string>();
+      let index = 0;
       for (let i = 1n; i <= totalItems; i++) {
-        const ownerCall = multicallRes[index]
-        const stakesCall = multicallRes[index + 1]
-        index += 2
+        const ownerCall = multicallRes[index];
+        const stakeCall = multicallRes[index + 1];
+        index += 2;
 
-        if (ownerCall.result) {
-          const ownerAddr = ownerCall.result as `0x${string}`
-          ownersSet.add(ownerAddr.toLowerCase())
+        if (ownerCall?.result) {
+          const ownerAddr = ownerCall.result as `0x${string}`;
+          ownersSet.add(ownerAddr.toLowerCase());
         }
-
-        if (stakesCall.result) {
-          const [stakerAddr, , , staked] = stakesCall.result as [string, bigint, bigint, boolean]
+        if (stakeCall?.result) {
+          const [stakerAddr, , , staked] = stakeCall.result as [string, bigint, bigint, boolean];
           if (staked && stakerAddr && stakerAddr !== "0x0000000000000000000000000000000000000000") {
-            ownersSet.add(stakerAddr.toLowerCase())
+            ownersSet.add(stakerAddr.toLowerCase());
           }
         }
       }
 
-      // Now we read userExperience for each address
+      // For each unique address, read userExperience
       const resultEntries: LeaderboardEntry[] = []
       for (const addr of ownersSet) {
         try {
-          const xpVal = await publicClient.readContract({
-            address: userExperiencePoints.address as `0x${string}`,
-            abi: userExperiencePoints.abi,
+          const xpVal = await publicClient?.readContract({
+            address: userExperiencePoints?.address as `0x${string}`,
+            abi: userExperiencePoints?.abi,
             functionName: "userExperience",
             args: [addr]
           }) as bigint
+
           resultEntries.push({ address: addr, xp: xpVal })
         } catch {
-          // skip
+          // skip if error
         }
       }
 
-      // Sort by descending XP
+      // Sort descending by XP
       resultEntries.sort((a, b) => Number(b.xp - a.xp))
       setLeaderboard(resultEntries)
     } catch (err: any) {
@@ -143,18 +129,44 @@ export default function LeaderboardPage() {
         variant: "destructive"
       })
     } finally {
+      // Done loading
       setLoading(false)
     }
   }
 
+  // We'll run the fetch once references exist, but avoid repeated calls
   useEffect(() => {
-    // We'll load once on mount
-    loadLeaderboard()
-  }, [])
+    // If references are not yet available, do nothing
+    if (
+      !publicClient ||
+      !userExperiencePoints?.address ||
+      !userExperiencePoints?.abi ||
+      !nftMarketplaceHub?.address ||
+      !nftMarketplaceHub?.abi ||
+      !nftStakingPool?.address ||
+      !nftStakingPool?.abi
+    ) {
+      return
+    }
 
-  // 2) Filter the sorted leaderboard, then show top 10
-  const filteredLeaderboard = React.useMemo(() => {
-    // We'll handle reversed slider values
+    // If we've already fetched once, skip
+    if (loadedRef.current) {
+      return
+    }
+    loadedRef.current = true
+
+    // Now we can call the load function once
+    loadLeaderboard()
+  }, [
+    publicClient,
+    userExperiencePoints,
+    nftMarketplaceHub,
+    nftStakingPool,
+    toast
+  ])
+
+  // Filter the top 10
+  const filteredLeaderboard = useMemo(() => {
     const minVal = Math.min(xpRange[0], xpRange[1])
     const maxVal = Math.max(xpRange[0], xpRange[1])
     const minXP = BigInt(minVal)
@@ -164,6 +176,7 @@ export default function LeaderboardPage() {
       .filter((entry) => {
         if (entry.xp < minXP || entry.xp > maxXP) return false
         if (addressSearch) {
+          // match substring of address
           if (!entry.address.toLowerCase().includes(addressSearch.toLowerCase())) {
             return false
           }
@@ -187,6 +200,7 @@ export default function LeaderboardPage() {
         </CardHeader>
         <CardContent className="p-6 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Address filter */}
             <div>
               <label className="block text-sm font-medium mb-1">Search by Address</label>
               <Input
@@ -195,11 +209,13 @@ export default function LeaderboardPage() {
                 onChange={(e) => setAddressSearch(e.target.value)}
               />
             </div>
+
+            {/* XP Range filter */}
             <div>
               <label className="block text-sm font-medium mb-1">XP Range</label>
               <DualRangeSlider
                 min={0}
-                max={10000000} // 10 million max
+                max={10000000} // up to 10 million
                 step={10}
                 value={xpRange}
                 onValueChange={(val) => setXpRange([val[0], val[1]])}
@@ -225,7 +241,9 @@ export default function LeaderboardPage() {
               <span>Loading leaderboard data...</span>
             </div>
           ) : filteredLeaderboard.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No addresses found for the given filters.</p>
+            <p className="text-sm text-muted-foreground">
+              No addresses found for the given filters.
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -251,10 +269,15 @@ export default function LeaderboardPage() {
                         const userTitle = getUserTitle(numericXp)
                         let colorClass = "text-muted-foreground"
 
-                        if (numericXp >= 5000) colorClass = "text-green-600"
-                        else if (numericXp >= 3000) colorClass = "text-blue-600"
-                        else if (numericXp >= 1000) colorClass = "text-purple-600"
-                        else if (numericXp >= 200) colorClass = "text-yellow-600"
+                        if (numericXp >= 5000) {
+                          colorClass = "text-green-600"
+                        } else if (numericXp >= 3000) {
+                          colorClass = "text-blue-600"
+                        } else if (numericXp >= 1000) {
+                          colorClass = "text-purple-600"
+                        } else if (numericXp >= 200) {
+                          colorClass = "text-yellow-600"
+                        }
 
                         return <span className={colorClass}>{userTitle}</span>
                       })()}
