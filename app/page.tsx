@@ -197,7 +197,7 @@ export default function Home() {
               <div className="bg-accent/10 rounded-lg p-4 md:p-6">
                 <div className="w-full space-y-2">
                   <Accordion type="multiple" className="w-full space-y-2">
-
+                  <Accordion type="multiple" className="w-full space-y-2">
                     {/* Leaderboard */}
                     <AccordionItem value="leaderboard">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
@@ -328,6 +328,31 @@ export default function Home() {
                       </AccordionContent>
                     </AccordionItem>
 
+                    <AccordionItem value="nft-staking">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        7. Is NFT Staking included in AIPenGuild?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        Absolutely! AIPenGuild includes an NFT Staking feature, which allows
+                        you to stake your NFTs to earn additional XP over time. Head over to
+                        the &quot;Stake&quot; page to lock up your NFTs and start accumulating XP
+                        rewards.
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="staking-xp">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        8. How many XP do I earn when I stake my NFT?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        The amount of XP you earn for staking depends on how long your NFT
+                        remains staked and the current staking rate. By default, each staked
+                        NFT accrues a set rate of XP per second, but this rate can be updated by
+                        the contract owner. You can claim your accumulated XP anytime or upon
+                        unstaking your NFT.
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                   </Accordion>
                 </div>
               </div>
