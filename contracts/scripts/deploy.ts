@@ -53,6 +53,12 @@ async function main() {
   )
   await stakingPool.deployed()
   console.log("NFTStakingPool deployed to:", stakingPool.address)
+
+  // Authorize NFTStakingPool in UserExperiencePoints
+  console.log("Authorizing NFTStakingPool in UserExperiencePoints as a caller...")
+  const authTx = await experience.setAuthorizedCaller(stakingPool.address, true)
+  await authTx.wait()
+  console.log("Authorized NFTStakingPool to call stakeModifyUserXP!")
 }
 
 main()
