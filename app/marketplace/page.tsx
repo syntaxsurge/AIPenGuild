@@ -190,23 +190,26 @@ export default function MarketplacePage() {
 
   // Compute final filtered array
   const filteredItems = React.useMemo(() => {
-    return listedItems.filter((item) => {
-      // Price range check
-      const numericPrice = Number(item.salePrice) / 1e18
-      if (numericPrice < priceRange[0] || numericPrice > priceRange[1]) {
-        return false
-      }
-      // Search filter check
-      const itemIdStr = String(item.itemId)
-      const lowerSearch = searchTerm.toLowerCase()
-      const lowerResource = item.resourceUrl.toLowerCase()
-      if (searchTerm) {
-        if (!itemIdStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
+    return listedItems
+      // 1) Only show items that are for sale
+      .filter((item) => item.isOnSale)
+      // 2) Filter by price range and search
+      .filter((item) => {
+        const numericPrice = Number(item.salePrice) / 1e18
+        if (numericPrice < priceRange[0] || numericPrice > priceRange[1]) {
           return false
         }
-      }
-      return true
-    })
+        // Search filter check
+        if (searchTerm) {
+          const itemIdStr = String(item.itemId)
+          const lowerSearch = searchTerm.toLowerCase()
+          const lowerResource = item.resourceUrl.toLowerCase()
+          if (!itemIdStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
+            return false
+          }
+        }
+        return true
+      })
   }, [listedItems, priceRange, searchTerm])
 
   // Handle "Buy" button
