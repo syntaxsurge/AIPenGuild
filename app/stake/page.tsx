@@ -526,6 +526,9 @@ export default function StakePage() {
                           alt={`NFT #${String(item.itemId)}`}
                           fill
                           className="object-cover"
+                          sizes="(max-width: 768px) 100vw,
+                                 (max-width: 1200px) 50vw,
+                                 33vw"
                         />
                       </div>
                       <p className="mt-1 text-xs font-semibold text-foreground line-clamp-1">
@@ -555,20 +558,23 @@ export default function StakePage() {
               </p>
             ) : (
               <div className="space-y-4">
-                {/* Preview */}
-                <div className="relative h-40 w-full overflow-hidden rounded-md border border-border bg-secondary">
+                {/* Preview: ensure we have a fixed height for fill. */}
+                <div className="relative w-full h-96 overflow-hidden rounded-md border border-border bg-secondary">
                   <Image
                     src={
                       selectedNFT.resourceUrl.startsWith("ipfs://")
                         ? selectedNFT.resourceUrl.replace(
-                          "ipfs://",
-                          "https://ipfs.io/ipfs/"
-                        )
+                            "ipfs://",
+                            "https://ipfs.io/ipfs/"
+                          )
                         : selectedNFT.resourceUrl
                     }
                     alt={`NFT #${String(selectedNFT.itemId)}`}
                     fill
-                    className="object-cover"
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw,
+                           (max-width: 1200px) 50vw,
+                           33vw"
                   />
                 </div>
 
