@@ -12,8 +12,10 @@ import { usePublicClient } from "wagmi"
 
 /**
  * We'll gather addresses by scanning all minted items from the NFTMarketplaceHub,
- * read userExperience(address) from UserExperiencePoints, store them in a map,
- * then show the top 10 addresses with the highest XP. We'll also allow:
+ * also checking stakers from NFTStakingPool so that staked NFTs are counted.
+ * Then read userExperience(address) from UserExperiencePoints, store them in a map,
+ * and show the top 10 addresses with the highest XP.
+ * We also allow:
  *  - Address search
  *  - XP Range filter
  */
@@ -27,6 +29,7 @@ export default function LeaderboardPage() {
   const { toast } = useToast()
   const userExperiencePoints = useContract("UserExperiencePoints")
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
+  const nftStakingPool = useContract("NFTStakingPool")
   const publicClient = usePublicClient()
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -37,9 +40,10 @@ export default function LeaderboardPage() {
   const [addressSearch, setAddressSearch] = useState("")
   const [xpRange, setXpRange] = useState<[number, number]>([0, 500]) // sample default range
 
-  // We'll track minted item owners up to getLatestItemId(), store them in a set, then query XP from UserExperience.
+  // We'll track minted item owners up to getLatestItemId(), store them in a set (including stakers),
+  // then query XP from UserExperience.
   async function loadLeaderboard() {
-    if (!userExperiencePoints || !nftMarketplaceHub || !publicClient) return
+    if (!userExperiencePoints || !nftMarketplaceHub || !nftStakingPool || !publicClient) return
     try {
       setLoading(true)
       const itemCount = await publicClient.readContract({
@@ -51,7 +55,9 @@ export default function LeaderboardPage() {
       if (typeof itemCount !== "bigint") return
 
       const ownersSet = new Set<string>()
+
       for (let i = 1n; i <= itemCount; i++) {
+        // 1) Try to get the "ownerOf" from the MarketplaceHub
         try {
           const owner = await publicClient.readContract({
             address: nftMarketplaceHub.address as `0x${string}`,
@@ -59,12 +65,31 @@ export default function LeaderboardPage() {
             functionName: "ownerOf",
             args: [i]
           }) as `0x${string}`
-
           ownersSet.add(owner.toLowerCase())
-        } catch { }
+        } catch {
+          // skip any error
+        }
+
+        // 2) Also check the staking info from NFTStakingPool, in case it's staked
+        // If staked, the actual "ownerOf" might be the pool's contract, not the user.
+        try {
+          const [staker, , , staked] = await publicClient.readContract({
+            address: nftStakingPool.address as `0x${string}`,
+            abi: nftStakingPool.abi,
+            functionName: "stakes",
+            args: [i]
+          }) as [string, bigint, bigint, boolean]
+
+          // If staked is true and staker isn't the zero address, add them
+          if (staked && staker && staker !== "0x0000000000000000000000000000000000000000") {
+            ownersSet.add(staker.toLowerCase())
+          }
+        } catch {
+          // skip any error
+        }
       }
 
-      // Now we have all owners. For each, read userExperience from UserExperience
+      // Now we have all addresses. For each, read userExperience from UserExperiencePoints
       const results: LeaderboardEntry[] = []
       for (const addr of ownersSet) {
         try {
@@ -77,10 +102,12 @@ export default function LeaderboardPage() {
           if (typeof xpVal === "bigint") {
             results.push({ address: addr, xp: xpVal })
           }
-        } catch { }
+        } catch {
+          // skip
+        }
       }
 
-      // Sort descending by xp
+      // Sort descending by XP
       results.sort((a, b) => Number(b.xp - a.xp))
       setLeaderboard(results)
     } catch (err: any) {
@@ -99,7 +126,7 @@ export default function LeaderboardPage() {
       setFetched(true)
       loadLeaderboard()
     }
-  }, [fetched])
+  }, [fetched, loadLeaderboard])
 
   // Filter the sorted leaderboard, then show top 10
   const filteredLeaderboard = React.useMemo(() => {
@@ -187,16 +214,16 @@ export default function LeaderboardPage() {
                     <td>{entry.xp.toString()} XP</td>
                     <td>
                       {(() => {
-                        const numericXp = Number(entry.xp);
-                        const userTitle = getUserTitle(numericXp);
-                        let colorClass = "text-muted-foreground";
+                        const numericXp = Number(entry.xp)
+                        const userTitle = getUserTitle(numericXp)
+                        let colorClass = "text-muted-foreground"
 
-                        if (numericXp >= 5000) colorClass = "text-green-600";
-                        else if (numericXp >= 3000) colorClass = "text-blue-600";
-                        else if (numericXp >= 1000) colorClass = "text-purple-600";
-                        else if (numericXp >= 200) colorClass = "text-yellow-600";
+                        if (numericXp >= 5000) colorClass = "text-green-600"
+                        else if (numericXp >= 3000) colorClass = "text-blue-600"
+                        else if (numericXp >= 1000) colorClass = "text-purple-600"
+                        else if (numericXp >= 200) colorClass = "text-yellow-600"
 
-                        return <span className={colorClass}>{userTitle}</span>;
+                        return <span className={colorClass}>{userTitle}</span>
                       })()}
                     </td>
                   </tr>
