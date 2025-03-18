@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { useRouter } from "next/navigation"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
 
@@ -18,7 +18,7 @@ interface TxStatus {
 
 export default function AdminPage() {
   const router = useRouter()
-  
+
   // Wagmi states
   const { address: wagmiAddress, isDisconnected } = useAccount()
   const publicClient = usePublicClient()
@@ -27,6 +27,15 @@ export default function AdminPage() {
 
   // Contract config
   const platformRewardPool = useContract("PlatformRewardPool")
+
+  // Is references loaded?
+  const isReferencesReady = (
+    !isDisconnected &&
+    !!publicClient &&
+    !!wagmiAddress &&
+    !!platformRewardPool?.address &&
+    !!platformRewardPool?.abi
+  )
 
   // State to track if the user is the owner
   const [isOwner, setIsOwner] = useState(false)
@@ -49,48 +58,47 @@ export default function AdminPage() {
     error: null
   })
 
-  // 1) Check ownership (once address is known)
+  const referencesCheckedRef = useRef(false)
+
+  // 1) Check ownership once references are ready
   useEffect(() => {
+    if (!isReferencesReady) return
+
+    // Ensure we only run once
+    if (referencesCheckedRef.current) return
+    referencesCheckedRef.current = true
+
     async function checkOwner() {
-      if (!platformRewardPool?.address || !platformRewardPool?.abi || !publicClient || !wagmiAddress) {
-        setIsOwner(false)
-        setOwnerLoading(false)
-        return
-      }
       try {
-        const contractOwner = await publicClient.readContract({
-          address: platformRewardPool.address as `0x${string}`,
-          abi: platformRewardPool.abi,
+        const contractOwner = await publicClient!.readContract({
+          address: platformRewardPool!.address as `0x${string}`,
+          abi: platformRewardPool!.abi,
           functionName: "owner",
           args: []
         }) as `0x${string}`
 
-        setIsOwner(contractOwner.toLowerCase() === wagmiAddress.toLowerCase())
+        setIsOwner(contractOwner.toLowerCase() === wagmiAddress!.toLowerCase())
       } catch {
         setIsOwner(false)
+      } finally {
+        setOwnerLoading(false)
       }
-      setOwnerLoading(false)
     }
 
-    if (!isDisconnected && wagmiAddress) {
-      checkOwner()
-    } else {
-      setIsOwner(false)
-      setOwnerLoading(false)
-    }
-  }, [platformRewardPool, publicClient, wagmiAddress, isDisconnected])
+    checkOwner()
+  }, [isReferencesReady, publicClient, platformRewardPool, wagmiAddress])
 
-  // Once we know ownership, redirect if not owner
+  // 2) Once we know if isOwner or not, if not isOwner => redirect
   useEffect(() => {
-    if (!ownerLoading && !isOwner) {
+    if (!ownerLoading && !isOwner && isReferencesReady) {
       router.push("/errors/403")
     }
-  }, [ownerLoading, isOwner, router])
+  }, [ownerLoading, isOwner, router, isReferencesReady])
 
-  // 2) Load pool balance
+  // 3) load pool balance
   useEffect(() => {
     async function loadBalance() {
-      if (!platformRewardPool?.address || !platformRewardPool?.abi || !publicClient) return
+      if (!publicClient || !platformRewardPool?.address || !platformRewardPool?.abi) return
       try {
         setLoadingBalance(true)
         const val = await publicClient.readContract({
@@ -114,10 +122,11 @@ export default function AdminPage() {
       }
     }
 
-    if (!isDisconnected && platformRewardPool?.address) {
+    // Only load if we have references, we know we're the owner, not disconnected
+    if (isReferencesReady && !ownerLoading && isOwner) {
       loadBalance()
     }
-  }, [platformRewardPool?.address, isDisconnected, toast, publicClient])
+  }, [isReferencesReady, ownerLoading, isOwner, platformRewardPool, publicClient, toast])
 
   // Withdraw logic
   async function handleWithdraw(e: React.FormEvent) {
@@ -191,31 +200,49 @@ export default function AdminPage() {
     }
   }
 
-  // If not connected
+  // If wallet is disconnected
   if (isDisconnected) {
     return (
-      <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
         <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
         <p className="text-center text-sm text-muted-foreground">Please connect your wallet.</p>
       </main>
     )
   }
 
-  // If we're still loading ownership
+  // If references are not ready => show a simple loading
+  if (!isReferencesReady) {
+    return (
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
+        <p className="text-center text-sm text-muted-foreground">
+          Loading contract references...
+        </p>
+      </main>
+    )
+  }
+
+  // If still checking ownership
   if (ownerLoading) {
     return (
-      <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
         <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
         <p className="text-center text-sm text-muted-foreground">Checking ownership...</p>
       </main>
     )
   }
 
-  // If user is owner, show the admin panel
+  // If user is not owner, we won't see this because we redirect above.
+  // But let's guard anyway
+  if (!isOwner) {
+    return null
+  }
+
+  // Otherwise, we show the admin panel
   return (
-    <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+    <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
       <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
-      <Card className="w-[1000px] mx-auto border border-border rounded-lg shadow-xl bg-background">
+      <Card className="border border-border rounded-lg shadow-xl bg-background">
         <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
           <CardTitle className="text-lg font-semibold">Reward Pool Management</CardTitle>
         </CardHeader>
