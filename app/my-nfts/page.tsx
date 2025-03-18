@@ -421,20 +421,22 @@ export default function MyNFTsPage() {
               </Button>
 
               {/* Transaction Status for Listing */}
-              <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                <p className="font-medium">Transaction Status:</p>
-                {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
-                {isListTxSuccess && (
-                  <p className="text-green-600">
-                    Transaction Confirmed! Your NFT is now listed.
-                  </p>
-                )}
-                {isListTxError && (
-                  <p className="font-bold text-orange-600 dark:text-orange-500">
-                    Transaction Failed: {listTxReceiptError?.message || listError?.message}
-                  </p>
-                )}
-              </div>
+              {(isListTxLoading || isListTxSuccess || isListTxError) && (
+                <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                  <p className="font-medium">Transaction Status:</p>
+                  {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                  {isListTxSuccess && (
+                    <p className="text-green-600">
+                      Transaction Confirmed! Your NFT is now listed.
+                    </p>
+                  )}
+                  {isListTxError && (
+                    <p className="font-bold text-orange-600 dark:text-orange-500">
+                      Transaction Failed: {listTxReceiptError?.message || listError?.message}
+                    </p>
+                  )}
+                </div>
+              )}
             </form>
 
             {/* Unlist NFT button (only if currently on sale) */}
@@ -450,22 +452,24 @@ export default function MyNFTsPage() {
                 </Button>
 
                 {/* Transaction Status for Unlisting */}
-                <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                  <p className="font-medium">Transaction Status:</p>
-                  {isUnlistTxLoading && (
-                    <p className="text-muted-foreground">Pending confirmation...</p>
-                  )}
-                  {isUnlistTxSuccess && (
-                    <p className="text-green-600">
-                      Transaction Confirmed! Your NFT has been unlisted.
-                    </p>
-                  )}
-                  {isUnlistTxError && (
-                    <p className="font-bold text-orange-600 dark:text-orange-500">
-                      Transaction Failed: {unlistTxReceiptError?.message || unlistError?.message}
-                    </p>
-                  )}
-                </div>
+                {(isUnlistTxLoading || isUnlistTxSuccess || isUnlistTxError) && (
+                  <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                    <p className="font-medium">Transaction Status:</p>
+                    {isUnlistTxLoading && (
+                      <p className="text-muted-foreground">Pending confirmation...</p>
+                    )}
+                    {isUnlistTxSuccess && (
+                      <p className="text-green-600">
+                        Transaction Confirmed! Your NFT has been unlisted.
+                      </p>
+                    )}
+                    {isUnlistTxError && (
+                      <p className="font-bold text-orange-600 dark:text-orange-500">
+                        Transaction Failed: {unlistTxReceiptError?.message || unlistError?.message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
