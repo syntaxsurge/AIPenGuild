@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import React, { useEffect, useRef, useState } from "react"
 import { parseAbiItem, parseEther } from "viem"
@@ -490,28 +491,7 @@ export default function MyNFTsPage() {
             {loadingNFTs ? (
               <div className="flex items-center justify-center gap-2">
                 {/* You can import Loader2 from lucide-react if not already */}
-                <span className="animate-spin">
-                  <svg
-                    className="h-5 w-5 text-muted-foreground"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8H4z"
-                    ></path>
-                  </svg>
-                </span>
+                <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="text-sm">Loading NFTs...</span>
               </div>
             ) : userNFTs.length === 0 ? (
