@@ -115,7 +115,7 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
      * @notice Claim the accumulated XP for a staked NFT, without unstaking it.
      * @param itemId The NFT itemId to claim rewards for.
      */
-    function claimStakingRewards(uint256 itemId) public nonReentrant {
+    function _claimStakingRewards(uint256 itemId) private {
         StakeInfo storage stakeData = stakes[itemId];
         require(stakeData.staked, "Not staked");
         require(stakeData.staker == msg.sender, "Not your stake");
@@ -139,6 +139,10 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
         emit RewardsClaimed(msg.sender, itemId, xpEarned);
     }
 
+    function claimStakingRewards(uint256 itemId) external nonReentrant {
+        _claimStakingRewards(itemId);
+    }
+
     /**
      * @notice Unstake a staked NFT. This automatically calls claimStakingRewards(...)
      *         to gather any unclaimed XP, then returns the NFT to the user.
@@ -150,7 +154,7 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
         require(stakeData.staker == msg.sender, "Not your stake");
 
         // First, claim any outstanding XP
-        claimStakingRewards(itemId);
+        _claimStakingRewards(itemId);
 
         // Transfer NFT back to the user
         IERC721(nftMarketplaceHub).safeTransferFrom(address(this), msg.sender, itemId);
