@@ -44,6 +44,8 @@ export default function StakePage() {
 
   // We'll store xpPerSecond from the staking contract (default 0n until loaded).
   const [xpRate, setXpRate] = useState<bigint>(0n);
+  // Additional boolean to prevent repeated calls
+  const [hasFetchedXpRate, setHasFetchedXpRate] = useState(false);
 
   // Current time in seconds (for real-time rewards).
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
@@ -64,10 +66,12 @@ export default function StakePage() {
     };
   }, []);
 
-  // 1) Read xpPerSecond from NFTStakingPool (one time)
+  // 1) Read xpPerSecond from NFTStakingPool only once
   useEffect(() => {
     async function loadXpRate() {
+      if (hasFetchedXpRate) return; // skip if we've already fetched
       if (!nftStakingPool?.address || !nftStakingPool.abi || !publicClient) return;
+
       try {
         const val = await publicClient.readContract({
           address: nftStakingPool.address as `0x${string}`,
@@ -78,12 +82,13 @@ export default function StakePage() {
         if (typeof val === "bigint") {
           setXpRate(val);
         }
+        setHasFetchedXpRate(true);
       } catch (err) {
         console.error("Failed to read xpPerSecond:", err);
       }
     }
     loadXpRate();
-  }, [nftStakingPool, publicClient]);
+  }, [nftStakingPool, publicClient, hasFetchedXpRate]);
 
   // 2) Fetch all items (nftData, ownerOf, and stake info) via single multicall
   async function fetchAllNFTs(forceReload?: boolean) {
@@ -190,8 +195,8 @@ export default function StakePage() {
   }
 
   useEffect(() => {
+    // Only fetch once initially or if user changes (and we want to refetch)
     fetchAllNFTs();
-    // We do not want to run it repeatedly on minor changes. Only once or if user logs in/out.
   }, [userAddress, nftMarketplaceHub, nftStakingPool, publicClient]);
 
   // 4) setApprovalForAll so staking pool can transfer from marketplace
@@ -396,8 +401,7 @@ export default function StakePage() {
     return ownerIsUser || stakerIsUser;
   });
 
-  // 7) For staked items belonging to user, compute unclaimed XP:
-  //    unclaimed = (currentTime - stakeInfo.lastClaimed) * xpRate
+  // 7) For staked items belonging to user, compute unclaimed XP in the front end with local time
   function computeUnclaimedXP(item: NFTItem): bigint {
     if (!item.stakeInfo || !item.stakeInfo.staked) return 0n;
     if (item.stakeInfo.staker.toLowerCase() !== userAddress?.toLowerCase()) return 0n;
