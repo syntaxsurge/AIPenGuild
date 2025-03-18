@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
-import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
@@ -17,8 +16,6 @@ interface TxStatus {
 }
 
 export default function AdminPage() {
-  const router = useRouter()
-
   // Wagmi states
   const { address: wagmiAddress, isDisconnected } = useAccount()
   const publicClient = usePublicClient()
@@ -38,13 +35,11 @@ export default function AdminPage() {
 
   // Withdraw input
   const [withdrawAmount, setWithdrawAmount] = useState("")
-  // Inline form error for amount
-  const [amountError, setAmountError] = useState("")
 
   // Show transaction status
   const [showTxStatus, setShowTxStatus] = useState(false)
 
-  // Our local withdraw transaction status (like in stake page)
+  // Our local withdraw transaction status
   const [withdrawTx, setWithdrawTx] = useState<TxStatus>({
     loading: false,
     success: false,
@@ -74,7 +69,6 @@ export default function AdminPage() {
       setOwnerLoading(false)
     }
 
-    // If there's a connected address, check ownership
     if (!isDisconnected && wagmiAddress) {
       checkOwner()
     } else {
@@ -115,14 +109,7 @@ export default function AdminPage() {
     }
   }, [platformRewardPool?.address, isDisconnected, toast, publicClient])
 
-  // 3) If user is not the owner (and done loading), redirect
-  useEffect(() => {
-    if (!ownerLoading && !isOwner) {
-      router.push("/errors/403")
-    }
-  }, [ownerLoading, isOwner, router])
-
-  // 4) Withdraw logic, copying the same approach as stake page
+  // Withdraw logic
   async function handleWithdraw(e: React.FormEvent) {
     e.preventDefault()
 
@@ -134,17 +121,8 @@ export default function AdminPage() {
       })
       return
     }
-    if (!withdrawAmount || isNaN(Number(withdrawAmount)) || Number(withdrawAmount) <= 0) {
-      setAmountError("Please enter a positive numeric amount of ETH to withdraw.")
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a positive numeric amount of ETH to withdraw.",
-        variant: "destructive"
-      })
-      return
-    }
-    // Clear error if user has put a valid amount
-    setAmountError("")
+
+    // skip all the prior amount checks: user can't click if invalid
     if (!walletClient || !publicClient) {
       toast({
         title: "No Wallet or Public Client",
@@ -204,7 +182,9 @@ export default function AdminPage() {
     }
   }
 
-  // A) If not connected at all
+  // Handle different states
+
+  // If not connected
   if (isDisconnected) {
     return (
       <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
@@ -214,7 +194,7 @@ export default function AdminPage() {
     )
   }
 
-  // B) If we're still loading ownership
+  // If we're still loading ownership
   if (ownerLoading) {
     return (
       <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
@@ -224,13 +204,19 @@ export default function AdminPage() {
     )
   }
 
-  // C) If at this point, user is not owner, we return null
-  //    The effect above will have pushed them to /errors/403
+  // If user is not recognized as owner
   if (!isOwner) {
-    return null
+    return (
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
+        <p className="text-center text-sm text-muted-foreground">
+          You are not recognized as the contract owner. Access restricted.
+        </p>
+      </main>
+    )
   }
 
-  // D) If user is indeed the contract owner, show the panel
+  // If user is the contract owner, show the admin panel
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
       <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
@@ -258,13 +244,15 @@ export default function AdminPage() {
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   placeholder="0.5"
                 />
-                {amountError && (
-                  <p className="mt-1 text-xs text-destructive">{amountError}</p>
-                )}
               </div>
               <Button
                 type="submit"
-                disabled={withdrawTx.loading}
+                disabled={
+                  !withdrawAmount ||
+                  isNaN(Number(withdrawAmount)) ||
+                  Number(withdrawAmount) <= 0 ||
+                  withdrawTx.loading
+                }
               >
                 {withdrawTx.loading ? "Withdrawing..." : "Withdraw"}
               </Button>
@@ -280,7 +268,7 @@ export default function AdminPage() {
                     </p>
                   )}
                   {withdrawTx.error && (
-                    <p className="font-bold text-orange-600 dark:text-orange-500">
+                    <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
                       Transaction Failed: {withdrawTx.error}
                     </p>
                   )}
