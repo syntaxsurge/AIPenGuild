@@ -78,7 +78,7 @@ export default function Home() {
       </section>
 
       {/* Introduction Section */}
-      <section className="py-12 bg-white dark:bg-gray-900">
+      <section id="introduction" className="py-12 bg-white dark:bg-gray-900">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-extrabold text-primary">Watch Our Introduction</h2>
@@ -124,7 +124,7 @@ export default function Home() {
       </section>
 
       {/* Featured AI NFTs Section */}
-      <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
+      <section id="featured" className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
         <div className="mx-auto max-w-6xl">
           <motion.h2
             className="mb-6 text-center text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl"
@@ -181,6 +181,7 @@ export default function Home() {
 
       {/* FAQ Section */}
       <section
+        id="faq"
         className="relative px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900"
         data-aos="fade-up"
       >
@@ -355,7 +356,7 @@ export default function Home() {
       </section >
 
       {/* Why AIPenGuild Section */}
-      < section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800" >
+      <section id="why-aipenguild" className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800">
         <div className="mx-auto max-w-6xl">
           <motion.div
             className="grid grid-cols-1 gap-8 md:grid-cols-2"
