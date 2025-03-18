@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
@@ -16,6 +17,8 @@ interface TxStatus {
 }
 
 export default function AdminPage() {
+  const router = useRouter()
+  
   // Wagmi states
   const { address: wagmiAddress, isDisconnected } = useAccount()
   const publicClient = usePublicClient()
@@ -77,6 +80,13 @@ export default function AdminPage() {
     }
   }, [platformRewardPool, publicClient, wagmiAddress, isDisconnected])
 
+  // Once we know ownership, redirect if not owner
+  useEffect(() => {
+    if (!ownerLoading && !isOwner) {
+      router.push("/errors/403")
+    }
+  }, [ownerLoading, isOwner, router])
+
   // 2) Load pool balance
   useEffect(() => {
     async function loadBalance() {
@@ -122,7 +132,6 @@ export default function AdminPage() {
       return
     }
 
-    // skip all the prior amount checks: user can't click if invalid
     if (!walletClient || !publicClient) {
       toast({
         title: "No Wallet or Public Client",
@@ -182,8 +191,6 @@ export default function AdminPage() {
     }
   }
 
-  // Handle different states
-
   // If not connected
   if (isDisconnected) {
     return (
@@ -204,19 +211,7 @@ export default function AdminPage() {
     )
   }
 
-  // If user is not recognized as owner
-  if (!isOwner) {
-    return (
-      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
-        <p className="text-center text-sm text-muted-foreground">
-          You are not recognized as the contract owner. Access restricted.
-        </p>
-      </main>
-    )
-  }
-
-  // If user is the contract owner, show the admin panel
+  // If user is owner, show the admin panel
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
       <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
