@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,7 +7,7 @@ import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import Image from "next/image"
 import React, { useEffect, useRef, useState } from "react"
-import { parseEther } from "viem"
+import { parseAbiItem, parseEther } from "viem"
 import {
   useAccount,
   usePublicClient,
@@ -283,11 +283,12 @@ export default function MyNFTsPage() {
       // itemId is indexed => topic[1]
       const nftItemGeneratedTopic = "0x93e40e7a55dc8edc8fe7fd5ab8a88111370574307399761a78d0f6a011dd3cdf"
       // We'll fetch logs from block 0 to "latest". You might want to limit from a known deployment block if you have it.
+      const event = parseAbiItem("event NFTItemGenerated(uint256 indexed itemId, address indexed collectionContract, uint256 xpGained, string imageURL)")
       const logs = await publicClient.getLogs({
-        address: nftMarketplaceHub.address as `0x${string}`,
+        address: nftMarketplaceHub.address as `0x\${string}`,
         fromBlock: 0n,
         toBlock: "latest",
-        topics: [nftItemGeneratedTopic]
+        event
       })
 
       // For each log, parse the itemId from topics[1] and read block timestamp
@@ -532,9 +533,8 @@ export default function MyNFTsPage() {
                     <div
                       key={String(nft.itemId)}
                       onClick={() => setSelectedNFT(nft)}
-                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${
-                        selected ? "border-primary" : "border-border"
-                      }`}
+                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${selected ? "border-primary" : "border-border"
+                        }`}
                     >
                       <div className="relative h-36 w-full overflow-hidden rounded-md bg-secondary">
                         <Image
@@ -605,7 +605,7 @@ export default function MyNFTsPage() {
                     <p className="text-sm mb-1 text-green-600">
                       <strong>Staked:</strong> This NFT is currently staked.
                     </p>
-                )}
+                  )}
 
                 {/* Listing Form */}
                 {(() => {
