@@ -42,9 +42,7 @@ export default function MintNFTPage() {
     isSuccess: isTxSuccess,
     isError: isTxError,
     error: txError
-  } = useWaitForTransactionReceipt({
-    hash: writeData ?? undefined
-  })
+  } = useWaitForTransactionReceipt({ hash: writeData ?? undefined })
 
   const [prompt, setPrompt] = useState("")
   const [aiNft, setAiNft] = useState<any>(null)
@@ -215,167 +213,170 @@ export default function MintNFTPage() {
   }, [isTxLoading, isTxSuccess, isTxError, txError, toast])
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-      <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
-      <p className="mb-4 text-center text-sm text-muted-foreground">
-        Generate or upload your NFT image and mint from the default collection.
-      </p>
+    <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12 sm:px-6 md:px-8">
+      <div className="max-w-5xl w-full">
+        <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          Generate or upload your NFT image and mint from the default collection.
+        </p>
 
-      <Card className="border border-border shadow-lg rounded-lg p-6">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Wand className="h-5 w-5" />
-            NFT Image Options
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <div className="mb-2 text-sm font-medium text-muted-foreground">
-              Choose how to get your NFT image
+        <Card className="border border-border shadow-lg rounded-lg p-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Wand className="h-5 w-5" />
+              NFT Image Options
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <div className="mb-2 text-sm font-medium text-muted-foreground">
+                Choose how to get your NFT image
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant={useAIImage ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setUseAIImage(true)
+                    setUploadedFile(null)
+                    setPreviewUrl(null)
+                  }}
+                >
+                  <Brain className="mr-1 h-4 w-4" />
+                  Generate with AI
+                </Button>
+                <Button
+                  variant={!useAIImage ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setUseAIImage(false)
+                    setAiNft(null)
+                  }}
+                >
+                  <Upload className="mr-1 h-4 w-4" />
+                  Upload Custom Image
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant={useAIImage ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setUseAIImage(true)
-                  setUploadedFile(null)
-                  setPreviewUrl(null)
-                }}
-              >
-                <Brain className="mr-1 h-4 w-4" />
-                Generate with AI
-              </Button>
-              <Button
-                variant={!useAIImage ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setUseAIImage(false)
-                  setAiNft(null)
-                }}
-              >
-                <Upload className="mr-1 h-4 w-4" />
-                Upload Custom Image
-              </Button>
-            </div>
-          </div>
 
-          {useAIImage && (
-            <div className="rounded-md bg-secondary p-4">
-              <label className="mb-2 block text-sm font-medium text-muted-foreground">
-                Enter an AI Prompt
-              </label>
-              <Input
-                placeholder="e.g. Surreal cityscape with neon vibes"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-              {showPromptError && (
-                <p className="mt-1 text-xs text-destructive">Please enter a prompt.</p>
-              )}
-              <Button onClick={handleGenerateImage} disabled={generatingImage} className="mt-2 w-full">
-                {generatingImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Image...
-                  </>
-                ) : (
-                  "Generate Image"
+            {useAIImage && (
+              <div className="rounded-md bg-secondary p-4">
+                <label className="mb-2 block text-sm font-medium text-muted-foreground">
+                  Enter an AI Prompt
+                </label>
+                <Input
+                  placeholder="e.g. Surreal cityscape with neon vibes"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+                {showPromptError && (
+                  <p className="mt-1 text-xs text-destructive">Please enter a prompt.</p>
                 )}
-              </Button>
-              {generateImageError && (
-                <p className="mt-2 text-xs text-destructive">{generateImageError}</p>
-              )}
-              {aiNft && (
-                <div className="mt-4 flex flex-col items-center space-y-2">
-                  <div className="relative h-48 w-48 overflow-hidden rounded-md border border-border">
-                    <Image
-                      src={aiNft.imageUrl}
-                      alt="AI NFT Preview"
-                      fill
-                      className="object-cover"
-                    />
+                <Button onClick={handleGenerateImage} disabled={generatingImage} className="mt-2 w-full">
+                  {generatingImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Image...
+                    </>
+                  ) : (
+                    "Generate Image"
+                  )}
+                </Button>
+                {generateImageError && (
+                  <p className="mt-2 text-xs text-destructive">{generateImageError}</p>
+                )}
+                {aiNft && (
+                  <div className="mt-4 flex flex-col items-center space-y-2">
+                    <div className="relative h-48 w-48 overflow-hidden rounded-md border border-border">
+                      <Image
+                        src={aiNft.imageUrl}
+                        alt="AI NFT Preview"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!useAIImage && (
-            <div className="rounded-md bg-secondary p-4">
-              <label className="mb-2 block text-sm font-medium text-muted-foreground">
-                Upload Custom Image
-              </label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="file:mr-4 file:rounded file:border-0 file:bg-accent file:px-4 file:py-2 file:text-accent-foreground hover:file:bg-accent/90"
-              />
-              {uploadedFile && previewUrl && (
-                <div className="mt-4 flex flex-col items-center space-y-2">
-                  <div className="relative h-48 w-48 overflow-hidden rounded-md border border-border">
-                    <Image
-                      src={previewUrl}
-                      alt="Custom NFT Preview"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="border border-border shadow-lg rounded-lg mt-8 p-6">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            Mint the NFT
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col space-y-3">
-            <Button
-              onClick={handleMint}
-              disabled={isWritePending || isTxLoading}
-              className="w-full"
-            >
-              {isWritePending || isTxLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isWritePending ? "Waiting for Wallet..." : "Minting..."}
-                </>
-              ) : (
-                "Mint NFT"
-              )}
-            </Button>
-
-            {mintError && (
-              <p className="text-xs text-destructive break-words whitespace-pre-wrap">{mintError}</p>
+                )}
+              </div>
             )}
 
-           {/* Transaction Status block */}
-           {(isWritePending || isTxLoading || isTxSuccess || isTxError) && (
-             <div className="rounded-md border border-border p-4 mt-2 text-sm">
-               <p className="font-medium">Transaction Status:</p>
-               {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
-               {isTxSuccess && (
-                 <p className="text-green-600">
-                   Transaction Confirmed! Your NFT is minted.
-                 </p>
-               )}
-               {isTxError && (
-                 <p className="font-bold text-orange-600 dark:text-orange-500">
-                   Transaction Failed: {txError?.message}
-                 </p>
-               )}
-             </div>
-           )}
-          </div>
-        </CardContent>
-      </Card>
+            {!useAIImage && (
+              <div className="rounded-md bg-secondary p-4">
+                <label className="mb-2 block text-sm font-medium text-muted-foreground">
+                  Upload Custom Image
+                </label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="file:mr-4 file:rounded file:border-0 file:bg-accent file:px-4 file:py-2 file:text-accent-foreground hover:file:bg-accent/90"
+                />
+                {uploadedFile && previewUrl && (
+                  <div className="mt-4 flex flex-col items-center space-y-2">
+                    <div className="relative h-48 w-48 overflow-hidden rounded-md border border-border">
+                      <Image
+                        src={previewUrl}
+                        alt="Custom NFT Preview"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border shadow-lg rounded-lg mt-8 p-6">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              Mint the NFT
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col space-y-3">
+              <Button
+                onClick={handleMint}
+                disabled={isWritePending || isTxLoading}
+                className="w-full"
+              >
+                {isWritePending || isTxLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isWritePending ? "Waiting for Wallet..." : "Minting..."}
+                  </>
+                ) : (
+                  "Mint NFT"
+                )}
+              </Button>
+
+              {mintError && (
+                <p className="text-xs text-destructive break-words whitespace-pre-wrap">
+                  {mintError}
+                </p>
+              )}
+
+              {(isWritePending || isTxLoading || isTxSuccess || isTxError) && (
+                <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                  <p className="font-medium">Transaction Status:</p>
+                  {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                  {isTxSuccess && (
+                    <p className="text-green-600">
+                      Transaction Confirmed! Your NFT is minted.
+                    </p>
+                  )}
+                  {isTxError && (
+                    <p className="font-bold text-orange-600 dark:text-orange-500">
+                      Transaction Failed: {txError?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   )
 }

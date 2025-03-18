@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,8 +63,6 @@ export default function AdminPage() {
   // 1) Check ownership once references are ready
   useEffect(() => {
     if (!isReferencesReady) return
-
-    // Ensure we only run once
     if (referencesCheckedRef.current) return
     referencesCheckedRef.current = true
 
@@ -88,7 +86,7 @@ export default function AdminPage() {
     checkOwner()
   }, [isReferencesReady, publicClient, platformRewardPool, wagmiAddress])
 
-  // 2) Once we know if isOwner or not, if not isOwner => redirect
+  // 2) redirect if not owner
   useEffect(() => {
     if (!ownerLoading && !isOwner && isReferencesReady) {
       router.push("/errors/403")
@@ -172,6 +170,7 @@ export default function AdminPage() {
 
       // 2) Wait for transaction receipt
       await publicClient.waitForTransactionReceipt({ hash })
+
       toast({
         title: "Withdrawal Successful",
         description: "Funds withdrawn from reward pool"
@@ -203,9 +202,11 @@ export default function AdminPage() {
   // If wallet is disconnected
   if (isDisconnected) {
     return (
-      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
-        <p className="text-center text-sm text-muted-foreground">Please connect your wallet.</p>
+      <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
+        <div className="max-w-5xl w-full">
+          <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
+          <p className="text-center text-sm text-muted-foreground">Please connect your wallet.</p>
+        </div>
       </main>
     )
   }
@@ -213,11 +214,13 @@ export default function AdminPage() {
   // If references are not ready => show a simple loading
   if (!isReferencesReady) {
     return (
-      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
-        <p className="text-center text-sm text-muted-foreground">
-          Loading contract references...
-        </p>
+      <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
+        <div className="max-w-5xl w-full">
+          <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
+          <p className="text-center text-sm text-muted-foreground">
+            Loading contract references...
+          </p>
+        </div>
       </main>
     )
   }
@@ -225,81 +228,83 @@ export default function AdminPage() {
   // If still checking ownership
   if (ownerLoading) {
     return (
-      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-        <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
-        <p className="text-center text-sm text-muted-foreground">Checking ownership...</p>
+      <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
+        <div className="max-w-5xl w-full">
+          <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
+          <p className="text-center text-sm text-muted-foreground">Checking ownership...</p>
+        </div>
       </main>
     )
   }
 
-  // If user is not owner, we won't see this because we redirect above.
-  // But let's guard anyway
+  // If user is not owner, we won't see this because we redirect. But let's guard anyway
   if (!isOwner) {
     return null
   }
 
   // Otherwise, we show the admin panel
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-      <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
-      <Card className="border border-border rounded-lg shadow-xl bg-background">
-        <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
-          <CardTitle className="text-lg font-semibold">Reward Pool Management</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 space-y-6">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Current Pool Balance:</p>
-            <div className="text-lg font-bold text-primary">
-              {loadingBalance ? "Loading..." : `${(Number(poolBalance) / 1e18).toFixed(4)} ETH`}
-            </div>
-          </div>
-          <hr className="border-border" />
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Withdraw funds from the reward pool (owner only).
-            </p>
-            <form onSubmit={handleWithdraw} className="flex flex-col gap-2">
-              <div className="flex flex-col">
-                <label className="text-xs font-medium">Amount in ETH</label>
-                <Input
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  placeholder="0.5"
-                />
+    <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
+      <div className="max-w-5xl w-full">
+        <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
+        <Card className="border border-border rounded-lg shadow-xl bg-background">
+          <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
+            <CardTitle className="text-lg font-semibold">Reward Pool Management</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Current Pool Balance:</p>
+              <div className="text-lg font-bold text-primary">
+                {loadingBalance ? "Loading..." : `${(Number(poolBalance) / 1e18).toFixed(4)} ETH`}
               </div>
-              <Button
-                type="submit"
-                disabled={
-                  !withdrawAmount ||
-                  isNaN(Number(withdrawAmount)) ||
-                  Number(withdrawAmount) <= 0 ||
-                  withdrawTx.loading
-                }
-              >
-                {withdrawTx.loading ? "Withdrawing..." : "Withdraw"}
-              </Button>
-
-              {/* Transaction Status - only show if "showTxStatus" is true */}
-              {showTxStatus && (
-                <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                  <p className="font-medium">Transaction Status:</p>
-                  {withdrawTx.loading && <p className="text-muted-foreground">Pending confirmation...</p>}
-                  {withdrawTx.success && (
-                    <p className="text-green-600">
-                      Transaction Confirmed! Withdrawal successful.
-                    </p>
-                  )}
-                  {withdrawTx.error && (
-                    <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
-                      Transaction Failed: {withdrawTx.error}
-                    </p>
-                  )}
+            </div>
+            <hr className="border-border" />
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Withdraw funds from the reward pool (owner only).
+              </p>
+              <form onSubmit={handleWithdraw} className="flex flex-col gap-2">
+                <div className="flex flex-col">
+                  <label className="text-xs font-medium">Amount in ETH</label>
+                  <Input
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder="0.5"
+                  />
                 </div>
-              )}
-            </form>
-          </div>
-        </CardContent>
-      </Card>
+                <Button
+                  type="submit"
+                  disabled={
+                    !withdrawAmount ||
+                    isNaN(Number(withdrawAmount)) ||
+                    Number(withdrawAmount) <= 0 ||
+                    withdrawTx.loading
+                  }
+                >
+                  {withdrawTx.loading ? "Withdrawing..." : "Withdraw"}
+                </Button>
+
+                {showTxStatus && (
+                  <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                    <p className="font-medium">Transaction Status:</p>
+                    {withdrawTx.loading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                    {withdrawTx.success && (
+                      <p className="text-green-600">
+                        Transaction Confirmed! Withdrawal successful.
+                      </p>
+                    )}
+                    {withdrawTx.error && (
+                      <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
+                        Transaction Failed: {withdrawTx.error}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   )
 }

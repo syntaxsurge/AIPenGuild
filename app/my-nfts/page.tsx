@@ -27,10 +27,6 @@ interface NFTDetails {
   stakeInfo?: StakeInfo
 }
 
-/**
- * Optional in-code metadata structure. We attempt to fetch if the resource URL leads
- * to some JSON with name/description.
- */
 interface MetadataState {
   imageUrl?: string
   name?: string
@@ -51,6 +47,7 @@ export default function MyNFTsPage() {
     data: listWriteData,
     error: listError,
     isPending: isListPending,
+    isSuccess: isListSuccess,
     writeContract: writeListContract,
   } = useWriteContract()
 
@@ -60,9 +57,7 @@ export default function MyNFTsPage() {
     isSuccess: isListTxSuccess,
     isError: isListTxError,
     error: listTxReceiptError
-  } = useWaitForTransactionReceipt({
-    hash: listWriteData ?? undefined
-  })
+  } = useWaitForTransactionReceipt({ hash: listWriteData ?? undefined })
 
   // For unlisting
   const {
@@ -78,9 +73,7 @@ export default function MyNFTsPage() {
     isSuccess: isUnlistTxSuccess,
     isError: isUnlistTxError,
     error: unlistTxReceiptError
-  } = useWaitForTransactionReceipt({
-    hash: unlistWriteData ?? undefined
-  })
+  } = useWaitForTransactionReceipt({ hash: unlistWriteData ?? undefined })
 
   // Toast notifications for listing
   useEffect(() => {
@@ -148,11 +141,13 @@ export default function MyNFTsPage() {
   // 1) If user not connected, just show message
   if (!wagmiAddress) {
     return (
-      <main className="mx-auto min-h-screen max-w-4xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-        <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">My NFTs</h1>
-        <p className="text-center text-sm text-muted-foreground">
-          Please connect your wallet to view your NFTs.
-        </p>
+      <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12 sm:px-6 md:px-8">
+        <div className="max-w-5xl w-full">
+          <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">My NFTs</h1>
+          <p className="text-center text-sm text-muted-foreground">
+            Please connect your wallet to view your NFTs.
+          </p>
+        </div>
       </main>
     )
   }
@@ -245,7 +240,6 @@ export default function MyNFTsPage() {
 
   useEffect(() => {
     fetchUserNFTs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wagmiAddress, currentMaxId, nftMarketplaceHub, nftStakingPool, publicClient])
 
   // 4) Load metadata for each
@@ -286,12 +280,7 @@ export default function MyNFTsPage() {
         } catch (err) {
           // ignore
         }
-
-        newMap[String(nft.itemId)] = {
-          imageUrl: finalImageUrl,
-          name,
-          description
-        }
+        newMap[String(nft.itemId)] = { imageUrl: finalImageUrl, name, description }
       }
       setMetadataMap(newMap)
     }
@@ -387,162 +376,153 @@ export default function MyNFTsPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-      <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">My NFTs</h1>
-      <p className="mb-8 text-center text-sm text-muted-foreground">
-        View NFTs you either own or have staked, and optionally list them for sale.
-      </p>
+    <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12 sm:px-6 md:px-8">
+      <div className="max-w-5xl w-full">
+        <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">My NFTs</h1>
+        <p className="mb-8 text-center text-sm text-muted-foreground">
+          View NFTs you either own or have staked, and optionally list them for sale.
+        </p>
 
-      {/* Collection Card */}
-      <Card className="mt-6 border border-border rounded-lg shadow-xl bg-background">
-        <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
-          <CardTitle className="text-lg font-semibold">Your NFTs</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {userNFTs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">You have no NFTs in your wallet or staked.</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {userNFTs.map((nft) => {
-                const meta = metadataMap[String(nft.itemId)] || {}
-                const displayUrl = getDisplayUrl(nft)
-
-                // Figure out labels to show: staked or for sale or both
-                // Usually it's improbable that it's both staked + for sale, but let's handle it gracefully
-                const isStaked = nft.stakeInfo?.staked && nft.stakeInfo.staker?.toLowerCase() === wagmiAddress.toLowerCase()
-                const isForSale = nft.isOnSale
-
-                return (
-                  <div
-                    key={String(nft.itemId)}
-                    onClick={() => setSelectedNFT(nft)}
-                    className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
-                      }`}
-                  >
-                    <div className="relative h-32 w-full overflow-hidden rounded-md sm:h-36 bg-secondary">
-                      <Image
-                        src={displayUrl}
-                        alt={`NFT #${nft.itemId}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <p className="mt-2 text-xs font-semibold text-foreground line-clamp-1">
-                      {meta.name || `NFT #${String(nft.itemId)}`}
-                    </p>
-                    {/* If staked, show label */}
-                    {isStaked && (
-                      <p className="mt-1 text-xs font-semibold text-green-700 dark:text-green-500">
-                        Staked
-                      </p>
-                    )}
-                    {/* If for sale, show label */}
-                    {isForSale && (
-                      <p className="mt-1 text-xs font-semibold text-orange-600 dark:text-orange-500">
-                        Listed for sale
-                      </p>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Selected NFT's listing form */}
-      {selectedNFT && (
         <Card className="mt-6 border border-border rounded-lg shadow-xl bg-background">
           <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
-            <CardTitle className="text-lg font-semibold">Set Sale Price</CardTitle>
+            <CardTitle className="text-lg font-semibold">Your NFTs</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <form onSubmit={handleListNFT} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Sale Price (ETH)</label>
-                <Input
-                  type="number"
-                  step="0.001"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.1"
-                  required
-                  className="mt-1"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={!selectedNFT || !price || isListingTxBusy}
-                className="w-full"
-              >
-                {isListingTxBusy ? "Processing..." : "List for Sale"}
-              </Button>
-
-              {/* Transaction Status for Listing */}
-              {(isListTxLoading || isListTxSuccess || isListTxError) && (
-                <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                  <p className="font-medium">Transaction Status:</p>
-                  {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
-                  {isListTxSuccess && (
-                    <p className="text-green-600">
-                      Transaction Confirmed! Your NFT is now listed.
-                    </p>
-                  )}
-                  {isListTxError && (
-                    <p className="font-bold text-orange-600 dark:text-orange-500">
-                      Transaction Failed: {listTxReceiptError?.message || listError?.message}
-                    </p>
-                  )}
-                </div>
-              )}
-            </form>
-
-            {/* Unlist NFT button (only if currently on sale) */}
-            {selectedNFT?.isOnSale && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleUnlistNFT}
-                  disabled={isUnlistingTxBusy}
-                  className="mt-4 w-full"
-                >
-                  {isUnlistingTxBusy ? "Processing..." : "Unlist NFT"}
-                </Button>
-
-                {/* Transaction Status for Unlisting */}
-                {(isUnlistTxLoading || isUnlistTxSuccess || isUnlistTxError) && (
-                  <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                    <p className="font-medium">Transaction Status:</p>
-                    {isUnlistTxLoading && (
-                      <p className="text-muted-foreground">Pending confirmation...</p>
-                    )}
-                    {isUnlistTxSuccess && (
-                      <p className="text-green-600">
-                        Transaction Confirmed! Your NFT has been unlisted.
+            {userNFTs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">You have no NFTs in your wallet or staked.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {userNFTs.map((nft) => {
+                  const meta = metadataMap[String(nft.itemId)] || {}
+                  const displayUrl = getDisplayUrl(nft)
+                  const isStaked = nft.stakeInfo?.staked &&
+                    nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+                  const isForSale = nft.isOnSale
+                  return (
+                    <div
+                      key={String(nft.itemId)}
+                      onClick={() => setSelectedNFT(nft)}
+                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${selectedNFT?.itemId === nft.itemId ? "border-primary" : "border-border"
+                        }`}
+                    >
+                      <div className="relative h-32 w-full overflow-hidden rounded-md bg-secondary sm:h-36">
+                        <Image
+                          src={displayUrl}
+                          alt={`NFT #${nft.itemId}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs font-semibold text-foreground line-clamp-1">
+                        {meta.name || `NFT #${String(nft.itemId)}`}
                       </p>
-                    )}
-                    {isUnlistTxError && (
-                      <p className="font-bold text-orange-600 dark:text-orange-500">
-                        Transaction Failed: {unlistTxReceiptError?.message || unlistError?.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* If there's a description from metadata, show it */}
-            {metadataMap[String(selectedNFT.itemId)]?.description && (
-              <div className="mt-6">
-                <p className="text-sm font-semibold">Story / Description:</p>
-                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
-                  {metadataMap[String(selectedNFT.itemId)]?.description}
-                </p>
+                      {isStaked && (
+                        <p className="mt-1 text-xs font-semibold text-green-700 dark:text-green-500">
+                          Staked
+                        </p>
+                      )}
+                      {isForSale && (
+                        <p className="mt-1 text-xs font-semibold text-orange-600 dark:text-orange-500">
+                          Listed for sale
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </CardContent>
         </Card>
-      )}
+
+        {selectedNFT && (
+          <Card className="mt-6 border border-border rounded-lg shadow-xl bg-background">
+            <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
+              <CardTitle className="text-lg font-semibold">Set Sale Price</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleListNFT} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Sale Price (ETH)</label>
+                  <Input
+                    type="number"
+                    step="0.001"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0.1"
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={!selectedNFT || !price || isListingTxBusy}
+                  className="w-full"
+                >
+                  {isListingTxBusy ? "Processing..." : "List for Sale"}
+                </Button>
+
+                {(isListTxLoading || isListTxSuccess || isListTxError) && (
+                  <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                    <p className="font-medium">Transaction Status:</p>
+                    {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                    {isListTxSuccess && (
+                      <p className="text-green-600">
+                        Transaction Confirmed! Your NFT is now listed.
+                      </p>
+                    )}
+                    {isListTxError && (
+                      <p className="font-bold text-orange-600 dark:text-orange-500">
+                        Transaction Failed: {listTxReceiptError?.message || listError?.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </form>
+
+              {selectedNFT?.isOnSale && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleUnlistNFT}
+                    disabled={isUnlistingTxBusy}
+                    className="mt-4 w-full"
+                  >
+                    {isUnlistingTxBusy ? "Processing..." : "Unlist NFT"}
+                  </Button>
+
+                  {(isUnlistTxLoading || isUnlistTxSuccess || isUnlistTxError) && (
+                    <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                      <p className="font-medium">Transaction Status:</p>
+                      {isUnlistTxLoading && (
+                        <p className="text-muted-foreground">Pending confirmation...</p>
+                      )}
+                      {isUnlistTxSuccess && (
+                        <p className="text-green-600">
+                          Transaction Confirmed! Your NFT has been unlisted.
+                        </p>
+                      )}
+                      {isUnlistTxError && (
+                        <p className="font-bold text-orange-600 dark:text-orange-500">
+                          Transaction Failed: {unlistTxReceiptError?.message || unlistError?.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {metadataMap[String(selectedNFT.itemId)]?.description && (
+                <div className="mt-6">
+                  <p className="text-sm font-semibold">Story / Description:</p>
+                  <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
+                    {metadataMap[String(selectedNFT.itemId)]?.description}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </main>
   )
 }

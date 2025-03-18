@@ -73,30 +73,27 @@ export default function LeaderboardPage() {
       const multicallRes = await publicClient?.multicall({
         contracts: calls,
         allowFailure: true
-      });
-
-      // Ensure multicallRes is defined before proceeding
+      })
       if (!multicallRes) {
-        console.error("multicallRes is undefined");
-        return;
+        console.error("multicallRes is undefined")
+        return
       }
 
-      // Gather all unique addresses from ownerOf and stakes calls
-      const ownersSet = new Set<string>();
-      let index = 0;
+      const ownersSet = new Set<string>()
+      let index = 0
       for (let i = 1n; i <= totalItems; i++) {
-        const ownerCall = multicallRes[index];
-        const stakeCall = multicallRes[index + 1];
-        index += 2;
+        const ownerCall = multicallRes[index]
+        const stakeCall = multicallRes[index + 1]
+        index += 2
 
         if (ownerCall?.result) {
-          const ownerAddr = ownerCall.result as `0x${string}`;
-          ownersSet.add(ownerAddr.toLowerCase());
+          const ownerAddr = ownerCall.result as `0x${string}`
+          ownersSet.add(ownerAddr.toLowerCase())
         }
         if (stakeCall?.result) {
-          const [stakerAddr, , , staked] = stakeCall.result as [string, bigint, bigint, boolean];
+          const [stakerAddr, , , staked] = stakeCall.result as [string, bigint, bigint, boolean]
           if (staked && stakerAddr && stakerAddr !== "0x0000000000000000000000000000000000000000") {
-            ownersSet.add(stakerAddr.toLowerCase());
+            ownersSet.add(stakerAddr.toLowerCase())
           }
         }
       }
@@ -150,9 +147,7 @@ export default function LeaderboardPage() {
     }
 
     // If we've already fetched once, skip
-    if (loadedRef.current) {
-      return
-    }
+    if (loadedRef.current) return
     loadedRef.current = true
 
     // Now we can call the load function once
@@ -187,108 +182,105 @@ export default function LeaderboardPage() {
   }, [leaderboard, xpRange, addressSearch])
 
   return (
-    <main className="mx-auto max-w-4xl min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
-      <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">XP Leaderboard</h1>
-      <p className="mb-8 text-center text-sm text-muted-foreground">
-        Explore the top XP holders on AIPenGuild. Addresses with high XP earn special titles.
-      </p>
+    <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12 sm:px-6 md:px-8">
+      <div className="max-w-5xl w-full">
+        <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">XP Leaderboard</h1>
+        <p className="mb-8 text-center text-sm text-muted-foreground">
+          Explore the top XP holders on AIPenGuild. Addresses with high XP earn special titles.
+        </p>
 
-      {/* Filters */}
-      <Card className="mb-6 border border-border rounded-lg shadow bg-background">
-        <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
-          <CardTitle className="text-lg font-semibold">Filters</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Address filter */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Search by Address</label>
-              <Input
-                placeholder="0x..."
-                value={addressSearch}
-                onChange={(e) => setAddressSearch(e.target.value)}
-              />
-            </div>
-
-            {/* XP Range filter */}
-            <div>
-              <label className="block text-sm font-medium mb-1">XP Range</label>
-              <DualRangeSlider
-                min={0}
-                max={10000000} // up to 10 million
-                step={10}
-                value={xpRange}
-                onValueChange={(val) => setXpRange([val[0], val[1]])}
-              />
-              <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                <span>{xpRange[0]} XP</span>
-                <span>{xpRange[1]} XP</span>
+        <Card className="mb-6 border border-border rounded-lg shadow bg-background">
+          <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
+            <CardTitle className="text-lg font-semibold">Filters</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium mb-1">Search by Address</label>
+                <Input
+                  placeholder="0x..."
+                  value={addressSearch}
+                  onChange={(e) => setAddressSearch(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">XP Range</label>
+                <DualRangeSlider
+                  min={0}
+                  max={10000000}
+                  step={10}
+                  value={xpRange}
+                  onValueChange={(val) => setXpRange([val[0], val[1]])}
+                />
+                <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                  <span>{xpRange[0]} XP</span>
+                  <span>{xpRange[1]} XP</span>
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Leaderboard Table */}
-      <Card className="border border-border rounded-lg shadow bg-background">
-        <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
-          <CardTitle className="text-lg font-semibold">Top 10 XP Holders</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {loading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Loading leaderboard data...</span>
-            </div>
-          ) : filteredLeaderboard.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No addresses found for the given filters.
-            </p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="py-2">Rank</th>
-                  <th>Address</th>
-                  <th>XP</th>
-                  <th>Title</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeaderboard.map((entry, index) => (
-                  <tr key={entry.address} className="border-b border-border last:border-none">
-                    <td className="py-2">{index + 1}</td>
-                    <td>
-                      {entry.address.slice(0, 6)}...
-                      {entry.address.slice(-4)}
-                    </td>
-                    <td>{entry.xp.toString()} XP</td>
-                    <td>
-                      {(() => {
-                        const numericXp = Number(entry.xp)
-                        const userTitle = getUserTitle(numericXp)
-                        let colorClass = "text-muted-foreground"
-
-                        if (numericXp >= 5000) {
-                          colorClass = "text-green-600"
-                        } else if (numericXp >= 3000) {
-                          colorClass = "text-blue-600"
-                        } else if (numericXp >= 1000) {
-                          colorClass = "text-purple-600"
-                        } else if (numericXp >= 200) {
-                          colorClass = "text-yellow-600"
-                        }
-
-                        return <span className={colorClass}>{userTitle}</span>
-                      })()}
-                    </td>
+        <Card className="border border-border rounded-lg shadow bg-background">
+          <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
+            <CardTitle className="text-lg font-semibold">Top 10 XP Holders</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {loading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading leaderboard data...</span>
+              </div>
+            ) : filteredLeaderboard.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No addresses found for the given filters.
+              </p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="py-2">Rank</th>
+                    <th>Address</th>
+                    <th>XP</th>
+                    <th>Title</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </CardContent>
-      </Card>
+                </thead>
+                <tbody>
+                  {filteredLeaderboard.map((entry, index) => (
+                    <tr key={entry.address} className="border-b border-border last:border-none">
+                      <td className="py-2">{index + 1}</td>
+                      <td>
+                        {entry.address.slice(0, 6)}...
+                        {entry.address.slice(-4)}
+                      </td>
+                      <td>{entry.xp.toString()} XP</td>
+                      <td>
+                        {(() => {
+                          const numericXp = Number(entry.xp)
+                          const userTitle = getUserTitle(numericXp)
+                          let colorClass = "text-muted-foreground"
+
+                          if (numericXp >= 5000) {
+                            colorClass = "text-green-600"
+                          } else if (numericXp >= 3000) {
+                            colorClass = "text-blue-600"
+                          } else if (numericXp >= 1000) {
+                            colorClass = "text-purple-600"
+                          } else if (numericXp >= 200) {
+                            colorClass = "text-yellow-600"
+                          }
+
+                          return <span className={colorClass}>{userTitle}</span>
+                        })()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </main>
   )
 }
