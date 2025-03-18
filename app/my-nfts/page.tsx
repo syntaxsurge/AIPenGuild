@@ -564,6 +564,19 @@ export default function MyNFTsPage() {
                   </p>
                 )}
 
+                {/* Additional Details */}
+                <p className="text-sm mb-1">
+                  <strong>XP Value:</strong> {selectedNFT.xpValue.toString()}
+                </p>
+                <p className="text-sm mb-1">
+                  <strong>Creator:</strong>{" "}
+                  {selectedNFT.creator.slice(0, 6)}...
+                  {selectedNFT.creator.slice(-4)}
+                </p>
+                <p className="text-sm mb-1 break-all">
+                  <strong>Resource URL:</strong> {selectedNFT.resourceUrl}
+                </p>
+
                 {/* Show sale info */}
                 <p className="text-sm mb-1">
                   <strong>Is On Sale:</strong>{" "}
