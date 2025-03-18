@@ -577,43 +577,58 @@ export default function MyNFTsPage() {
                 )}
 
                 {/* Listing Form */}
-                <form onSubmit={handleListNFT} className="mt-4 space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Sale Price (ETH)</label>
-                    <Input
-                      type="number"
-                      step="0.001"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      placeholder="0.1"
-                      className="mt-1"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={!selectedNFT || !price || isListingTxBusy}
-                    className="w-full"
-                  >
-                    {isListingTxBusy ? "Processing..." : "List for Sale"}
-                  </Button>
+                {(() => {
+                  const isStaked =
+                    selectedNFT.stakeInfo?.staked &&
+                    selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase();
 
-                  {(isListTxLoading || isListTxSuccess || isListTxError) && (
-                    <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                      <p className="font-medium">Transaction Status:</p>
-                      {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
-                      {isListTxSuccess && (
-                        <p className="text-green-600">
-                          Transaction Confirmed! Your NFT is now listed.
+                  return (
+                    <form onSubmit={handleListNFT} className="mt-4 space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Sale Price (ETH)</label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          placeholder="0.1"
+                          className="mt-1"
+                          disabled={isStaked}
+                        />
+                      </div>
+                      {isStaked ? (
+                        <p className="text-sm text-orange-600 font-semibold">
+                          This NFT is currently staked. Please unstake it first before listing.
                         </p>
+                      ) : (
+                        <Button
+                          type="submit"
+                          disabled={!selectedNFT || !price || isListingTxBusy}
+                          className="w-full"
+                        >
+                          {isListingTxBusy ? "Processing..." : "List for Sale"}
+                        </Button>
                       )}
-                      {isListTxError && (
-                        <p className="font-bold text-orange-600 dark:text-orange-500">
-                          Transaction Failed: {listTxReceiptError?.message || listError?.message}
-                        </p>
+
+                      {(isListTxLoading || isListTxSuccess || isListTxError) && (
+                        <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                          <p className="font-medium">Transaction Status:</p>
+                          {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                          {isListTxSuccess && (
+                            <p className="text-green-600">
+                              Transaction Confirmed! Your NFT is now listed.
+                            </p>
+                          )}
+                          {isListTxError && (
+                            <p className="font-bold text-orange-600 dark:text-orange-500">
+                              Transaction Failed: {listTxReceiptError?.message || listError?.message}
+                            </p>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                </form>
+                    </form>
+                  );
+                })()}
 
                 {/* If item is on sale, unlist button */}
                 {selectedNFT.isOnSale && (
