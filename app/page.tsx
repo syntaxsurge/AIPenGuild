@@ -422,7 +422,7 @@ export default function Home() {
       </section >
 
       {/* Moonbase Test Network Section */}
-      < section className="relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-b from-secondary/20 via-secondary/30 to-secondary/50 dark:from-gray-800/20 dark:via-gray-800/40 dark:to-gray-800/80" >
+      <section id="test-networks" className="relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-b from-secondary/20 via-secondary/30 to-secondary/50 dark:from-gray-800/20 dark:via-gray-800/40 dark:to-gray-800/80" >
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 rounded-xl p-6 sm:p-12 md:flex-row md:gap-12 md:p-16 shadow-md dark:shadow-none bg-white dark:bg-gray-900">
           {/* Left Side Text */}
           <div className="flex-1">

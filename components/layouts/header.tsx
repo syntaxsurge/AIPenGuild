@@ -66,6 +66,12 @@ function Header() {
                   >
                     WHY AIPENGUILD
                   </Link>
+                  <Link
+                    href="/#test-networks"
+                    className="block rounded-sm px-4 py-2 hover:bg-muted"
+                  >
+                    SUPPORTED NETWORKS
+                  </Link>
                 </div>
               </div>
             </div>
