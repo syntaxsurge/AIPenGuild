@@ -194,7 +194,7 @@ export default function AdminPage() {
   // If not connected
   if (isDisconnected) {
     return (
-      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+      <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
         <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
         <p className="text-center text-sm text-muted-foreground">Please connect your wallet.</p>
       </main>
@@ -204,7 +204,7 @@ export default function AdminPage() {
   // If we're still loading ownership
   if (ownerLoading) {
     return (
-      <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+      <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
         <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
         <p className="text-center text-sm text-muted-foreground">Checking ownership...</p>
       </main>
@@ -213,9 +213,9 @@ export default function AdminPage() {
 
   // If user is owner, show the admin panel
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
+    <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
       <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
-      <Card className="border border-border rounded-lg shadow-xl bg-background">
+      <Card className="w-[1000px] mx-auto border border-border rounded-lg shadow-xl bg-background">
         <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
           <CardTitle className="text-lg font-semibold">Reward Pool Management</CardTitle>
         </CardHeader>
