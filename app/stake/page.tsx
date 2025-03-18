@@ -55,7 +55,7 @@ export default function StakePage() {
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: nftMarketplaceHub.abi,
         functionName: "getLatestItemId",
-        args: [],   // must pass an empty array if no function args
+        args: [],
       });
       if (typeof totalItemId !== "bigint") {
         setLoadingItems(false);
@@ -145,10 +145,80 @@ export default function StakePage() {
     }
   }, [allItems, nftStakingPool, publicClient]);
 
+  // Helper: setApprovalForAll on the marketplace so that the staking pool can transfer NFTs
+  async function ensureApprovalForAll() {
+    if (!walletClient || !nftMarketplaceHub?.address || !userAddress) return;
+    try {
+      // Check isApprovedForAll first
+      const isApproved = await publicClient?.readContract({
+        address: nftMarketplaceHub.address as `0x${string}`,
+        abi: [
+          {
+            name: "isApprovedForAll",
+            type: "function",
+            stateMutability: "view",
+            inputs: [
+              { name: "owner", type: "address" },
+              { name: "operator", type: "address" }
+            ],
+            outputs: [{ name: "", type: "bool" }]
+          }
+        ],
+        functionName: "isApprovedForAll",
+        args: [userAddress, nftStakingPool?.address as `0x${string}`]
+      }) as boolean;
+
+      if (!isApproved) {
+        toast({
+          title: "Approval Required",
+          description: "You must first approve the staking contract to transfer your NFTs."
+        });
+        const hash = await walletClient.writeContract({
+          address: nftMarketplaceHub.address as `0x${string}`,
+          abi: [
+            {
+              name: "setApprovalForAll",
+              type: "function",
+              stateMutability: "nonpayable",
+              inputs: [
+                { name: "operator", type: "address" },
+                { name: "approved", type: "bool" }
+              ],
+              outputs: []
+            }
+          ],
+          functionName: "setApprovalForAll",
+          args: [nftStakingPool?.address as `0x${string}`, true],
+          account: userAddress
+        });
+        toast({
+          title: "Approval Transaction Sent",
+          description: `Hash: ${String(hash)}`
+        });
+        // Wait for the transaction to confirm
+        await publicClient?.waitForTransactionReceipt({ hash });
+        toast({
+          title: "Approved!",
+          description: "Staking contract can now transfer your NFTs."
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Approval Failed",
+        description: error.message || "Could not set approval for all.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }
+
   // 3) Helpers for stake / unstake / claim using walletClient
   async function handleStake(itemId: bigint) {
     if (!nftStakingPool || !walletClient || !userAddress) return;
     try {
+      // Ensure that we have setApprovalForAll
+      await ensureApprovalForAll();
+
       toast({ title: "Staking...", description: "Sending transaction..." });
       const hash = await walletClient.writeContract({
         address: nftStakingPool.address as `0x${string}`,
@@ -227,7 +297,9 @@ export default function StakePage() {
     return !!(info && info.staked);
   }
 
-  const userItems = allItems.filter((item) => item.owner.toLowerCase() === userAddress?.toLowerCase());
+  const userItems = allItems.filter(
+    (item) => item.owner.toLowerCase() === userAddress?.toLowerCase()
+  );
 
   return (
     <main className="mx-auto max-w-4xl min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
