@@ -59,6 +59,8 @@ export default function AdminPage() {
   })
 
   const referencesCheckedRef = useRef(false)
+  // We also want to make sure we only load the balance once
+  const balanceLoadedRef = useRef(false)
 
   // 1) Check ownership once references are ready
   useEffect(() => {
@@ -93,7 +95,7 @@ export default function AdminPage() {
     }
   }, [ownerLoading, isOwner, router, isReferencesReady])
 
-  // 3) load pool balance
+  // 3) load pool balance (only once)
   useEffect(() => {
     async function loadBalance() {
       if (!publicClient || !platformRewardPool?.address || !platformRewardPool?.abi) return
@@ -120,8 +122,9 @@ export default function AdminPage() {
       }
     }
 
-    // Only load if we have references, we know we're the owner, not disconnected
-    if (isReferencesReady && !ownerLoading && isOwner) {
+    // Only load once if we have references, we know we're the owner, and not disconnected
+    if (isReferencesReady && !ownerLoading && isOwner && !balanceLoadedRef.current) {
+      balanceLoadedRef.current = true
       loadBalance()
     }
   }, [isReferencesReady, ownerLoading, isOwner, platformRewardPool, publicClient, toast])
