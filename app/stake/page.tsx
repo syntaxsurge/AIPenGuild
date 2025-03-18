@@ -41,6 +41,8 @@ export default function StakePage() {
 
   // We'll store stake info for each itemId
   const [stakeInfoMap, setStakeInfoMap] = useState<Record<string, StakeInfo>>({});
+  // New state for transaction statuses
+  const [txMap, setTxMap] = useState<Record<string, { loading: boolean; success: boolean; error: string | null }>>({});
 
   // 1) Fetch all item data from the marketplace
   async function fetchData(forceReload?: boolean) {
@@ -215,25 +217,42 @@ export default function StakePage() {
   // 3) Helpers for stake / unstake / claim using walletClient
   async function handleStake(itemId: bigint) {
     if (!nftStakingPool || !walletClient || !userAddress) return;
+    // Set tx state to loading
+    setTxMap((prev) => ({
+      ...prev,
+      [itemId.toString()]: { loading: true, success: false, error: null },
+    }));
+
     try {
       // Ensure that we have setApprovalForAll
       await ensureApprovalForAll();
 
       toast({ title: "Staking...", description: "Sending transaction..." });
       const hash = await walletClient.writeContract({
-        address: nftStakingPool.address as `0x${string}`,
+        address: nftStakingPool.address as `0x\${string}`,
         abi: nftStakingPool.abi,
         functionName: "stakeNFT",
         args: [itemId],
-        account: userAddress as `0x${string}`,
+        account: userAddress as `0x\${string}`,
       });
-      toast({ title: "Transaction Submitted", description: `Hash: ${String(hash)}` });
+      toast({ title: "Transaction Submitted", description: `Hash: \${String(hash)}` });
 
       // Wait for receipt
       await publicClient?.waitForTransactionReceipt({ hash });
       toast({ title: "Stake Complete", description: "Your NFT is staked." });
+
+      // On success
+      setTxMap((prev) => ({
+        ...prev,
+        [itemId.toString()]: { loading: false, success: true, error: null },
+      }));
       fetchData(true);
     } catch (err: any) {
+      // On error
+      setTxMap((prev) => ({
+        ...prev,
+        [itemId.toString()]: { loading: false, success: false, error: err.message || "Failed to stake NFT" },
+      }));
       toast({
         title: "Stake Error",
         description: err.message || "Failed to stake NFT",
@@ -244,21 +263,39 @@ export default function StakePage() {
 
   async function handleUnstake(itemId: bigint) {
     if (!nftStakingPool || !walletClient || !userAddress) return;
+
+    // Set tx state to loading
+    setTxMap((prev) => ({
+      ...prev,
+      [itemId.toString()]: { loading: true, success: false, error: null },
+    }));
+
     try {
       toast({ title: "Unstaking...", description: "Sending transaction..." });
       const hash = await walletClient.writeContract({
-        address: nftStakingPool.address as `0x${string}`,
+        address: nftStakingPool.address as `0x\${string}`,
         abi: nftStakingPool.abi,
         functionName: "unstakeNFT",
         args: [itemId],
-        account: userAddress as `0x${string}`,
+        account: userAddress as `0x\${string}`,
       });
-      toast({ title: "Transaction Submitted", description: `Hash: ${String(hash)}` });
+      toast({ title: "Transaction Submitted", description: `Hash: \${String(hash)}` });
 
       await publicClient?.waitForTransactionReceipt({ hash });
       toast({ title: "Unstake Complete", description: "Your NFT is now unstaked." });
+
+      // On success
+      setTxMap((prev) => ({
+        ...prev,
+        [itemId.toString()]: { loading: false, success: true, error: null },
+      }));
       fetchData(true);
     } catch (err: any) {
+      // On error
+      setTxMap((prev) => ({
+        ...prev,
+        [itemId.toString()]: { loading: false, success: false, error: err.message || "Failed to unstake NFT" },
+      }));
       toast({
         title: "Unstake Error",
         description: err.message || "Failed to unstake NFT",
@@ -269,21 +306,39 @@ export default function StakePage() {
 
   async function handleClaim(itemId: bigint) {
     if (!nftStakingPool || !walletClient || !userAddress) return;
+
+    // Set tx state to loading
+    setTxMap((prev) => ({
+      ...prev,
+      [itemId.toString()]: { loading: true, success: false, error: null },
+    }));
+
     try {
       toast({ title: "Claiming...", description: "Sending transaction..." });
       const hash = await walletClient.writeContract({
-        address: nftStakingPool.address as `0x${string}`,
+        address: nftStakingPool.address as `0x\${string}`,
         abi: nftStakingPool.abi,
         functionName: "claimStakingRewards",
         args: [itemId],
-        account: userAddress as `0x${string}`,
+        account: userAddress as `0x\${string}`,
       });
-      toast({ title: "Transaction Submitted", description: `Hash: ${String(hash)}` });
+      toast({ title: "Transaction Submitted", description: `Hash: \${String(hash)}` });
 
       await publicClient?.waitForTransactionReceipt({ hash });
       toast({ title: "Claim Success", description: "You claimed staking rewards as XP." });
+
+      // On success
+      setTxMap((prev) => ({
+        ...prev,
+        [itemId.toString()]: { loading: false, success: true, error: null },
+      }));
       fetchData(true);
     } catch (err: any) {
+      // On error
+      setTxMap((prev) => ({
+        ...prev,
+        [itemId.toString()]: { loading: false, success: false, error: err.message || "Failed to claim rewards" },
+      }));
       toast({
         title: "Claim Error",
         description: err.message || "Failed to claim rewards",
@@ -333,10 +388,10 @@ export default function StakePage() {
 
                 return (
                   <div key={String(item.itemId)} className="border border-border rounded-md p-2 shadow-sm">
-                    <div className="relative w-full h-48 bg-secondary rounded-md overflow-hidden">
+                    <div className="relative h-32 w-full overflow-hidden rounded-md sm:h-36">
                       <Image
                         src={displayUrl}
-                        alt={`NFT #${String(item.itemId)}`}
+                        alt={`NFT #\${String(item.itemId)}`}
                         fill
                         className="object-cover"
                       />
@@ -365,6 +420,17 @@ export default function StakePage() {
                         </Button>
                       </div>
                     )}
+
+                    <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                      <p className="font-medium">Transaction Status:</p>
+                      {txMap[item.itemId.toString()]?.loading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                      {txMap[item.itemId.toString()]?.success && <p className="text-green-600">Transaction Confirmed!</p>}
+                      {txMap[item.itemId.toString()]?.error && (
+                        <p className="font-bold text-orange-600 dark:text-orange-500">
+                          Transaction Failed: {txMap[item.itemId.toString()]?.error}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
