@@ -102,14 +102,14 @@ function Header() {
               </button>
               <div className="absolute top-full left-0 hidden min-w-[180px] pt-2 group-hover:block">
                 <div className="rounded-md border border-border bg-background p-2 shadow-lg">
-                  <Link href="/marketplace" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    MARKETPLACE
+                  <Link href="/mint" className="block rounded-sm px-4 py-2 hover:bg-muted">
+                    CREATE AI NFT
                   </Link>
                   <Link href="/my-nfts" className="block rounded-sm px-4 py-2 hover:bg-muted">
                     MY NFTS
                   </Link>
-                  <Link href="/mint" className="block rounded-sm px-4 py-2 hover:bg-muted">
-                    CREATE AI NFT
+                  <Link href="/marketplace" className="block rounded-sm px-4 py-2 hover:bg-muted">
+                    MARKETPLACE
                   </Link>
                   <Link href="/stake" className="block rounded-sm px-4 py-2 hover:bg-muted">
                     STAKE NFTS
