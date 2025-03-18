@@ -15,9 +15,14 @@ import { usePublicClient } from "wagmi"
  * also checking stakers from NFTStakingPool so that staked NFTs are counted.
  * Then read userExperience(address) from UserExperiencePoints, store them in a map,
  * and show the top 10 addresses with the highest XP.
+ *
  * We also allow:
  *  - Address search
  *  - XP Range filter
+ *
+ * If "sometimes it works, sometimes it doesn't," we do a single multicall approach for item queries
+ * to ensure we don't skip items due to partial failures. We'll also remove the "fetched" check
+ * so that we reliably load the data whenever the page renders.
  */
 
 interface LeaderboardEntry {
@@ -33,64 +38,86 @@ export default function LeaderboardPage() {
   const publicClient = usePublicClient()
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [fetched, setFetched] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // Filter states
   const [addressSearch, setAddressSearch] = useState("")
-  const [xpRange, setXpRange] = useState<[number, number]>([0, 500]) // sample default range
+  // Default filter range
+  const [xpRange, setXpRange] = useState<[number, number]>([0, 1000000])
 
-  // We'll track minted item owners up to getLatestItemId(), store them in a set (including stakers),
-  // then query XP from UserExperience.
+  // 1) load leaderboard
   async function loadLeaderboard() {
     if (!userExperiencePoints || !nftMarketplaceHub || !nftStakingPool || !publicClient) return
     try {
       setLoading(true)
-      const itemCount = await publicClient.readContract({
+
+      const totalItems = await publicClient.readContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: nftMarketplaceHub.abi,
         functionName: "getLatestItemId",
         args: []
-      })
-      if (typeof itemCount !== "bigint") return
+      }) as bigint
 
+      if (!totalItems || totalItems < 1n) {
+        setLeaderboard([])
+        return
+      }
+
+      // We'll do a single multicall to fetch [ownerOf(i), stakes(i)] for each i.
+      // That means 2 calls per itemId -> we build them in an array.
+      const calls: {
+        address: `0x${string}`
+        abi: any
+        functionName: string
+        args: [bigint]
+      }[] = []
+
+      for (let i = 1n; i <= totalItems; i++) {
+        calls.push({
+          address: nftMarketplaceHub.address as `0x${string}`,
+          abi: nftMarketplaceHub.abi,
+          functionName: "ownerOf",
+          args: [i]
+        })
+        calls.push({
+          address: nftStakingPool.address as `0x${string}`,
+          abi: nftStakingPool.abi,
+          functionName: "stakes",
+          args: [i]
+        })
+      }
+
+      // Execute them all in a single multicall
+      const multicallRes = await publicClient.multicall({
+        contracts: calls,
+        allowFailure: true
+      })
+
+      // We'll gather addresses from the ownerOf calls + stakers
       const ownersSet = new Set<string>()
 
-      for (let i = 1n; i <= itemCount; i++) {
-        // 1) Try to get the "ownerOf" from the MarketplaceHub
-        try {
-          const owner = await publicClient.readContract({
-            address: nftMarketplaceHub.address as `0x${string}`,
-            abi: nftMarketplaceHub.abi,
-            functionName: "ownerOf",
-            args: [i]
-          }) as `0x${string}`
-          ownersSet.add(owner.toLowerCase())
-        } catch {
-          // skip any error
+      // Each item has 2 calls in order: [ownerOf(i), stakes(i)], so we group them
+      let index = 0
+      for (let i = 1n; i <= totalItems; i++) {
+        const ownerCall = multicallRes[index]
+        const stakesCall = multicallRes[index + 1]
+        index += 2
+
+        if (ownerCall.result) {
+          const ownerAddr = ownerCall.result as `0x${string}`
+          ownersSet.add(ownerAddr.toLowerCase())
         }
 
-        // 2) Also check the staking info from NFTStakingPool, in case it's staked
-        // If staked, the actual "ownerOf" might be the pool's contract, not the user.
-        try {
-          const [staker, , , staked] = await publicClient.readContract({
-            address: nftStakingPool.address as `0x${string}`,
-            abi: nftStakingPool.abi,
-            functionName: "stakes",
-            args: [i]
-          }) as [string, bigint, bigint, boolean]
-
-          // If staked is true and staker isn't the zero address, add them
-          if (staked && staker && staker !== "0x0000000000000000000000000000000000000000") {
-            ownersSet.add(staker.toLowerCase())
+        if (stakesCall.result) {
+          const [stakerAddr, , , staked] = stakesCall.result as [string, bigint, bigint, boolean]
+          if (staked && stakerAddr && stakerAddr !== "0x0000000000000000000000000000000000000000") {
+            ownersSet.add(stakerAddr.toLowerCase())
           }
-        } catch {
-          // skip any error
         }
       }
 
-      // Now we have all addresses. For each, read userExperience from UserExperiencePoints
-      const results: LeaderboardEntry[] = []
+      // Now we read userExperience for each address
+      const resultEntries: LeaderboardEntry[] = []
       for (const addr of ownersSet) {
         try {
           const xpVal = await publicClient.readContract({
@@ -98,19 +125,18 @@ export default function LeaderboardPage() {
             abi: userExperiencePoints.abi,
             functionName: "userExperience",
             args: [addr]
-          })
-          if (typeof xpVal === "bigint") {
-            results.push({ address: addr, xp: xpVal })
-          }
+          }) as bigint
+          resultEntries.push({ address: addr, xp: xpVal })
         } catch {
           // skip
         }
       }
 
-      // Sort descending by XP
-      results.sort((a, b) => Number(b.xp - a.xp))
-      setLeaderboard(results)
+      // Sort by descending XP
+      resultEntries.sort((a, b) => Number(b.xp - a.xp))
+      setLeaderboard(resultEntries)
     } catch (err: any) {
+      console.error("[loadLeaderboard] error:", err)
       toast({
         title: "Error loading leaderboard",
         description: err.message || "Something went wrong loading XP leaderboard",
@@ -122,32 +148,36 @@ export default function LeaderboardPage() {
   }
 
   useEffect(() => {
-    if (!fetched) {
-      setFetched(true)
-      loadLeaderboard()
-    }
-  }, [fetched, loadLeaderboard])
+    // We'll load once on mount
+    loadLeaderboard()
+  }, [])
 
-  // Filter the sorted leaderboard, then show top 10
+  // 2) Filter the sorted leaderboard, then show top 10
   const filteredLeaderboard = React.useMemo(() => {
-    const minXP = BigInt(xpRange[0])
-    const maxXP = BigInt(xpRange[1])
-    return leaderboard.filter((entry) => {
-      if (entry.xp < minXP || entry.xp > maxXP) return false
-      if (addressSearch) {
-        if (!entry.address.toLowerCase().includes(addressSearch.toLowerCase())) {
-          return false
+    // We'll handle reversed slider values
+    const minVal = Math.min(xpRange[0], xpRange[1])
+    const maxVal = Math.max(xpRange[0], xpRange[1])
+    const minXP = BigInt(minVal)
+    const maxXP = BigInt(maxVal)
+
+    return leaderboard
+      .filter((entry) => {
+        if (entry.xp < minXP || entry.xp > maxXP) return false
+        if (addressSearch) {
+          if (!entry.address.toLowerCase().includes(addressSearch.toLowerCase())) {
+            return false
+          }
         }
-      }
-      return true
-    }).slice(0, 10)
+        return true
+      })
+      .slice(0, 10)
   }, [leaderboard, xpRange, addressSearch])
 
   return (
     <main className="mx-auto max-w-4xl min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-white dark:bg-gray-900 text-foreground">
       <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">XP Leaderboard</h1>
       <p className="mb-8 text-center text-sm text-muted-foreground">
-        See the top XP holders on AIPenGuild. Addresses with high XP gain title.
+        Explore the top XP holders on AIPenGuild. Addresses with high XP earn special titles.
       </p>
 
       {/* Filters */}
@@ -169,7 +199,7 @@ export default function LeaderboardPage() {
               <label className="block text-sm font-medium mb-1">XP Range</label>
               <DualRangeSlider
                 min={0}
-                max={10000}
+                max={10000000} // 10 million max
                 step={10}
                 value={xpRange}
                 onValueChange={(val) => setXpRange([val[0], val[1]])}
@@ -210,7 +240,10 @@ export default function LeaderboardPage() {
                 {filteredLeaderboard.map((entry, index) => (
                   <tr key={entry.address} className="border-b border-border last:border-none">
                     <td className="py-2">{index + 1}</td>
-                    <td>{entry.address.slice(0, 6)}...{entry.address.slice(-4)}</td>
+                    <td>
+                      {entry.address.slice(0, 6)}...
+                      {entry.address.slice(-4)}
+                    </td>
                     <td>{entry.xp.toString()} XP</td>
                     <td>
                       {(() => {
