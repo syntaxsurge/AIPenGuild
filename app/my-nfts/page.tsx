@@ -280,9 +280,6 @@ export default function MyNFTsPage() {
     if (missingItemIds.length === 0) return
 
     try {
-      // The event signature for NFTItemGenerated(uint256 indexed itemId, address indexed collectionContract, uint256 xpGained, string imageURL)
-      // itemId is indexed => topic[1]
-      const nftItemGeneratedTopic = "0x93e40e7a55dc8edc8fe7fd5ab8a88111370574307399761a78d0f6a011dd3cdf"
       // We'll fetch logs from block 0 to "latest". You might want to limit from a known deployment block if you have it.
       const event = parseAbiItem("event NFTItemGenerated(uint256 indexed itemId, address indexed collectionContract, uint256 xpGained, string imageURL)")
       const logs = await publicClient.getLogs({
