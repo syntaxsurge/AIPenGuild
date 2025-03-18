@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +9,20 @@ import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
+
+/**
+ * Stake page with:
+ *   1) Top "Staking Overview" card including:
+ *      - total user NFTs
+ *      - number staked
+ *      - number not staked
+ *      - total unclaimed XP (large & bold)
+ *      - staking rate (XP/second)
+ *
+ *   2) "Your NFTs" card with a grid (no unclaimed XP here).
+ *
+ *   3) NFT details card showing stake info and bigger unclaimed XP text.
+ */
 
 interface StakeInfo {
   staker: `0x${string}`
@@ -37,19 +51,19 @@ export default function StakePage() {
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const nftStakingPool = useContract("NFTStakingPool")
 
-  // All items from the chain
+  // We store all items from the chain
   const [allItems, setAllItems] = useState<NFTItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
   const [fetched, setFetched] = useState(false)
 
-  // xpPerSecond from the contract
+  // xpPerSecond
   const [xpRate, setXpRate] = useState<bigint>(0n)
   const [hasFetchedXpRate, setHasFetchedXpRate] = useState(false)
 
-  // For showing a selected NFT in a side card
+  // user selection
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null)
 
-  // For transaction states, keyed by itemId
+  // transaction states
   interface TxState {
     loading: boolean
     success: boolean
@@ -57,13 +71,18 @@ export default function StakePage() {
   }
   const [txMap, setTxMap] = useState<Record<string, TxState>>({})
 
-  // Current time for real-time unclaimed XP
+  // real-time updates of unclaimed xp
   const [currentTime, setCurrentTime] = useState<number>(
     Math.floor(Date.now() / 1000)
   )
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Update currentTime every second
+  // helper: format timestamp
+  function formatTimestampSec(sec: bigint): string {
+    const ms = Number(sec) * 1000
+    return new Date(ms).toLocaleString()
+  }
+
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setCurrentTime(Math.floor(Date.now() / 1000))
@@ -73,13 +92,11 @@ export default function StakePage() {
     }
   }, [])
 
-  // 1) Read xpPerSecond from staking contract
+  // 1) read xpPerSecond
   useEffect(() => {
     async function loadXpRate() {
       if (hasFetchedXpRate) return
-      if (!publicClient) return
-      if (!nftStakingPool) return
-
+      if (!publicClient || !nftStakingPool) return
       try {
         const val = await publicClient.readContract({
           address: nftStakingPool.address as `0x${string}`,
@@ -98,31 +115,26 @@ export default function StakePage() {
     loadXpRate()
   }, [publicClient, nftStakingPool, hasFetchedXpRate])
 
-  // 2) Fetch items from marketplace hub
+  // 2) fetch items
   async function fetchAllNFTs(forceReload?: boolean) {
-    if (!userAddress) return
-    if (!publicClient) return
-    if (!nftMarketplaceHub) return
-
+    if (!userAddress || !publicClient || !nftMarketplaceHub) return
     if (!forceReload && fetched) return
+
     setFetched(true)
     setLoadingItems(true)
-
     try {
-      // read totalItemId
-      const totalItemId = await publicClient.readContract({
+      const totalItemId = (await publicClient.readContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: nftMarketplaceHub.abi,
         functionName: "getLatestItemId",
         args: []
-      }) as bigint
+      })) as bigint
 
       if (typeof totalItemId !== "bigint" || totalItemId < 1n) {
         setLoadingItems(false)
         return
       }
 
-      // build multicall requests: [nftData, ownerOf, stakes]
       const calls = []
       for (let i = 1n; i <= totalItemId; i++) {
         calls.push({
@@ -196,10 +208,9 @@ export default function StakePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userAddress, publicClient, nftMarketplaceHub, nftStakingPool])
 
-  // 3) Ensure setApprovalForAll
+  // 3) setApproval
   async function ensureApprovalForAll() {
     if (!userAddress || !walletClient || !nftMarketplaceHub || !nftStakingPool) return
-
     try {
       const isApproved = (await publicClient?.readContract({
         address: nftMarketplaceHub.address as `0x${string}`,
@@ -220,7 +231,10 @@ export default function StakePage() {
       })) as boolean
 
       if (!isApproved) {
-        toast({ title: "Approval Required", description: "Approving staking contract..." })
+        toast({
+          title: "Approval Required",
+          description: "Approving staking contract..."
+        })
         const hash = await walletClient.writeContract({
           address: nftMarketplaceHub.address as `0x${string}`,
           abi: [
@@ -239,24 +253,27 @@ export default function StakePage() {
           args: [nftStakingPool.address as `0x${string}`, true],
           account: userAddress
         })
-        toast({ title: "Approval Tx Sent", description: `Hash: ${hash}` })
+        toast({
+          title: "Approval Tx Sent",
+          description: `Hash: ${hash}`
+        })
         await publicClient?.waitForTransactionReceipt({ hash })
         toast({
           title: "Approved!",
           description: "Staking contract can now manage your NFTs."
         })
       }
-    } catch (error: any) {
+    } catch (err: any) {
       toast({
         title: "Approval Failed",
-        description: error.message || "Could not set approval for all.",
+        description: err.message || "Could not set approval for all.",
         variant: "destructive"
       })
-      throw error
+      throw err
     }
   }
 
-  // 4) handle stake
+  // 4) stake
   async function handleStake(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
 
@@ -265,7 +282,6 @@ export default function StakePage() {
       ...prev,
       [itemIdStr]: { loading: true, success: false, error: null }
     }))
-
     try {
       await ensureApprovalForAll()
       toast({ title: "Staking...", description: "Sending transaction..." })
@@ -286,7 +302,6 @@ export default function StakePage() {
         [itemIdStr]: { loading: false, success: true, error: null }
       }))
 
-      // Refresh data
       fetchAllNFTs(true)
     } catch (err: any) {
       setTxMap((prev) => ({
@@ -301,7 +316,7 @@ export default function StakePage() {
     }
   }
 
-  // 5) handle unstake
+  // 5) unstake
   async function handleUnstake(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
 
@@ -310,7 +325,6 @@ export default function StakePage() {
       ...prev,
       [itemIdStr]: { loading: true, success: false, error: null }
     }))
-
     try {
       toast({ title: "Unstaking...", description: "Sending transaction..." })
       const hash = await walletClient.writeContract({
@@ -344,7 +358,7 @@ export default function StakePage() {
     }
   }
 
-  // 6) handle claim
+  // 6) claim
   async function handleClaim(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
 
@@ -353,7 +367,6 @@ export default function StakePage() {
       ...prev,
       [itemIdStr]: { loading: true, success: false, error: null }
     }))
-
     try {
       toast({ title: "Claiming...", description: "Sending transaction..." })
       const hash = await walletClient.writeContract({
@@ -387,16 +400,17 @@ export default function StakePage() {
     }
   }
 
-  // 7) Filter user items (owner or staker)
+  // Filter user items
   const userItems = allItems.filter((item) => {
     if (!userAddress) return false
     const staked = item.stakeInfo?.staked
-    const stakerIsUser = item.stakeInfo?.staker?.toLowerCase() === userAddress.toLowerCase()
+    const stakerIsUser =
+      item.stakeInfo?.staker?.toLowerCase() === userAddress.toLowerCase()
     const ownerIsUser = item.owner.toLowerCase() === userAddress.toLowerCase()
     return ownerIsUser || (staked && stakerIsUser)
   })
 
-  // 8) compute unclaimed xp for a single item
+  // compute unclaimed xp
   function computeUnclaimedXP(item: NFTItem): bigint {
     if (!xpRate) return 0n
     if (!item.stakeInfo?.staked) return 0n
@@ -406,8 +420,12 @@ export default function StakePage() {
     return diff > 0 ? diff * xpRate : 0n
   }
 
-  // 9) sum total unclaimed xp
+  // sum total unclaimed xp
   const totalUnclaimed = userItems.reduce((acc, item) => acc + computeUnclaimedXP(item), 0n)
+
+  // staked count vs not staked
+  const stakedCount = userItems.filter((item) => item.stakeInfo?.staked).length
+  const notStakedCount = userItems.length - stakedCount
 
   // If not connected
   if (!userAddress) {
@@ -419,40 +437,47 @@ export default function StakePage() {
     )
   }
 
-  // Helper to convert a bigInt timestamp (seconds) to local date/time
-  function formatTimestampSec(sec: bigint): string {
-    // sec is a bigInt. Convert to Number, multiply by 1000 for ms
-    const ms = Number(sec) * 1000
-    return new Date(ms).toLocaleString()
-  }
-
   return (
     <main className="mx-auto max-w-5xl min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-background text-foreground">
-      {/* Page Title */}
       <div className="mb-6 text-center">
         <h1 className="text-4xl font-extrabold text-primary">Stake Your NFTs</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Earn extra XP by staking your NFTs on AIPenGuild.
+          Enjoy extra XP rewards by staking your NFTs on AIPenGuild.
         </p>
       </div>
 
-      {/* Card for total unclaimed XP */}
+      {/* Staking Overview card */}
       <Card className="mb-6 border border-border rounded-lg shadow-sm">
         <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
-          <CardTitle className="text-base font-semibold">
-            Your Unclaimed Staking Rewards
-          </CardTitle>
+          <CardTitle className="text-base font-semibold">Staking Overview</CardTitle>
         </CardHeader>
-        <CardContent className="p-6 text-center">
-          <p className="text-xl font-extrabold text-primary">
-            {totalUnclaimed.toString()} XP
-          </p>
+        <CardContent className="space-y-3 p-6 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Total NFTs (recognized):</span>
+            <span className="font-semibold">{userItems.length}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Staked NFTs:</span>
+            <span className="font-semibold">{stakedCount}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Not Staked:</span>
+            <span className="font-semibold">{notStakedCount}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Staking Rate (XP/sec):</span>
+            <span className="font-semibold">{xpRate.toString()}</span>
+          </div>
+          <hr className="my-3 border-border" />
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Total Unclaimed XP:</span>
+            <span className="text-2xl font-extrabold text-primary">{totalUnclaimed.toString()}</span>
+          </div>
         </CardContent>
       </Card>
 
-      {/* 2-column layout */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Left card: Grid of user's NFTs */}
+        {/* Left card: grid of user NFTs */}
         <Card className="border border-border rounded-lg shadow-sm">
           <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
             <CardTitle className="text-base font-semibold">Your NFTs</CardTitle>
@@ -472,7 +497,6 @@ export default function StakePage() {
                     item.resourceUrl.startsWith("ipfs://")
                       ? item.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
                       : item.resourceUrl
-
                   const staked = item.stakeInfo?.staked
                   return (
                     <div
@@ -494,7 +518,7 @@ export default function StakePage() {
                         />
                       </div>
                       <p className="mt-1 text-xs font-semibold text-foreground line-clamp-1">
-                        #{String(item.itemId)} {staked && "(Staked)"}
+                        NFT #{String(item.itemId)}{staked ? " (Staked)" : ""}
                       </p>
                     </div>
                   )
@@ -504,13 +528,11 @@ export default function StakePage() {
           </CardContent>
         </Card>
 
-        {/* Right card: Selected NFT + stake actions */}
+        {/* Right card: selected details */}
         <Card className="border border-border rounded-lg shadow-sm">
           <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
             <CardTitle className="text-base font-semibold">
-              {selectedNFT
-                ? `NFT #${String(selectedNFT.itemId)}`
-                : "Select an NFT"}
+              {selectedNFT ? `NFT #${String(selectedNFT.itemId)}` : "Select an NFT"}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
@@ -520,7 +542,7 @@ export default function StakePage() {
               </p>
             ) : (
               <div className="space-y-4">
-                {/* NFT Preview */}
+                {/* Image preview */}
                 <div className="relative h-40 w-full overflow-hidden rounded-md border border-border bg-secondary">
                   <Image
                     src={
@@ -537,30 +559,30 @@ export default function StakePage() {
                   />
                 </div>
 
-                {/* Display if staked or not */}
+                {/* staked info */}
                 {selectedNFT.stakeInfo?.staked ? (
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm">
                     <span className="font-bold text-green-600">Staked</span>{" "}
                     since{" "}
                     <span className="font-bold text-foreground">
                       {formatTimestampSec(selectedNFT.stakeInfo.startTimestamp)}
                     </span>
                     .
-                    <br />
-                    Unclaimed XP:{" "}
-                    <span className="font-bold text-primary">
-                      {computeUnclaimedXP(selectedNFT).toString()}
-                    </span>
+                    <div className="mt-2 text-muted-foreground">
+                      <span>Unclaimed XP:&nbsp;</span>
+                      <span className="text-2xl font-extrabold text-primary">
+                        {computeUnclaimedXP(selectedNFT).toString()}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-orange-600 font-bold">Not Staked</p>
                 )}
 
-                {/* Transaction State */}
+                {/* transaction state */}
                 {(() => {
                   const txState = txMap[selectedNFT.itemId.toString()]
                   if (!txState) return null
-
                   if (txState.loading || txState.success || txState.error) {
                     return (
                       <div className="rounded-md border border-border p-3 text-xs">
@@ -582,7 +604,7 @@ export default function StakePage() {
                   return null
                 })()}
 
-                {/* Action Buttons */}
+                {/* action buttons */}
                 <div className="flex flex-col gap-2">
                   {selectedNFT.stakeInfo?.staked ? (
                     <>
