@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -455,6 +455,7 @@ export default function StakePage() {
                 }
 
                 const unclaimedXP = computeUnclaimedXP(item);
+                const txState = txMap[item.itemId.toString()];
 
                 return (
                   <div
@@ -487,16 +488,16 @@ export default function StakePage() {
                     {staked ? (
                       <div className="mt-3 flex flex-col gap-2">
                         <Button onClick={() => handleClaim(item.itemId)}>
-                          {txMap[item.itemId.toString()]?.loading
+                          {txState?.loading
                             ? "Processing..."
                             : "Claim Rewards"}
                         </Button>
                         <Button
                           variant="outline"
                           onClick={() => handleUnstake(item.itemId)}
-                          disabled={txMap[item.itemId.toString()]?.loading || false}
+                          disabled={!!txState?.loading}
                         >
-                          {txMap[item.itemId.toString()]?.loading
+                          {txState?.loading
                             ? "Processing..."
                             : "Unstake"}
                         </Button>
@@ -505,30 +506,32 @@ export default function StakePage() {
                       <div className="mt-3">
                         <Button
                           onClick={() => handleStake(item.itemId)}
-                          disabled={txMap[item.itemId.toString()]?.loading || false}
+                          disabled={!!txState?.loading}
                         >
-                          {txMap[item.itemId.toString()]?.loading
+                          {txState?.loading
                             ? "Processing..."
                             : "Stake"}
                         </Button>
                       </div>
                     )}
 
-                    {/* Transaction status */}
-                    <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                      <p className="font-medium">Transaction Status:</p>
-                      {txMap[item.itemId.toString()]?.loading && (
-                        <p className="text-muted-foreground">Pending confirmation...</p>
-                      )}
-                      {txMap[item.itemId.toString()]?.success && (
-                        <p className="text-green-600">Transaction Confirmed!</p>
-                      )}
-                      {txMap[item.itemId.toString()]?.error && (
-                        <p className="font-bold text-orange-600 dark:text-orange-500">
-                          Transaction Failed: {txMap[item.itemId.toString()]?.error}
-                        </p>
-                      )}
-                    </div>
+                    {/* Only show transaction status if there's an active transaction or result */}
+                    {(txState?.loading || txState?.success || txState?.error) && (
+                      <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                        <p className="font-medium">Transaction Status:</p>
+                        {txState.loading && (
+                          <p className="text-muted-foreground">Pending confirmation...</p>
+                        )}
+                        {txState.success && (
+                          <p className="text-green-600">Transaction Confirmed!</p>
+                        )}
+                        {txState.error && (
+                          <p className="font-bold text-orange-600 dark:text-orange-500">
+                            Transaction Failed: {txState.error}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
