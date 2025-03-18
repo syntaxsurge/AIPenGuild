@@ -356,21 +356,23 @@ export default function MintNFTPage() {
               <p className="text-xs text-destructive break-words whitespace-pre-wrap">{mintError}</p>
             )}
 
-            {/* Transaction Status block */}
-            <div className="rounded-md border border-border p-4 mt-2 text-sm">
-              <p className="font-medium">Transaction Status:</p>
-              {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
-              {isTxSuccess && (
-                <p className="text-green-600">
-                  Transaction Confirmed! Your NFT is minted.
-                </p>
-              )}
-              {isTxError && (
-                <p className="font-bold text-orange-600 dark:text-orange-500">
-                  Transaction Failed: {txError?.message}
-                </p>
-              )}
-            </div>
+           {/* Transaction Status block */}
+           {(isWritePending || isTxLoading || isTxSuccess || isTxError) && (
+             <div className="rounded-md border border-border p-4 mt-2 text-sm">
+               <p className="font-medium">Transaction Status:</p>
+               {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+               {isTxSuccess && (
+                 <p className="text-green-600">
+                   Transaction Confirmed! Your NFT is minted.
+                 </p>
+               )}
+               {isTxError && (
+                 <p className="font-bold text-orange-600 dark:text-orange-500">
+                   Transaction Failed: {txError?.message}
+                 </p>
+               )}
+             </div>
+           )}
           </div>
         </CardContent>
       </Card>
