@@ -8,7 +8,13 @@ import { useToast } from "@/hooks/use-toast-notifications"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
 import { parseEther } from "viem"
-import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
+import { useAccount, usePublicClient, useWalletClient } from "wagmi"
+
+interface TxStatus {
+  loading: boolean
+  success: boolean
+  error: string | null
+}
 
 export default function AdminPage() {
   const router = useRouter()
@@ -16,6 +22,7 @@ export default function AdminPage() {
   // Wagmi states
   const { address: wagmiAddress, isDisconnected } = useAccount()
   const publicClient = usePublicClient()
+  const { data: walletClient } = useWalletClient()
   const { toast } = useToast()
 
   // Contract config
@@ -31,24 +38,17 @@ export default function AdminPage() {
 
   // Withdraw input
   const [withdrawAmount, setWithdrawAmount] = useState("")
+  // Inline form error for amount
+  const [amountError, setAmountError] = useState("")
 
-  // Write contract states
-  const {
-    data: withdrawData,
-    error: withdrawError,
-    isPending: isWithdrawPending,
-    isSuccess: isWriteSuccess,
-    writeContract: writeWithdrawContract
-  } = useWriteContract()
+  // Show transaction status
+  const [showTxStatus, setShowTxStatus] = useState(false)
 
-  const {
-    data: withdrawReceipt,
-    isLoading: isTxLoading,
-    isSuccess: isTxSuccess,
-    isError: isTxError,
-    error: txError
-  } = useWaitForTransactionReceipt({
-    hash: withdrawData ?? undefined
+  // Our local withdraw transaction status (like in stake page)
+  const [withdrawTx, setWithdrawTx] = useState<TxStatus>({
+    loading: false,
+    success: false,
+    error: null
   })
 
   // 1) Check ownership (once address is known)
@@ -110,68 +110,22 @@ export default function AdminPage() {
       }
     }
 
-    // Load balance once user possibly is the owner or not
     if (!isDisconnected && platformRewardPool?.address) {
       loadBalance()
     }
   }, [platformRewardPool?.address, isDisconnected, toast, publicClient])
 
-  // 3) Watch withdrawal transaction events
-  useEffect(() => {
-    if (isTxLoading) {
-      toast({
-        title: "Transaction Pending",
-        description: "Your withdrawal transaction is being confirmed..."
-      })
-    }
-    if (isTxSuccess) {
-      toast({
-        title: "Withdrawal Successful",
-        description: "Funds withdrawn from reward pool"
-      })
-      setWithdrawAmount("")
-      // Reload balance
-      if (!loadingBalance) {
-        // Trigger a fresh load
-        (async () => {
-          if (platformRewardPool?.address && platformRewardPool?.abi && publicClient) {
-            try {
-              setLoadingBalance(true)
-              const val = await publicClient.readContract({
-                address: platformRewardPool.address as `0x\${string}`,
-                abi: platformRewardPool.abi,
-                functionName: "getPoolBalance",
-                args: []
-              })
-              if (typeof val === "bigint") {
-                setPoolBalance(val)
-              }
-            } catch { }
-            setLoadingBalance(false)
-          }
-        })()
-      }
-    }
-    if (isTxError) {
-      toast({
-        title: "Transaction Failed",
-        description: txError?.message || withdrawError?.message || "Something went wrong",
-        variant: "destructive"
-      })
-    }
-  }, [isTxLoading, isTxSuccess, isTxError, withdrawError, txError, toast, platformRewardPool?.address, platformRewardPool?.abi, publicClient, loadingBalance])
-
-  // 4) If user is not the owner (and done loading), redirect
-  //    We must declare the effect unconditionally, so the hooks order remains stable.
+  // 3) If user is not the owner (and done loading), redirect
   useEffect(() => {
     if (!ownerLoading && !isOwner) {
       router.push("/errors/403")
     }
   }, [ownerLoading, isOwner, router])
 
-  // 5) Handle withdrawal
-  const handleWithdraw = async (e: React.FormEvent) => {
+  // 4) Withdraw logic, copying the same approach as stake page
+  async function handleWithdraw(e: React.FormEvent) {
     e.preventDefault()
+
     if (!platformRewardPool?.address || !platformRewardPool?.abi) {
       toast({
         title: "Error",
@@ -181,6 +135,7 @@ export default function AdminPage() {
       return
     }
     if (!withdrawAmount || isNaN(Number(withdrawAmount)) || Number(withdrawAmount) <= 0) {
+      setAmountError("Please enter a positive numeric amount of ETH to withdraw.")
       toast({
         title: "Invalid Amount",
         description: "Please enter a positive numeric amount of ETH to withdraw.",
@@ -188,33 +143,62 @@ export default function AdminPage() {
       })
       return
     }
-    const weiAmount = parseEther(withdrawAmount)
-
-    const withdrawABI = {
-      name: "withdrawPoolFunds",
-      type: "function",
-      stateMutability: "nonpayable",
-      inputs: [
-        { name: "amount", type: "uint256" }
-      ],
-      outputs: []
+    // Clear error if user has put a valid amount
+    setAmountError("")
+    if (!walletClient || !publicClient) {
+      toast({
+        title: "No Wallet or Public Client",
+        description: "Please connect your wallet properly before withdrawing.",
+        variant: "destructive"
+      })
+      return
     }
 
+    // We'll show the transaction status
+    setShowTxStatus(true)
+    setWithdrawTx({ loading: true, success: false, error: null })
+
+    const weiAmount = parseEther(withdrawAmount)
     try {
-      await writeWithdrawContract({
-        address: platformRewardPool.address as `0x\${string}`,
-        abi: [withdrawABI],
-        functionName: "withdrawPoolFunds",
-        args: [weiAmount]
-      })
       toast({
         title: "Transaction Submitted",
         description: `Withdrawing ${withdrawAmount} ETH from reward pool...`
       })
-    } catch (err: any) {
+
+      // 1) Write the transaction
+      const hash = await walletClient.writeContract({
+        address: platformRewardPool.address as `0x${string}`,
+        abi: platformRewardPool.abi,
+        functionName: "withdrawPoolFunds",
+        args: [weiAmount],
+        account: wagmiAddress
+      })
+
+      // 2) Wait for transaction receipt
+      await publicClient.waitForTransactionReceipt({ hash })
       toast({
-        title: "Withdraw Error",
-        description: err.message || "Transaction submission failed",
+        title: "Withdrawal Successful",
+        description: "Funds withdrawn from reward pool"
+      })
+      setWithdrawTx({ loading: false, success: true, error: null })
+
+      // 3) Reset input, reload balance
+      setWithdrawAmount("")
+      const val = await publicClient.readContract({
+        address: platformRewardPool.address as `0x${string}`,
+        abi: platformRewardPool.abi,
+        functionName: "getPoolBalance",
+        args: []
+      })
+      if (typeof val === "bigint") {
+        setPoolBalance(val)
+      }
+
+    } catch (err: any) {
+      setWithdrawTx({ loading: false, success: false, error: err.message })
+      toast({
+        title: "Transaction Failed",
+        description: err.message || "Something went wrong",
         variant: "destructive"
       })
     }
@@ -274,29 +258,34 @@ export default function AdminPage() {
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   placeholder="0.5"
                 />
+                {amountError && (
+                  <p className="mt-1 text-xs text-destructive">{amountError}</p>
+                )}
               </div>
               <Button
                 type="submit"
-                disabled={isWithdrawPending || isTxLoading}
+                disabled={withdrawTx.loading}
               >
-                {isWithdrawPending || isTxLoading ? "Withdrawing..." : "Withdraw"}
+                {withdrawTx.loading ? "Withdrawing..." : "Withdraw"}
               </Button>
 
-              {/* Transaction Status */}
-              <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                <p className="font-medium">Transaction Status:</p>
-                {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
-                {isTxSuccess && (
-                  <p className="text-green-600">
-                    Transaction Confirmed! Withdrawal successful.
-                  </p>
-                )}
-                {isTxError && (
-                  <p className="font-bold text-orange-600 dark:text-orange-500">
-                    Transaction Failed: {txError?.message || withdrawError?.message}
-                  </p>
-                )}
-              </div>
+              {/* Transaction Status - only show if "showTxStatus" is true */}
+              {showTxStatus && (
+                <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                  <p className="font-medium">Transaction Status:</p>
+                  {withdrawTx.loading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                  {withdrawTx.success && (
+                    <p className="text-green-600">
+                      Transaction Confirmed! Withdrawal successful.
+                    </p>
+                  )}
+                  {withdrawTx.error && (
+                    <p className="font-bold text-orange-600 dark:text-orange-500">
+                      Transaction Failed: {withdrawTx.error}
+                    </p>
+                  )}
+                </div>
+              )}
             </form>
           </div>
         </CardContent>
