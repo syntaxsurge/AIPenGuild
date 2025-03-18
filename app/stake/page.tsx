@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,17 +11,10 @@ import { useEffect, useRef, useState } from "react"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
 
 /**
- * Stake page with:
- *   1) Top "Staking Overview" card including:
- *      - total user NFTs
- *      - number staked
- *      - number not staked
- *      - total unclaimed XP (large & bold)
- *      - staking rate (XP/second)
- *
- *   2) "Your NFTs" card with a grid (no unclaimed XP here).
- *
- *   3) NFT details card showing stake info and bigger unclaimed XP text.
+ * This stake page:
+ *  - If an NFT is listed (isOnSale), the user cannot stake it.
+ *  - Show '(LISTED)' in place of '(Staked)' if isOnSale == true.
+ *  - In the details card, do not show stake button if isOnSale == true and not staked. Instead show a note that it’s listed.
  */
 
 interface StakeInfo {
@@ -51,7 +44,7 @@ export default function StakePage() {
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const nftStakingPool = useContract("NFTStakingPool")
 
-  // We store all items from the chain
+  // All items
   const [allItems, setAllItems] = useState<NFTItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
   const [fetched, setFetched] = useState(false)
@@ -60,10 +53,9 @@ export default function StakePage() {
   const [xpRate, setXpRate] = useState<bigint>(0n)
   const [hasFetchedXpRate, setHasFetchedXpRate] = useState(false)
 
-  // user selection
+  // selected NFT
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null)
 
-  // transaction states
   interface TxState {
     loading: boolean
     success: boolean
@@ -71,13 +63,12 @@ export default function StakePage() {
   }
   const [txMap, setTxMap] = useState<Record<string, TxState>>({})
 
-  // real-time updates of unclaimed xp
+  // For real-time unclaimed XP
   const [currentTime, setCurrentTime] = useState<number>(
     Math.floor(Date.now() / 1000)
   )
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // helper: format timestamp
   function formatTimestampSec(sec: bigint): string {
     const ms = Number(sec) * 1000
     return new Date(ms).toLocaleString()
@@ -277,6 +268,16 @@ export default function StakePage() {
   async function handleStake(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
 
+    // If it's on sale, do nothing
+    if (item.isOnSale) {
+      toast({
+        title: "Cannot Stake",
+        description: "This NFT is currently listed for sale. Please unlist it first.",
+        variant: "destructive"
+      })
+      return
+    }
+
     const itemIdStr = item.itemId.toString()
     setTxMap((prev) => ({
       ...prev,
@@ -400,7 +401,7 @@ export default function StakePage() {
     }
   }
 
-  // Filter user items
+  // user items
   const userItems = allItems.filter((item) => {
     if (!userAddress) return false
     const staked = item.stakeInfo?.staked
@@ -420,10 +421,10 @@ export default function StakePage() {
     return diff > 0 ? diff * xpRate : 0n
   }
 
-  // sum total unclaimed xp
+  // total unclaimed xp
   const totalUnclaimed = userItems.reduce((acc, item) => acc + computeUnclaimedXP(item), 0n)
 
-  // staked count vs not staked
+  // staked count
   const stakedCount = userItems.filter((item) => item.stakeInfo?.staked).length
   const notStakedCount = userItems.length - stakedCount
 
@@ -446,7 +447,7 @@ export default function StakePage() {
         </p>
       </div>
 
-      {/* Staking Overview card */}
+      {/* Staking Overview */}
       <Card className="mb-6 border border-border rounded-lg shadow-sm">
         <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
           <CardTitle className="text-base font-semibold">Staking Overview</CardTitle>
@@ -471,13 +472,16 @@ export default function StakePage() {
           <hr className="my-3 border-border" />
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Total Unclaimed XP:</span>
-            <span className="text-2xl font-extrabold text-primary">{totalUnclaimed.toString()}</span>
+            <span className="text-2xl font-extrabold text-primary">
+              {totalUnclaimed.toString()}
+            </span>
           </div>
         </CardContent>
       </Card>
 
+      {/* 2-col layout */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Left card: grid of user NFTs */}
+        {/* Left - your NFTs */}
         <Card className="border border-border rounded-lg shadow-sm">
           <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
             <CardTitle className="text-base font-semibold">Your NFTs</CardTitle>
@@ -493,11 +497,18 @@ export default function StakePage() {
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {userItems.map((item) => {
-                  const displayUrl =
-                    item.resourceUrl.startsWith("ipfs://")
-                      ? item.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
-                      : item.resourceUrl
-                  const staked = item.stakeInfo?.staked
+                  const displayUrl = item.resourceUrl.startsWith("ipfs://")
+                    ? item.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
+                    : item.resourceUrl
+
+                  // " (STAKED)" or " (LISTED)" or neither
+                  let label = ""
+                  if (item.stakeInfo?.staked) {
+                    label = "(STAKED)"
+                  } else if (item.isOnSale) {
+                    label = "(LISTED)"
+                  }
+
                   return (
                     <div
                       key={String(item.itemId)}
@@ -518,7 +529,7 @@ export default function StakePage() {
                         />
                       </div>
                       <p className="mt-1 text-xs font-semibold text-foreground line-clamp-1">
-                        NFT #{String(item.itemId)}{staked ? " (Staked)" : ""}
+                        NFT #{String(item.itemId)} {label}
                       </p>
                     </div>
                   )
@@ -528,11 +539,13 @@ export default function StakePage() {
           </CardContent>
         </Card>
 
-        {/* Right card: selected details */}
+        {/* Right - details */}
         <Card className="border border-border rounded-lg shadow-sm">
           <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
             <CardTitle className="text-base font-semibold">
-              {selectedNFT ? `NFT #${String(selectedNFT.itemId)}` : "Select an NFT"}
+              {selectedNFT
+                ? `NFT #${String(selectedNFT.itemId)}`
+                : "Select an NFT"}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
@@ -542,7 +555,7 @@ export default function StakePage() {
               </p>
             ) : (
               <div className="space-y-4">
-                {/* Image preview */}
+                {/* Preview */}
                 <div className="relative h-40 w-full overflow-hidden rounded-md border border-border bg-secondary">
                   <Image
                     src={
@@ -559,8 +572,9 @@ export default function StakePage() {
                   />
                 </div>
 
-                {/* staked info */}
+                {/* Info: staked or not, isOnSale */}
                 {selectedNFT.stakeInfo?.staked ? (
+                  // Staked => show unclaimed XP, claim, unstake
                   <div className="text-sm">
                     <span className="font-bold text-green-600">Staked</span>{" "}
                     since{" "}
@@ -574,40 +588,34 @@ export default function StakePage() {
                         {computeUnclaimedXP(selectedNFT).toString()}
                       </span>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-orange-600 font-bold">Not Staked</p>
-                )}
 
-                {/* transaction state */}
-                {(() => {
-                  const txState = txMap[selectedNFT.itemId.toString()]
-                  if (!txState) return null
-                  if (txState.loading || txState.success || txState.error) {
-                    return (
-                      <div className="rounded-md border border-border p-3 text-xs">
-                        <p className="font-medium">Transaction Status:</p>
-                        {txState.loading && (
-                          <p className="text-muted-foreground">Pending...</p>
-                        )}
-                        {txState.success && (
-                          <p className="text-green-600">Transaction Confirmed!</p>
-                        )}
-                        {txState.error && (
-                          <p className="font-bold text-orange-600">
-                            Transaction Failed: {txState.error}
-                          </p>
-                        )}
-                      </div>
-                    )
-                  }
-                  return null
-                })()}
+                    {/* Tx states */}
+                    {(() => {
+                      const txState = txMap[selectedNFT.itemId.toString()]
+                      if (!txState) return null
+                      if (txState.loading || txState.success || txState.error) {
+                        return (
+                          <div className="rounded-md border border-border p-3 text-xs mt-3">
+                            <p className="font-medium">Transaction Status:</p>
+                            {txState.loading && (
+                              <p className="text-muted-foreground">Pending...</p>
+                            )}
+                            {txState.success && (
+                              <p className="text-green-600">Transaction Confirmed!</p>
+                            )}
+                            {txState.error && (
+                              <p className="font-bold text-orange-600">
+                                Transaction Failed: {txState.error}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      }
+                      return null
+                    })()}
 
-                {/* action buttons */}
-                <div className="flex flex-col gap-2">
-                  {selectedNFT.stakeInfo?.staked ? (
-                    <>
+                    {/* Buttons: Claim & Unstake */}
+                    <div className="flex flex-col gap-2 mt-2">
                       <Button
                         variant="default"
                         onClick={() => handleClaim(selectedNFT)}
@@ -626,19 +634,56 @@ export default function StakePage() {
                           ? "Processing..."
                           : "Unstake"}
                       </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="default"
-                      onClick={() => handleStake(selectedNFT)}
-                      disabled={txMap[selectedNFT.itemId.toString()]?.loading}
-                    >
-                      {txMap[selectedNFT.itemId.toString()]?.loading
-                        ? "Processing..."
-                        : "Stake"}
-                    </Button>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                ) : selectedNFT.isOnSale ? (
+                  // Not staked but on sale => cannot stake
+                  <p className="text-sm font-bold text-orange-500">
+                    This NFT is currently listed for sale. Please unlist it first if you want to stake.
+                  </p>
+                ) : (
+                  // Not staked, not on sale => stake button
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-bold text-orange-600">Not Staked</p>
+
+                    {/* Tx states */}
+                    {(() => {
+                      const txState = txMap[selectedNFT.itemId.toString()]
+                      if (!txState) return null
+                      if (txState.loading || txState.success || txState.error) {
+                        return (
+                          <div className="rounded-md border border-border p-3 text-xs mt-3">
+                            <p className="font-medium">Transaction Status:</p>
+                            {txState.loading && (
+                              <p className="text-muted-foreground">Pending...</p>
+                            )}
+                            {txState.success && (
+                              <p className="text-green-600">Transaction Confirmed!</p>
+                            )}
+                            {txState.error && (
+                              <p className="font-bold text-orange-600">
+                                Transaction Failed: {txState.error}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      }
+                      return null
+                    })()}
+
+                    <div className="flex flex-col gap-2 mt-2">
+                      <Button
+                        variant="default"
+                        onClick={() => handleStake(selectedNFT)}
+                        disabled={txMap[selectedNFT.itemId.toString()]?.loading}
+                      >
+                        {txMap[selectedNFT.itemId.toString()]?.loading
+                          ? "Processing..."
+                          : "Stake"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
