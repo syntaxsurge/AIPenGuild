@@ -48,6 +48,9 @@ contract NFTMarketplaceHub is ERC721URIStorage, Ownable {
   // A constant that defines the platform fee as a percentage (10%)
   uint256 public constant FEE_PERCENT = 10;
 
+  // A mapping from an itemId to the time it was minted, for quick retrieval
+  mapping(uint256 => uint256) public mintedAt;
+
   /**
    * @dev Each NFT item is stored with:
    *   itemId:      A unique numeric identifier
@@ -133,6 +136,9 @@ contract NFTMarketplaceHub is ERC721URIStorage, Ownable {
       salePrice: 0,
       resourceUrl: imageUrl
     });
+
+    // Record the block timestamp of mint
+    mintedAt[newId] = block.timestamp;
 
     // Emit an event about the newly created item
     emit NFTItemGenerated(newId, nftCollections[collectionId], xpAssigned, imageUrl);
