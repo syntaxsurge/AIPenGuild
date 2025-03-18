@@ -439,7 +439,7 @@ export default function StakePage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-background text-foreground">
+    <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-background text-foreground">
       <div className="mb-6 text-center">
         <h1 className="text-4xl font-extrabold text-primary">Stake Your NFTs</h1>
         <p className="mt-2 text-sm text-muted-foreground">
