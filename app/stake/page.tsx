@@ -376,10 +376,14 @@ export default function StakePage() {
     return !!(info && info.staked);
   }
 
-  // 6) We'll gather the user's items
-  const userItems = allItems.filter(
-    (item) => item.owner.toLowerCase() === userAddress?.toLowerCase()
-  );
+  // 6) We'll gather the user's items. Include items the user staked (i.e. staker == user) or items the user owns.
+  const userItems = allItems.filter((item) => {
+    const info = stakeInfoMap[item.itemId.toString()];
+    const stakerIsUser =
+      info?.staker?.toLowerCase() === userAddress?.toLowerCase() && info.staked;
+    const ownerIsUser = item.owner.toLowerCase() === userAddress?.toLowerCase();
+    return ownerIsUser || stakerIsUser;
+  });
 
   // 7) For staked items belonging to user, compute unclaimed XP:
   //    unclaimed = (currentTime - stakeInfo.lastClaimed) * xpRate
@@ -422,7 +426,7 @@ export default function StakePage() {
           <span>Loading your NFTs...</span>
         </div>
       ) : userItems.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground">You have no NFTs.</p>
+        <p className="text-center text-sm text-muted-foreground">You have no NFTs here.</p>
       ) : (
         <Card className="border border-border">
           <CardHeader className="bg-accent text-accent-foreground p-4 rounded-t-md">
