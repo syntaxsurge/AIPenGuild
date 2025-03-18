@@ -44,28 +44,24 @@ function Header() {
                   </Link>
                   <Link
                     href="/#introduction"
-                    scroll={false}
                     className="block rounded-sm px-4 py-2 hover:bg-muted"
                   >
                     INTRODUCTION
                   </Link>
                   <Link
                     href="/#featured"
-                    scroll={false}
                     className="block rounded-sm px-4 py-2 hover:bg-muted"
                   >
                     FEATURED
                   </Link>
                   <Link
                     href="/#faq"
-                    scroll={false}
                     className="block rounded-sm px-4 py-2 hover:bg-muted"
                   >
                     FAQ
                   </Link>
                   <Link
                     href="/#why-aipenguild"
-                    scroll={false}
                     className="block rounded-sm px-4 py-2 hover:bg-muted"
                   >
                     WHY AIPENGUILD
