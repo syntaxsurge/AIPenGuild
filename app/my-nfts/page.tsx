@@ -202,9 +202,9 @@ export default function MyNFTsPage() {
 
     async function loadLatestItemId() {
       try {
-        const val = await publicClient.readContract({
-          address: nftMarketplaceHub.address as `0x${string}`,
-          abi: nftMarketplaceHub.abi,
+        const val = await publicClient?.readContract({
+          address: nftMarketplaceHub?.address as `0x${string}`,
+          abi: nftMarketplaceHub?.abi,
           functionName: "getLatestItemId",
           args: []
         })
@@ -528,15 +528,17 @@ export default function MyNFTsPage() {
                     <div
                       key={String(nft.itemId)}
                       onClick={() => setSelectedNFT(nft)}
-                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${
-                        selected ? "border-primary" : "border-border"
-                      }`}
+                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${selected ? "border-primary" : "border-border"
+                        }`}
                     >
                       <div className="relative h-36 w-full overflow-hidden rounded-md bg-secondary">
                         <Image
                           src={displayUrl}
                           alt={`NFT #${String(nft.itemId)}`}
                           fill
+                          sizes="(max-width: 768px) 100vw,
+                                 (max-width: 1200px) 50vw,
+                                 33vw"
                           className="object-cover"
                         />
                       </div>
@@ -571,6 +573,9 @@ export default function MyNFTsPage() {
                     src={getDisplayUrl(selectedNFT)}
                     alt={`NFT #${String(selectedNFT.itemId)}`}
                     fill
+                    sizes="(max-width: 768px) 100vw,
+                           (max-width: 1200px) 50vw,
+                           33vw"
                     className="object-contain"
                   />
                 </div>

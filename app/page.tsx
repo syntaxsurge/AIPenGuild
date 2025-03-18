@@ -69,8 +69,10 @@ export default function Home() {
             <Image
               src="/images/hero-nft-preview.png"
               alt="AIPenGuild Showcase"
-              width={800}
-              height={600}
+              fill
+              sizes="(max-width: 768px) 100vw,
+                     (max-width: 1200px) 50vw,
+                     33vw"
               className={cn("object-cover")}
             />
           </motion.div>
@@ -158,6 +160,9 @@ export default function Home() {
                     src={`/${src}`}
                     alt={`Featured NFT ${idx + 1}`}
                     fill
+                    sizes="(max-width: 768px) 100vw,
+                           (max-width: 1200px) 50vw,
+                           33vw"
                     className="object-cover transition-transform group-hover:scale-105"
                   />
                 </div>
@@ -381,6 +386,9 @@ export default function Home() {
                 src="/images/why-aipenguild.png"
                 alt="Why AIPenGuild"
                 fill
+                sizes="(max-width: 768px) 100vw,
+                       (max-width: 1200px) 50vw,
+                       33vw"
                 className={cn("object-cover")}
               />
             </div>
@@ -485,6 +493,9 @@ export default function Home() {
                 src={logoSrc}
                 alt="Test Network Overview"
                 fill
+                sizes="(max-width: 768px) 100vw,
+                       (max-width: 1200px) 50vw,
+                       33vw"
                 className="object-contain p-2"
               />
             </div>

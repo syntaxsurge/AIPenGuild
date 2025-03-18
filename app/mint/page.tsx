@@ -292,6 +292,9 @@ export default function MintNFTPage() {
                         src={aiNft.imageUrl}
                         alt="AI NFT Preview"
                         fill
+                        sizes="(max-width: 768px) 100vw,
+                               (max-width: 1200px) 50vw,
+                               33vw"
                         className="object-cover"
                       />
                     </div>
@@ -318,6 +321,9 @@ export default function MintNFTPage() {
                         src={previewUrl}
                         alt="Custom NFT Preview"
                         fill
+                        sizes="(max-width: 768px) 100vw,
+                               (max-width: 1200px) 50vw,
+                               33vw"
                         className="object-cover"
                       />
                     </div>
@@ -367,7 +373,7 @@ export default function MintNFTPage() {
                     </p>
                   )}
                   {isTxError && (
-                    <p className="font-bold text-orange-600 dark:text-orange-500">
+                    <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
                       Transaction Failed: {txError?.message}
                     </p>
                   )}

@@ -256,7 +256,7 @@ export default function StakePage() {
         })
         toast({
           title: "Approval Tx Sent",
-          description: `Hash: ${hash}`
+          description: `Hash: ${String(hash)}`
         })
         await publicClient?.waitForTransactionReceipt({ hash })
         toast({
@@ -504,15 +504,15 @@ export default function StakePage() {
                     label = "(LISTED)"
                   }
 
+                  const selected = selectedNFT?.itemId === item.itemId
+
                   return (
                     <div
                       key={String(item.itemId)}
                       onClick={() => setSelectedNFT(item)}
                       className={cn(
                         "cursor-pointer rounded-md border p-2 hover:shadow transition",
-                        selectedNFT?.itemId === item.itemId
-                          ? "border-primary"
-                          : "border-border"
+                        selected ? "border-primary" : "border-border"
                       )}
                     >
                       <div className="relative h-24 w-full overflow-hidden rounded bg-secondary sm:h-28">
@@ -520,10 +520,10 @@ export default function StakePage() {
                           src={displayUrl}
                           alt={`NFT #${String(item.itemId)}`}
                           fill
-                          className="object-cover"
                           sizes="(max-width: 768px) 100vw,
                                  (max-width: 1200px) 50vw,
                                  33vw"
+                          className="object-cover"
                         />
                       </div>
                       <p className="mt-1 text-xs font-semibold text-foreground line-clamp-1">
@@ -558,18 +558,15 @@ export default function StakePage() {
                   <Image
                     src={
                       selectedNFT.resourceUrl.startsWith("ipfs://")
-                        ? selectedNFT.resourceUrl.replace(
-                          "ipfs://",
-                          "https://ipfs.io/ipfs/"
-                        )
+                        ? selectedNFT.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
                         : selectedNFT.resourceUrl
                     }
                     alt={`NFT #${String(selectedNFT.itemId)}`}
                     fill
-                    className="object-contain"
                     sizes="(max-width: 768px) 100vw,
                            (max-width: 1200px) 50vw,
                            33vw"
+                    className="object-contain"
                   />
                 </div>
 
