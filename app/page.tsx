@@ -197,7 +197,6 @@ export default function Home() {
               <div className="bg-accent/10 rounded-lg p-4 md:p-6">
                 <div className="w-full space-y-2">
                   <Accordion type="multiple" className="w-full space-y-2">
-                  <Accordion type="multiple" className="w-full space-y-2">
                     {/* Leaderboard */}
                     <AccordionItem value="leaderboard">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
@@ -212,7 +211,6 @@ export default function Home() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {/* Titles */}
                     <AccordionItem value="titles">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
                         2. What are Titles?
@@ -253,7 +251,6 @@ export default function Home() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {/* XP / Experience Distribution */}
                     <AccordionItem value="xp-distribution">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
                         3. How is XP distributed?
@@ -268,7 +265,6 @@ export default function Home() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {/* Dashboard */}
                     <AccordionItem value="dashboard">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
                         4. What is the Dashboard used for?
@@ -281,7 +277,6 @@ export default function Home() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {/* Admin Panel */}
                     <AccordionItem value="admin">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
                         5. What can I do in the Admin Panel?
@@ -293,10 +288,34 @@ export default function Home() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {/* Step-by-Step */}
+                    <AccordionItem value="nft-staking">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        6. Is NFT Staking included in AIPenGuild?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        Absolutely! AIPenGuild includes an NFT Staking feature, which allows
+                        you to stake your NFTs to earn additional XP over time. Head over to
+                        the &quot;Stake&quot; page to lock up your NFTs and start accumulating XP
+                        rewards.
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="staking-xp">
+                      <AccordionTrigger className="text-base md:text-lg font-semibold">
+                        7. How many XP do I earn when I stake my NFT?
+                      </AccordionTrigger>
+                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
+                        The amount of XP you earn for staking depends on how long your NFT
+                        remains staked and the current staking rate. By default, each staked
+                        NFT accrues a set rate of XP per second, but this rate can be updated by
+                        the contract owner. You can claim your accumulated XP anytime or upon
+                        unstaking your NFT.
+                      </AccordionContent>
+                    </AccordionItem>
+
                     <AccordionItem value="usage-guide">
                       <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        6. Step-by-step: How do I use AIPenGuild?
+                        8. Step-by-step: How do I use AIPenGuild?
                       </AccordionTrigger>
                       <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground space-y-3">
                         <ol className="list-decimal list-inside ml-4">
@@ -327,42 +346,16 @@ export default function Home() {
                         </ol>
                       </AccordionContent>
                     </AccordionItem>
-
-                    <AccordionItem value="nft-staking">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        7. Is NFT Staking included in AIPenGuild?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        Absolutely! AIPenGuild includes an NFT Staking feature, which allows
-                        you to stake your NFTs to earn additional XP over time. Head over to
-                        the &quot;Stake&quot; page to lock up your NFTs and start accumulating XP
-                        rewards.
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="staking-xp">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        8. How many XP do I earn when I stake my NFT?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        The amount of XP you earn for staking depends on how long your NFT
-                        remains staked and the current staking rate. By default, each staked
-                        NFT accrues a set rate of XP per second, but this rate can be updated by
-                        the contract owner. You can claim your accumulated XP anytime or upon
-                        unstaking your NFT.
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
                   </Accordion>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Why AIPenGuild Section */}
-      <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800">
+      < section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800" >
         <div className="mx-auto max-w-6xl">
           <motion.div
             className="grid grid-cols-1 gap-8 md:grid-cols-2"
@@ -392,10 +385,10 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </section >
 
       {/* Leaderboard Section */}
-      <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
+      < section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900" >
         <div className="mx-auto max-w-6xl text-center">
           <motion.h2
             className="mb-6 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl"
@@ -425,10 +418,10 @@ export default function Home() {
             Dashboard
           </Link>
         </div>
-      </section>
+      </section >
 
       {/* Moonbase Test Network Section */}
-      <section className="relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-b from-secondary/20 via-secondary/30 to-secondary/50 dark:from-gray-800/20 dark:via-gray-800/40 dark:to-gray-800/80">
+      < section className="relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-b from-secondary/20 via-secondary/30 to-secondary/50 dark:from-gray-800/20 dark:via-gray-800/40 dark:to-gray-800/80" >
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 rounded-xl p-6 sm:p-12 md:flex-row md:gap-12 md:p-16 shadow-md dark:shadow-none bg-white dark:bg-gray-900">
           {/* Left Side Text */}
           <div className="flex-1">
@@ -496,7 +489,7 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </section >
     </>
   )
 }
