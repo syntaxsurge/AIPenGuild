@@ -95,6 +95,7 @@ export default function MyNFTsPage() {
   const [selectedNFT, setSelectedNFT] = useState<NFTDetails | null>(null)
   const [metadataMap, setMetadataMap] = useState<Record<string, MetadataState>>({})
   const [currentMaxId, setCurrentMaxId] = useState<bigint | null>(null)
+  const [loadingNFTs, setLoadingNFTs] = useState(false)
 
   // Track minted times for each item
   const mintedTimeMapRef = useRef<Map<bigint, number>>(new Map())
@@ -199,6 +200,8 @@ export default function MyNFTsPage() {
     if (!force && fetchedRef.current) return
     fetchedRef.current = true
 
+    setLoadingNFTs(true)
+
     const total = Number(currentMaxId)
     const found: NFTDetails[] = []
 
@@ -260,6 +263,7 @@ export default function MyNFTsPage() {
     await fetchMintedTimes(found)
 
     setUserNFTs(found)
+    setLoadingNFTs(false)
   }
 
   /**
@@ -482,8 +486,35 @@ export default function MyNFTsPage() {
             <CardTitle className="text-lg font-semibold">Your NFTs</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {userNFTs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">You have no NFTs in your wallet or staked.</p>
+            {loadingNFTs ? (
+              <div className="flex items-center justify-center gap-2">
+                {/* You can import Loader2 from lucide-react if not already */}
+                <span className="animate-spin">
+                  <svg
+                    className="h-5 w-5 text-muted-foreground"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                </span>
+                <span className="text-sm">Loading NFTs...</span>
+              </div>
+            ) : userNFTs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">You have no NFTs in your wallet.</p>
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {userNFTs.map((nft) => {
