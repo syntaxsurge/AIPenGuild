@@ -17,6 +17,7 @@ interface NFTItem {
   salePrice: bigint;
   resourceUrl: string;
   owner: string;
+  stakeInfo?: StakeInfo; // optional stake info
 }
 
 interface StakeInfo {
@@ -39,7 +40,6 @@ export default function StakePage() {
   const [loadingItems, setLoadingItems] = useState(false);
   const [fetched, setFetched] = useState(false);
 
-  const [stakeInfoMap, setStakeInfoMap] = useState<Record<string, StakeInfo>>({});
   const [txMap, setTxMap] = useState<Record<string, { loading: boolean; success: boolean; error: string | null }>>({});
 
   // We'll store xpPerSecond from the staking contract (default 0n until loaded).
@@ -51,7 +51,7 @@ export default function StakePage() {
   // Interval ref so we can clear it if needed
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Start an interval to update currentTime once per second
+  // Start an interval to update currentTime once per second (for real-time unclaimed XP display).
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setCurrentTime(Math.floor(Date.now() / 1000));
@@ -64,10 +64,10 @@ export default function StakePage() {
     };
   }, []);
 
-  // 1) Read xpPerSecond from NFTStakingPool
+  // 1) Read xpPerSecond from NFTStakingPool (one time)
   useEffect(() => {
     async function loadXpRate() {
-      if (!nftStakingPool || !nftStakingPool.address || !nftStakingPool.abi || !publicClient) return;
+      if (!nftStakingPool?.address || !nftStakingPool.abi || !publicClient) return;
       try {
         const val = await publicClient.readContract({
           address: nftStakingPool.address as `0x${string}`,
@@ -85,114 +85,121 @@ export default function StakePage() {
     loadXpRate();
   }, [nftStakingPool, publicClient]);
 
-  // 2) Fetch all items from marketplace
+  // 2) Fetch all items (nftData, ownerOf, and stake info) via single multicall
   async function fetchAllNFTs(forceReload?: boolean) {
-    if (!nftMarketplaceHub || !publicClient || !userAddress) return;
+    if (!nftMarketplaceHub?.address || !publicClient || !userAddress || !nftStakingPool?.address) return;
     if (!forceReload && fetched) return;
+
     setFetched(true);
     setLoadingItems(true);
 
     try {
-      // read total count
+      // First read totalItemId
       const totalItemId = await publicClient.readContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: nftMarketplaceHub.abi,
         functionName: "getLatestItemId",
         args: []
-      });
-      if (typeof totalItemId !== "bigint") {
+      }) as bigint;
+
+      if (typeof totalItemId !== "bigint" || totalItemId < 1n) {
         setLoadingItems(false);
         return;
       }
 
-      const newItems: NFTItem[] = [];
+      // Build array of calls in sets of 3: [nftData, ownerOf, stakes]
+      const calls = [];
       for (let i = 1n; i <= totalItemId; i++) {
-        try {
-          // read item data
-          const data = await publicClient.readContract({
-            address: nftMarketplaceHub.address as `0x${string}`,
-            abi: nftMarketplaceHub.abi,
-            functionName: "nftData",
-            args: [i]
-          }) as [bigint, string, bigint, boolean, bigint, string];
-
-          // read owner
-          const owner = await publicClient.readContract({
-            address: nftMarketplaceHub.address as `0x${string}`,
-            abi: nftMarketplaceHub.abi,
-            functionName: "ownerOf",
-            args: [i]
-          }) as `0x${string}`;
-
-          newItems.push({
-            itemId: data[0],
-            creator: data[1],
-            xpValue: data[2],
-            isOnSale: data[3],
-            salePrice: data[4],
-            resourceUrl: data[5],
-            owner
-          });
-        } catch {
-          // skip
-        }
+        calls.push({
+          address: nftMarketplaceHub.address as `0x${string}`,
+          abi: nftMarketplaceHub.abi,
+          functionName: "nftData",
+          args: [i]
+        });
+        calls.push({
+          address: nftMarketplaceHub.address as `0x${string}`,
+          abi: nftMarketplaceHub.abi,
+          functionName: "ownerOf",
+          args: [i]
+        });
+        calls.push({
+          address: nftStakingPool.address as `0x${string}`,
+          abi: nftStakingPool.abi,
+          functionName: "stakes",
+          args: [i]
+        });
       }
+
+      // Execute multicall once
+      const multicallResults = await publicClient.multicall({
+        contracts: calls,
+        allowFailure: true // if some fail, continue
+      });
+
+      const newItems: NFTItem[] = [];
+      for (let i = 0; i < multicallResults.length; i += 3) {
+        const nftDataResult = multicallResults[i];
+        const ownerOfResult = multicallResults[i + 1];
+        const stakeInfoResult = multicallResults[i + 2];
+
+        if (!nftDataResult.result || !ownerOfResult.result || !stakeInfoResult.result) {
+          // If something failed, skip.
+          continue;
+        }
+
+        const [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl] = nftDataResult.result as [
+          bigint,
+          string,
+          bigint,
+          boolean,
+          bigint,
+          string
+        ];
+        const owner = ownerOfResult.result as `0x${string}`;
+        const [staker, startTimestamp, lastClaimed, staked] = stakeInfoResult.result as [
+          `0x${string}`,
+          bigint,
+          bigint,
+          boolean
+        ];
+
+        // Build the item
+        newItems.push({
+          itemId,
+          creator,
+          xpValue,
+          isOnSale,
+          salePrice,
+          resourceUrl,
+          owner,
+          stakeInfo: {
+            staker,
+            startTimestamp,
+            lastClaimed,
+            staked
+          }
+        });
+      }
+
       setAllItems(newItems);
     } catch (err) {
-      console.error("Error loading items:", err);
+      console.error("Error loading items via multicall:", err);
     } finally {
       setLoadingItems(false);
     }
   }
 
-  // 3) For each item, read stake info from NFTStakingPool
-  async function fetchStakeInfo(itemId: bigint) {
-    if (!nftStakingPool || !publicClient) return null;
-    try {
-      const info = await publicClient.readContract({
-        address: nftStakingPool.address as `0x${string}`,
-        abi: nftStakingPool.abi,
-        functionName: "stakes",
-        args: [itemId]
-      }) as [string, bigint, bigint, boolean];
-      return {
-        staker: info[0] as `0x${string}`,
-        startTimestamp: info[1],
-        lastClaimed: info[2],
-        staked: info[3]
-      };
-    } catch {
-      return null;
-    }
-  }
-
   useEffect(() => {
     fetchAllNFTs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userAddress, nftMarketplaceHub, publicClient]);
-
-  useEffect(() => {
-    async function checkAllStakes() {
-      const map: Record<string, StakeInfo> = {};
-      for (const nft of allItems) {
-        const info = await fetchStakeInfo(nft.itemId);
-        if (info) {
-          map[nft.itemId.toString()] = info;
-        }
-      }
-      setStakeInfoMap(map);
-    }
-    if (allItems.length > 0) {
-      checkAllStakes();
-    }
-  }, [allItems, nftStakingPool, publicClient]);
+    // We do not want to run it repeatedly on minor changes. Only once or if user logs in/out.
+  }, [userAddress, nftMarketplaceHub, nftStakingPool, publicClient]);
 
   // 4) setApprovalForAll so staking pool can transfer from marketplace
   async function ensureApprovalForAll() {
     if (!walletClient || !nftMarketplaceHub?.address || !userAddress) return;
     try {
       // check isApprovedForAll
-      const isApproved = await publicClient?.readContract({
+      const isApproved = (await publicClient?.readContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: [
           {
@@ -208,7 +215,7 @@ export default function StakePage() {
         ],
         functionName: "isApprovedForAll",
         args: [userAddress, nftStakingPool?.address as `0x${string}`]
-      }) as boolean;
+      })) as boolean;
 
       if (!isApproved) {
         toast({
@@ -237,7 +244,7 @@ export default function StakePage() {
           title: "Approval Transaction Sent",
           description: `Tx Hash: ${String(hash)}`
         });
-        // Wait for confirm
+        // Wait for confirmation
         await publicClient?.waitForTransactionReceipt({ hash });
         toast({
           title: "Approved!",
@@ -261,16 +268,16 @@ export default function StakePage() {
       ...prev,
       [itemId.toString()]: { loading: true, success: false, error: null }
     }));
+
     try {
       await ensureApprovalForAll();
-
       toast({ title: "Staking...", description: "Sending transaction..." });
       const hash = await walletClient.writeContract({
         address: nftStakingPool.address as `0x${string}`,
         abi: nftStakingPool.abi,
         functionName: "stakeNFT",
         args: [itemId],
-        account: userAddress as `0x${string}`
+        account: userAddress
       });
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` });
 
@@ -281,6 +288,7 @@ export default function StakePage() {
         ...prev,
         [itemId.toString()]: { loading: false, success: true, error: null }
       }));
+      // refresh data
       fetchAllNFTs(true);
     } catch (err: any) {
       setTxMap((prev) => ({
@@ -301,6 +309,7 @@ export default function StakePage() {
       ...prev,
       [itemId.toString()]: { loading: true, success: false, error: null }
     }));
+
     try {
       toast({ title: "Unstaking...", description: "Sending transaction..." });
       const hash = await walletClient.writeContract({
@@ -308,7 +317,7 @@ export default function StakePage() {
         abi: nftStakingPool.abi,
         functionName: "unstakeNFT",
         args: [itemId],
-        account: userAddress as `0x${string}`
+        account: userAddress
       });
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` });
 
@@ -319,6 +328,7 @@ export default function StakePage() {
         ...prev,
         [itemId.toString()]: { loading: false, success: true, error: null }
       }));
+      // refresh data
       fetchAllNFTs(true);
     } catch (err: any) {
       setTxMap((prev) => ({
@@ -339,6 +349,7 @@ export default function StakePage() {
       ...prev,
       [itemId.toString()]: { loading: true, success: false, error: null }
     }));
+
     try {
       toast({ title: "Claiming...", description: "Sending transaction..." });
       const hash = await walletClient.writeContract({
@@ -346,7 +357,7 @@ export default function StakePage() {
         abi: nftStakingPool.abi,
         functionName: "claimStakingRewards",
         args: [itemId],
-        account: userAddress as `0x${string}`
+        account: userAddress
       });
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` });
 
@@ -357,6 +368,7 @@ export default function StakePage() {
         ...prev,
         [itemId.toString()]: { loading: false, success: true, error: null }
       }));
+      // refresh data
       fetchAllNFTs(true);
     } catch (err: any) {
       setTxMap((prev) => ({
@@ -371,35 +383,32 @@ export default function StakePage() {
     }
   }
 
-  function isStaked(itemId: bigint) {
-    const info = stakeInfoMap[itemId.toString()];
-    return !!(info && info.staked);
+  function isStaked(item: NFTItem) {
+    return item?.stakeInfo?.staked ?? false;
   }
 
   // 6) We'll gather the user's items. Include items the user staked (i.e. staker == user) or items the user owns.
   const userItems = allItems.filter((item) => {
-    const info = stakeInfoMap[item.itemId.toString()];
+    const staked = item?.stakeInfo?.staked;
     const stakerIsUser =
-      info?.staker?.toLowerCase() === userAddress?.toLowerCase() && info.staked;
+      (item?.stakeInfo?.staker?.toLowerCase() === userAddress?.toLowerCase()) && staked;
     const ownerIsUser = item.owner.toLowerCase() === userAddress?.toLowerCase();
     return ownerIsUser || stakerIsUser;
   });
 
   // 7) For staked items belonging to user, compute unclaimed XP:
   //    unclaimed = (currentTime - stakeInfo.lastClaimed) * xpRate
-  function computeUnclaimedXP(itemId: bigint): bigint {
-    const info = stakeInfoMap[itemId.toString()];
-    if (!info || !info.staked) return 0n;
-    // Confirm staker is the user
-    if (info.staker.toLowerCase() !== userAddress?.toLowerCase()) return 0n;
-    const diff = BigInt(currentTime) - info.lastClaimed;
+  function computeUnclaimedXP(item: NFTItem): bigint {
+    if (!item.stakeInfo || !item.stakeInfo.staked) return 0n;
+    if (item.stakeInfo.staker.toLowerCase() !== userAddress?.toLowerCase()) return 0n;
+    const diff = BigInt(currentTime) - item.stakeInfo.lastClaimed;
     if (diff <= 0n) return 0n;
     return diff * xpRate;
   }
 
   // 8) Sum total unclaimed XP across all staked items the user owns
   const totalUnclaimed = userItems.reduce((acc, item) => {
-    const unclaimed = computeUnclaimedXP(item.itemId);
+    const unclaimed = computeUnclaimedXP(item);
     return acc + unclaimed;
   }, 0n);
 
@@ -435,13 +444,13 @@ export default function StakePage() {
           <CardContent>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
               {userItems.map((item) => {
-                const staked = isStaked(item.itemId);
+                const staked = isStaked(item);
                 let displayUrl = item.resourceUrl;
                 if (displayUrl.startsWith("ipfs://")) {
                   displayUrl = displayUrl.replace("ipfs://", "https://ipfs.io/ipfs/");
                 }
 
-                const unclaimedXP = computeUnclaimedXP(item.itemId);
+                const unclaimedXP = computeUnclaimedXP(item);
 
                 return (
                   <div
