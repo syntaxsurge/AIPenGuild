@@ -559,9 +559,9 @@ export default function StakePage() {
                     src={
                       selectedNFT.resourceUrl.startsWith("ipfs://")
                         ? selectedNFT.resourceUrl.replace(
-                            "ipfs://",
-                            "https://ipfs.io/ipfs/"
-                          )
+                          "ipfs://",
+                          "https://ipfs.io/ipfs/"
+                        )
                         : selectedNFT.resourceUrl
                     }
                     alt={`NFT #${String(selectedNFT.itemId)}`}
@@ -621,22 +621,22 @@ export default function StakePage() {
                           {/* Claim button */}
                           <Button
                             variant="default"
-                            className="mt-3"
+                            className="mt-3 w-full"
                             onClick={() => handleClaim(selectedNFT)}
                             disabled={claimTx?.loading}
                           >
-                            {claimTx?.loading ? "Processing..." : "Claim Rewards"}
+                            {claimTx?.loading ? "Processing..." : "Claim NFT Rewards"}
                           </Button>
                           {showTxStatus(claimTx)}
 
                           {/* Unstake button */}
                           <Button
                             variant="outline"
-                            className="mt-3"
+                            className="mt-3 w-full"
                             onClick={() => handleUnstake(selectedNFT)}
                             disabled={unstakeTx?.loading}
                           >
-                            {unstakeTx?.loading ? "Processing..." : "Unstake"}
+                            {unstakeTx?.loading ? "Processing..." : "Unstake NFT"}
                           </Button>
                           {showTxStatus(unstakeTx)}
                         </>
@@ -677,11 +677,11 @@ export default function StakePage() {
                         <>
                           <Button
                             variant="default"
-                            className="mt-2"
+                            className="mt-2 w-full"
                             onClick={() => handleStake(selectedNFT)}
                             disabled={stakeTx?.loading}
                           >
-                            {stakeTx?.loading ? "Processing..." : "Stake"}
+                            {stakeTx?.loading ? "Processing..." : "Stake NFT"}
                           </Button>
                           {showTxStatus(stakeTx)}
                         </>
