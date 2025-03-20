@@ -16,6 +16,7 @@ import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import React, { useEffect, useRef, useState } from "react"
+import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 
 interface MarketplaceItem {
@@ -31,6 +32,7 @@ interface MarketplaceItem {
 
 export default function MarketplacePage() {
   const { toast } = useToast()
+  const currencySymbol = useNativeCurrencySymbol()
   const { address: wagmiAddress } = useAccount()
 
   // For the buy transaction (shared across items)
@@ -357,8 +359,8 @@ export default function MarketplacePage() {
                       onValueChange={(val) => setTempPriceRange([val[0], val[1]])}
                     />
                     <div className="flex justify-between gap-2 text-xs text-muted-foreground">
-                      <span>{tempPriceRange[0]} ETH</span>
-                      <span>{tempPriceRange[1]} ETH</span>
+                      <span>{tempPriceRange[0]} {currencySymbol}</span>
+                      <span>{tempPriceRange[1]} {currencySymbol}</span>
                     </div>
                     <div className="flex justify-between gap-2 text-sm">
                       <Input
@@ -466,7 +468,7 @@ export default function MarketplacePage() {
                           AIPenGuild NFT #{String(item.itemId)}
                         </h2>
                         <span className="text-xs font-bold text-primary">
-                          {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
+                          {(Number(item.salePrice) / 1e18).toFixed(4)} {currencySymbol}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -521,7 +523,7 @@ export default function MarketplacePage() {
                       </div>
                       <div className="flex flex-col items-start gap-2 sm:items-end">
                         <span className="text-sm font-bold text-primary">
-                          {(Number(item.salePrice) / 1e18).toFixed(4)} ETH
+                          {(Number(item.salePrice) / 1e18).toFixed(4)} {currencySymbol}
                         </span>
                         {item.isOnSale && !isOwner && (
                           <Button

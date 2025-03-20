@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import React, { useEffect, useRef, useState } from "react"
@@ -45,6 +46,7 @@ interface MetadataState {
 
 export default function MyNFTsPage() {
   const { address: wagmiAddress } = useAccount()
+  const currencySymbol = useNativeCurrencySymbol()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
@@ -574,7 +576,7 @@ export default function MyNFTsPage() {
                 </p>
                 {selectedNFT.isOnSale && (
                   <p className="text-sm mb-1">
-                    <strong>Price:</strong> {(Number(selectedNFT.salePrice) / 1e18).toFixed(4)} ETH
+                    <strong>Price:</strong> {(Number(selectedNFT.salePrice) / 1e18).toFixed(4)} {currencySymbol}
                   </p>
                 )}
                 {selectedNFT.stakeInfo?.staked &&
@@ -591,7 +593,7 @@ export default function MyNFTsPage() {
                   return (
                     <form onSubmit={handleListNFT} className="mt-4 space-y-4">
                       <div>
-                        <label className="text-sm font-medium">Sale Price (ETH)</label>
+                        <label className="text-sm font-medium">Sale Price ({currencySymbol})</label>
                         <Input
                           type="number"
                           step="0.001"

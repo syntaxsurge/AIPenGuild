@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import React, { useEffect, useRef, useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
+import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 
 interface TxStatus {
   loading: boolean
@@ -18,6 +19,7 @@ interface TxStatus {
 
 export default function AdminPage() {
   const router = useRouter()
+  const currencySymbol = useNativeCurrencySymbol()
 
   // Wagmi states
   const { address: wagmiAddress, isDisconnected } = useAccount()
@@ -159,7 +161,7 @@ export default function AdminPage() {
     try {
       toast({
         title: "Transaction Submitted",
-        description: `Withdrawing ${withdrawAmount} ETH from reward pool...`
+        description: `Withdrawing ${withdrawAmount} ${currencySymbol} from reward pool...`
       })
 
       // 1) Write the transaction
@@ -258,7 +260,7 @@ export default function AdminPage() {
             <div>
               <p className="text-sm text-muted-foreground mb-1">Current Pool Balance:</p>
               <div className="text-lg font-bold text-primary">
-                {loadingBalance ? "Loading..." : `${(Number(poolBalance) / 1e18).toFixed(4)} ETH`}
+                {loadingBalance ? "Loading..." : `${(Number(poolBalance) / 1e18).toFixed(4)} ${currencySymbol}`}
               </div>
             </div>
             <hr className="border-border" />
@@ -268,7 +270,7 @@ export default function AdminPage() {
               </p>
               <form onSubmit={handleWithdraw} className="flex flex-col gap-2">
                 <div className="flex flex-col">
-                  <label className="text-xs font-medium">Amount in ETH</label>
+                  <label className="text-xs font-medium">Amount in {currencySymbol}</label>
                   <Input
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
