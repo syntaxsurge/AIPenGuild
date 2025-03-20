@@ -365,15 +365,15 @@ export default function MintNFTPage() {
 
               {(isWritePending || isTxLoading || isTxSuccess || isTxError) && (
                 <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                  <p className="font-medium">Transaction Status:</p>
-                  {isTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                  <p className="font-bold">Transaction Status:</p>
+                  {isTxLoading && <p className="font-bold text-muted-foreground">Pending confirmation...</p>}
                   {isTxSuccess && (
-                    <p className="text-green-600">
+                    <p className="font-bold text-green-600">
                       Transaction Confirmed! Your NFT is minted.
                     </p>
                   )}
                   {isTxError && (
-                    <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
+                    <p className="font-bold text-orange-600 dark:text-orange-500">
                       Transaction Failed: {txError?.message}
                     </p>
                   )}

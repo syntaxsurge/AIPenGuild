@@ -599,9 +599,9 @@ export default function StakePage() {
                         if (tx.loading || tx.success || tx.error) {
                           return (
                             <div className="rounded-md border border-border p-3 text-xs mt-2">
-                              <p className="font-medium">Transaction Status:</p>
-                              {tx.loading && <p className="text-muted-foreground">Pending...</p>}
-                              {tx.success && <p className="text-green-600">Transaction Confirmed!</p>}
+                              <p className="font-bold">Transaction Status:</p>
+                              {tx.loading && <p className="font-bold text-muted-foreground">Pending...</p>}
+                              {tx.success && <p className="font-bold text-green-600">Transaction Confirmed!</p>}
                               {tx.error && (
                                 <p className="font-bold text-orange-600">
                                   Transaction Failed: {tx.error}

@@ -289,10 +289,10 @@ export default function AdminPage() {
 
                 {showTxStatus && (
                   <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                    <p className="font-medium">Transaction Status:</p>
-                    {withdrawTx.loading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                    <p className="font-bold">Transaction Status:</p>
+                    {withdrawTx.loading && <p className="font-bold text-muted-foreground">Pending confirmation...</p>}
                     {withdrawTx.success && (
-                      <p className="text-green-600">
+                      <p className="font-bold text-green-600">
                         Transaction Confirmed! Withdrawal successful.
                       </p>
                     )}

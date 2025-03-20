@@ -647,10 +647,10 @@ export default function MyNFTsPage() {
 
                       {(isListTxLoading || isListTxSuccess || isListTxError) && (
                         <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                          <p className="font-medium">Transaction Status:</p>
-                          {isListTxLoading && <p className="text-muted-foreground">Pending confirmation...</p>}
+                          <p className="font-bold">Transaction Status:</p>
+                          {isListTxLoading && <p className="font-bold text-muted-foreground">Pending confirmation...</p>}
                           {isListTxSuccess && (
-                            <p className="text-green-600">
+                            <p className="font-bold text-green-600">
                               Transaction Confirmed! Your NFT is now listed.
                             </p>
                           )}
@@ -679,12 +679,12 @@ export default function MyNFTsPage() {
 
                     {(isUnlistTxLoading || isUnlistTxSuccess || isUnlistTxError) && (
                       <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                        <p className="font-medium">Transaction Status:</p>
+                        <p className="font-bold">Transaction Status:</p>
                         {isUnlistTxLoading && (
-                          <p className="text-muted-foreground">Pending confirmation...</p>
+                          <p className="font-bold text-muted-foreground">Pending confirmation...</p>
                         )}
                         {isUnlistTxSuccess && (
-                          <p className="text-green-600">
+                          <p className="font-bold text-green-600">
                             Transaction Confirmed! Your NFT has been unlisted.
                           </p>
                         )}
