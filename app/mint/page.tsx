@@ -13,12 +13,31 @@ import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagm
 
 async function uploadFileToIpfs(file: File): Promise<string> {
   const formData = new FormData()
-  formData.append("file", file)
-  const res = await fetch("https://rest.unique.network/opal/v1/ipfs/upload-file", {
+  // Field name changed to "files"
+  formData.append("files", file)
+  const res = await fetch("https://rest.unique.network/opal/v1/ipfs/upload-files", {
     method: "POST",
     body: formData
   })
   if (!res.ok) throw new Error("Failed to upload file to IPFS")
+  const data = await res.json()
+  // Return the "fullUrl" from the server response
+  return data.fullUrl
+}
+
+async function uploadJsonToIpfs(jsonData: any): Promise<string> {
+  // Convert json to a Blob or file
+  const blob = new Blob([JSON.stringify(jsonData)], { type: 'application/json' })
+  const file = new File([blob], "metadata.json", { type: "application/json" })
+
+  const formData = new FormData()
+  // Field name changed to "files"
+  formData.append("files", file)
+  const res = await fetch("https://rest.unique.network/opal/v1/ipfs/upload-files", {
+    method: "POST",
+    body: formData
+  })
+  if (!res.ok) throw new Error("Failed to upload JSON to IPFS")
   const data = await res.json()
   return data.fullUrl
 }
@@ -45,6 +64,7 @@ export default function MintNFTPage() {
   } = useWaitForTransactionReceipt({ hash: writeData ?? undefined })
 
   const [prompt, setPrompt] = useState("")
+  const [category, setCategory] = useState("Character")
   const [aiNft, setAiNft] = useState<any>(null)
   const [generatingImage, setGeneratingImage] = useState(false)
   const [generateImageError, setGenerateImageError] = useState("")
@@ -56,7 +76,8 @@ export default function MintNFTPage() {
   const [useAIImage, setUseAIImage] = useState(true)
   const [mintError, setMintError] = useState("")
 
-  async function handleGenerateImage() {
+  // Step 1: Combined generation from LLM + replicate
+  async function handleGenerateAttributesAndImage() {
     if (!prompt.trim()) {
       setShowPromptError(true)
       return
@@ -66,20 +87,22 @@ export default function MintNFTPage() {
     setGenerateImageError("")
     setGeneratingImage(true)
     try {
-      const resp = await fetch("/api/v1/ai-nft", {
+      // We'll call our new route that merges LLM attribute generation + replicate image
+      const resp = await fetch("/api/v1/ai-nft/metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt, category })
       })
-      if (!resp.ok) throw new Error("AI generation request failed.")
+      if (!resp.ok) throw new Error("Metadata generation request failed.")
       const data = await resp.json()
       if (!data.success) {
         throw new Error(data.error || "AI generation error occurred.")
       }
-      setAiNft(data)
+      // data.metadata => { name, image, attributes: {...} }
+      setAiNft(data.metadata)
       toast({
-        title: "Generation Complete",
-        description: "Your AI-generated image is ready. We'll upload it to IPFS before minting."
+        title: "LLM + Image Generation Complete",
+        description: "We have an AI-generated image and attributes ready. We'll upload them to IPFS before minting."
       })
     } catch (err: any) {
       setGenerateImageError(err.message || "Failed to generate image")
@@ -105,6 +128,7 @@ export default function MintNFTPage() {
     }
   }
 
+  // Step 2: Do the final mint flow
   async function handleMint() {
     try {
       setMintError("")
@@ -125,24 +149,37 @@ export default function MintNFTPage() {
         return
       }
 
-      let finalImageUrl = ""
+      let finalMetadataUrl = ""
+      // If using advanced LLM path
       if (useAIImage) {
-        if (!aiNft?.imageUrl) {
-          setMintError("No AI image found. Generate or upload an image first.")
+        if (!aiNft?.image) {
+          setMintError("No AI metadata found. Generate or upload an image first.")
           toast({
-            title: "No AI Image",
-            description: "Please generate or upload an image before minting.",
+            title: "No AI Data",
+            description: "Please generate or upload an image/metadata before minting.",
             variant: "destructive"
           })
           return
         }
         toast({ title: "Uploading to IPFS...", description: "Please wait" })
-        const imageData = await fetch(aiNft.imageUrl)
+
+        // We'll store the entire aiNft object in IPFS as metadata
+        // But first we should store the AI image itself in IPFS if we want
+        // The route gave us a direct replicate link. We'll re-upload for permanent IPFS storage
+        const imageData = await fetch(aiNft.image)
         if (!imageData.ok) throw new Error("Failed to fetch AI image for re-upload to IPFS")
         const blob = await imageData.blob()
         const file = new File([blob], "ai_nft.png", { type: blob.type })
-        finalImageUrl = await uploadFileToIpfs(file)
+        const imageIpfsUrl = await uploadFileToIpfs(file)
+
+        // now put that IPFS url in the metadata
+        const finalMetadata = {
+          ...aiNft,
+          image: imageIpfsUrl
+        }
+        finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       } else {
+        // Manual upload path
         if (!uploadedFile) {
           setMintError("No manual upload found. Please generate or upload an image first.")
           toast({
@@ -153,9 +190,19 @@ export default function MintNFTPage() {
           return
         }
         toast({ title: "Uploading to IPFS...", description: "Please wait" })
-        finalImageUrl = await uploadFileToIpfs(uploadedFile)
+        const imageIpfsUrl = await uploadFileToIpfs(uploadedFile)
+        // minimal JSON
+        const finalMetadata = {
+          name: prompt || "Untitled NFT",
+          image: imageIpfsUrl,
+          attributes: {}
+        }
+        finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       }
 
+      // Step 3: call the contract
+      // function mintFromCollection(uint256 collectionId, string memory imageUrl) payable
+      // We'll store finalMetadataUrl as the "imageUrl" param for simplicity
       const mintFromCollectionABI = {
         name: "mintFromCollection",
         type: "function",
@@ -167,11 +214,12 @@ export default function MintNFTPage() {
         outputs: []
       }
 
+      // For example, we use collectionId = 0, with a 0.1 ETH mint fee
       await writeContract({
         address: creatorCollection?.address as `0x\${string}`,
         abi: [mintFromCollectionABI],
         functionName: "mintFromCollection",
-        args: [0, finalImageUrl],
+        args: [0, finalMetadataUrl],
         value: parseEther("0.1")
       })
 
@@ -217,14 +265,14 @@ export default function MintNFTPage() {
       <div className="max-w-5xl w-full">
         <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
         <p className="mb-4 text-center text-sm text-muted-foreground">
-          Generate or upload your NFT image and mint from the default collection.
+          Generate or upload your NFT image and let an LLM create advanced attributes.
         </p>
 
         <Card className="border border-border shadow-lg rounded-lg p-6">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <Wand className="h-5 w-5" />
-              NFT Image Options
+              NFT Image &amp; Attribute Options
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -269,27 +317,43 @@ export default function MintNFTPage() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
+                <div className="mt-2">
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Category</label>
+                  <select
+                    className="border border-input bg-background p-2 text-sm"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    <option value="Character">Character</option>
+                    <option value="GameItem">Game Item</option>
+                    <option value="Powerup">Powerup</option>
+                  </select>
+                </div>
                 {showPromptError && (
                   <p className="mt-1 text-xs text-destructive">Please enter a prompt.</p>
                 )}
-                <Button onClick={handleGenerateImage} disabled={generatingImage} className="mt-2 w-full">
+                <Button
+                  onClick={handleGenerateAttributesAndImage}
+                  disabled={generatingImage}
+                  className="mt-2 w-full"
+                >
                   {generatingImage ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Image...
+                      Generating...
                     </>
                   ) : (
-                    "Generate Image"
+                    "Generate Image & Attributes"
                   )}
                 </Button>
                 {generateImageError && (
                   <p className="mt-2 text-xs text-destructive">{generateImageError}</p>
                 )}
-                {aiNft && (
+                {aiNft?.image && (
                   <div className="mt-4 flex flex-col items-center space-y-2">
                     <div className="relative h-48 w-48 overflow-hidden rounded-md border border-border">
                       <Image
-                        src={aiNft.imageUrl}
+                        src={aiNft.image}
                         alt="AI NFT Preview"
                         fill
                         sizes="(max-width: 768px) 100vw,
@@ -298,6 +362,9 @@ export default function MintNFTPage() {
                         className="object-cover"
                       />
                     </div>
+                    <pre className="text-xs bg-secondary p-2 rounded-md w-full overflow-auto">
+                      {JSON.stringify(aiNft.attributes, null, 2)}
+                    </pre>
                   </div>
                 )}
               </div>
@@ -312,7 +379,7 @@ export default function MintNFTPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="file:mr-4 file:rounded file:border-0 file:bg-accent file:px-4 file:py-2 file:text-accent-foreground hover:file:bg-accent/90"
+                  className="file:mr-4 file:rounded file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-medium file:text-accent-foreground hover:file:bg-accent/90"
                 />
                 {uploadedFile && previewUrl && (
                   <div className="mt-4 flex flex-col items-center space-y-2">
@@ -373,7 +440,7 @@ export default function MintNFTPage() {
                     </p>
                   )}
                   {isTxError && (
-                    <p className="font-bold text-orange-600 dark:text-orange-500">
+                    <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
                       Transaction Failed: {txError?.message}
                     </p>
                   )}
