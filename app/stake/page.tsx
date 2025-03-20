@@ -10,13 +10,6 @@ import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
 
-/**
- * This stake page:
- *  - If an NFT is listed (isOnSale), the user cannot stake it.
- *  - Show '(LISTED)' in place of '(Staked)' if isOnSale == true.
- *  - In the details card, do not show stake button if isOnSale == true and not staked. Instead show a note that it’s listed.
- */
-
 interface StakeInfo {
   staker: `0x${string}`
   startTimestamp: bigint
@@ -28,21 +21,20 @@ interface NFTItem {
   itemId: bigint
   creator: string
   xpValue: bigint
+  resourceUrl: string
+  mintedAt: bigint
+  owner: string
   isOnSale: boolean
   salePrice: bigint
-  resourceUrl: string
-  owner: string
   stakeInfo?: StakeInfo
 }
 
-// Transaction state for each action type
 interface ActionTxState {
   loading: boolean
   success: boolean
   error: string | null
 }
 
-// We'll group stake/claim/unstake states under an item-specific object.
 interface ItemTxState {
   stake?: ActionTxState
   claim?: ActionTxState
@@ -56,32 +48,25 @@ export default function StakePage() {
   const { toast } = useToast()
 
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
+  const nftMintingPlatform = useContract("NFTMintingPlatform")
   const nftStakingPool = useContract("NFTStakingPool")
 
-  // All items
   const [allItems, setAllItems] = useState<NFTItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
   const [fetched, setFetched] = useState(false)
 
-  // xpPerSecond
   const [xpRate, setXpRate] = useState<bigint>(0n)
   const [hasFetchedXpRate, setHasFetchedXpRate] = useState(false)
 
-  // selected NFT
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null)
-
-  // Transaction states keyed by itemId
   const [txMap, setTxMap] = useState<Record<string, ItemTxState>>({})
-
-  // For real-time unclaimed XP
   const [currentTime, setCurrentTime] = useState<number>(
     Math.floor(Date.now() / 1000)
   )
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   function formatTimestampSec(sec: bigint): string {
-    const ms = Number(sec) * 1000
-    return new Date(ms).toLocaleString()
+    return new Date(Number(sec) * 1000).toLocaleString()
   }
 
   useEffect(() => {
@@ -93,11 +78,11 @@ export default function StakePage() {
     }
   }, [])
 
-  // 1) read xpPerSecond
+  // 1) read xpPerSecond from NFTStakingPool
   useEffect(() => {
     async function loadXpRate() {
       if (hasFetchedXpRate) return
-      if (!publicClient || !nftStakingPool) return
+      if (!publicClient || !nftStakingPool?.address || !nftStakingPool?.abi) return
       try {
         const val = await publicClient.readContract({
           address: nftStakingPool.address as `0x${string}`,
@@ -116,20 +101,21 @@ export default function StakePage() {
     loadXpRate()
   }, [publicClient, nftStakingPool, hasFetchedXpRate])
 
-  // 2) fetch items
+  // 2) fetch items from NFTMintingPlatform (metadata + ownership) and from NFTMarketplaceHub (sale data) + NFTStakingPool (stake data)
   async function fetchAllNFTs(forceReload?: boolean) {
-    if (!userAddress || !publicClient || !nftMarketplaceHub) return
+    if (!userAddress || !publicClient || !nftMintingPlatform || !nftMarketplaceHub || !nftStakingPool) return
     if (!forceReload && fetched) return
 
     setFetched(true)
     setLoadingItems(true)
     try {
-      const totalItemId = (await publicClient.readContract({
-        address: nftMarketplaceHub.address as `0x${string}`,
-        abi: nftMarketplaceHub.abi,
-        functionName: "getLatestItemId",
+      // total minted
+      const totalItemId = await publicClient.readContract({
+        address: nftMintingPlatform.address as `0x${string}`,
+        abi: nftMintingPlatform.abi,
+        functionName: "getLatestMintedId",
         args: []
-      })) as bigint
+      }) as bigint
 
       if (typeof totalItemId !== "bigint" || totalItemId < 1n) {
         setLoadingItems(false)
@@ -138,21 +124,31 @@ export default function StakePage() {
 
       const calls = []
       for (let i = 1n; i <= totalItemId; i++) {
+        // nftItems(i)
         calls.push({
-          address: nftMarketplaceHub.address as `0x${string}`,
-          abi: nftMarketplaceHub.abi,
-          functionName: "nftData",
+          address: nftMintingPlatform.address as `0x${string}`,
+          abi: nftMintingPlatform.abi,
+          functionName: "nftItems",
           args: [i]
         })
+        // ownerOf(i)
         calls.push({
-          address: nftMarketplaceHub.address as `0x${string}`,
-          abi: nftMarketplaceHub.abi,
+          address: nftMintingPlatform.address as `0x${string}`,
+          abi: nftMintingPlatform.abi,
           functionName: "ownerOf",
           args: [i]
         })
+        // marketplace => marketItems(i)
         calls.push({
-          address: nftStakingPool?.address as `0x${string}`,
-          abi: nftStakingPool?.abi,
+          address: nftMarketplaceHub.address as `0x${string}`,
+          abi: nftMarketplaceHub.abi,
+          functionName: "marketItems",
+          args: [i]
+        })
+        // staking => stakes(i)
+        calls.push({
+          address: nftStakingPool.address as `0x${string}`,
+          abi: nftStakingPool.abi,
           functionName: "stakes",
           args: [i]
         })
@@ -164,31 +160,35 @@ export default function StakePage() {
       })
 
       const newItems: NFTItem[] = []
-      for (let i = 0; i < multicallResults.length; i += 3) {
-        const nftDataResult = multicallResults[i]
-        const ownerResult = multicallResults[i + 1]
-        const stakeInfoResult = multicallResults[i + 2]
+      let idx = 0
+      for (let i = 1n; i <= totalItemId; i++) {
+        const nftDataCall = multicallResults[idx]
+        const ownerCall = multicallResults[idx + 1]
+        const marketCall = multicallResults[idx + 2]
+        const stakeCall = multicallResults[idx + 3]
+        idx += 4
 
-        if (!nftDataResult.result || !ownerResult.result || !stakeInfoResult.result) {
+        if (!nftDataCall?.result || !ownerCall?.result || !marketCall?.result || !stakeCall?.result) {
           continue
         }
 
-        const [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl] =
-          nftDataResult.result as [bigint, string, bigint, boolean, bigint, string]
-        const owner = ownerResult.result as `0x${string}`
-        const [staker, startTimestamp, lastClaimed, staked] =
-          stakeInfoResult.result as [string, bigint, bigint, boolean]
+        // nftItems => [xpValue, resourceUrl, mintedAt, creator]
+        const [xpValue, resourceUrl, mintedAt, creator] = nftDataCall.result as [bigint, string, bigint, string]
+        const owner = ownerCall.result as `0x${string}`
+        const [isOnSale, salePrice] = marketCall.result as [boolean, bigint]
+        const [stakerAddr, startTimestamp, lastClaimed, staked] = stakeCall.result as [string, bigint, bigint, boolean]
 
         newItems.push({
-          itemId,
+          itemId: i,
           creator,
           xpValue,
+          resourceUrl,
+          mintedAt,
+          owner,
           isOnSale,
           salePrice,
-          resourceUrl,
-          owner,
           stakeInfo: {
-            staker: staker as `0x${string}`,
+            staker: stakerAddr as `0x${string}`,
             startTimestamp,
             lastClaimed,
             staked
@@ -207,14 +207,14 @@ export default function StakePage() {
   useEffect(() => {
     fetchAllNFTs()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userAddress, publicClient, nftMarketplaceHub, nftStakingPool])
+  }, [userAddress, publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool])
 
-  // 3) setApproval
+  // ensure approval
   async function ensureApprovalForAll() {
-    if (!userAddress || !walletClient || !nftMarketplaceHub || !nftStakingPool) return
+    if (!userAddress || !walletClient || !nftMintingPlatform || !nftStakingPool) return
     try {
-      const isApproved = (await publicClient?.readContract({
-        address: nftMarketplaceHub.address as `0x${string}`,
+      const isApproved = await publicClient?.readContract({
+        address: nftMintingPlatform.address as `0x${string}`,
         abi: [
           {
             name: "isApprovedForAll",
@@ -229,7 +229,7 @@ export default function StakePage() {
         ],
         functionName: "isApprovedForAll",
         args: [userAddress, nftStakingPool.address as `0x${string}`]
-      })) as boolean
+      }) as boolean
 
       if (!isApproved) {
         toast({
@@ -237,7 +237,7 @@ export default function StakePage() {
           description: "Approving staking contract..."
         })
         const hash = await walletClient.writeContract({
-          address: nftMarketplaceHub.address as `0x${string}`,
+          address: nftMintingPlatform.address as `0x${string}`,
           abi: [
             {
               name: "setApprovalForAll",
@@ -274,7 +274,6 @@ export default function StakePage() {
     }
   }
 
-  // Helper to set or update a single action within txMap
   function updateTxState(itemId: bigint, action: "stake" | "claim" | "unstake", nextState: Partial<ActionTxState>) {
     setTxMap((prev) => {
       const itemIdStr = itemId.toString()
@@ -291,11 +290,9 @@ export default function StakePage() {
     })
   }
 
-  // 4) stake
+  // stake
   async function handleStake(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
-
-    // If it's on sale, do nothing
     if (item.isOnSale) {
       toast({
         title: "Cannot Stake",
@@ -304,8 +301,6 @@ export default function StakePage() {
       })
       return
     }
-
-    // Set stakeTxState to loading
     updateTxState(item.itemId, "stake", { loading: true, success: false, error: null })
     try {
       await ensureApprovalForAll()
@@ -317,7 +312,6 @@ export default function StakePage() {
         args: [item.itemId],
         account: userAddress
       })
-
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` })
       await publicClient.waitForTransactionReceipt({ hash })
 
@@ -334,10 +328,9 @@ export default function StakePage() {
     }
   }
 
-  // 5) unstake
+  // unstake
   async function handleUnstake(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
-
     updateTxState(item.itemId, "unstake", { loading: true, success: false, error: null })
     try {
       toast({ title: "Unstaking...", description: "Sending transaction..." })
@@ -348,7 +341,6 @@ export default function StakePage() {
         args: [item.itemId],
         account: userAddress
       })
-
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` })
       await publicClient.waitForTransactionReceipt({ hash })
 
@@ -365,10 +357,9 @@ export default function StakePage() {
     }
   }
 
-  // 6) claim
+  // claim
   async function handleClaim(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
-
     updateTxState(item.itemId, "claim", { loading: true, success: false, error: null })
     try {
       toast({ title: "Claiming...", description: "Sending transaction..." })
@@ -379,7 +370,6 @@ export default function StakePage() {
         args: [item.itemId],
         account: userAddress
       })
-
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` })
       await publicClient.waitForTransactionReceipt({ hash })
 
@@ -400,13 +390,11 @@ export default function StakePage() {
   const userItems = allItems.filter((item) => {
     if (!userAddress) return false
     const staked = item.stakeInfo?.staked
-    const stakerIsUser =
-      item.stakeInfo?.staker?.toLowerCase() === userAddress.toLowerCase()
+    const stakerIsUser = item.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
     const ownerIsUser = item.owner.toLowerCase() === userAddress.toLowerCase()
     return ownerIsUser || (staked && stakerIsUser)
   })
 
-  // compute unclaimed xp
   function computeUnclaimedXP(item: NFTItem): bigint {
     if (!xpRate) return 0n
     if (!item.stakeInfo?.staked) return 0n
@@ -416,14 +404,10 @@ export default function StakePage() {
     return diff > 0 ? diff * xpRate : 0n
   }
 
-  // total unclaimed xp
   const totalUnclaimed = userItems.reduce((acc, item) => acc + computeUnclaimedXP(item), 0n)
-
-  // staked count
   const stakedCount = userItems.filter((item) => item.stakeInfo?.staked).length
   const notStakedCount = userItems.length - stakedCount
 
-  // If not connected
   if (!userAddress) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background text-foreground">
@@ -474,7 +458,6 @@ export default function StakePage() {
         </CardContent>
       </Card>
 
-      {/* 2-col layout */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Left - your NFTs */}
         <Card className="border border-border rounded-lg shadow-sm">
@@ -492,11 +475,12 @@ export default function StakePage() {
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {userItems.map((item) => {
-                  const displayUrl = item.resourceUrl.startsWith("ipfs://")
-                    ? item.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
-                    : item.resourceUrl
+                  // transform ipfs if needed
+                  let displayUrl = item.resourceUrl
+                  if (displayUrl.startsWith("ipfs://")) {
+                    displayUrl = displayUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
+                  }
 
-                  // " (STAKED)" or " (LISTED)" or neither
                   let label = ""
                   if (item.stakeInfo?.staked) {
                     label = "(STAKED)"
@@ -553,7 +537,6 @@ export default function StakePage() {
               </p>
             ) : (
               <div className="space-y-4">
-                {/* Preview */}
                 <div className="relative w-full h-96 overflow-hidden rounded-md border border-border bg-secondary">
                   <Image
                     src={
@@ -570,9 +553,7 @@ export default function StakePage() {
                   />
                 </div>
 
-                {/* Info: staked or not, isOnSale */}
                 {selectedNFT.stakeInfo?.staked ? (
-                  // Staked => show unclaimed XP, claim, unstake
                   <div className="text-sm">
                     <span className="font-bold text-green-600">Staked</span>{" "}
                     since{" "}
@@ -586,36 +567,13 @@ export default function StakePage() {
                         {computeUnclaimedXP(selectedNFT).toString()}
                       </span>
                     </div>
-
-                    {/* Tx states */}
                     {(() => {
                       const itemTx = txMap[selectedNFT.itemId.toString()] || {}
                       const claimTx = itemTx.claim
                       const unstakeTx = itemTx.unstake
-                      // Show claimTx if any
-                      // Show unstakeTx if any
-                      const showTxStatus = (tx?: ActionTxState) => {
-                        if (!tx) return null
-                        if (tx.loading || tx.success || tx.error) {
-                          return (
-                            <div className="rounded-md border border-border p-3 text-xs mt-2">
-                              <p className="font-bold">Transaction Status:</p>
-                              {tx.loading && <p className="font-bold text-muted-foreground">Pending...</p>}
-                              {tx.success && <p className="font-bold text-green-600">Transaction Confirmed!</p>}
-                              {tx.error && (
-                                <p className="font-bold text-orange-600">
-                                  Transaction Failed: {tx.error}
-                                </p>
-                              )}
-                            </div>
-                          )
-                        }
-                        return null
-                      }
 
                       return (
                         <>
-                          {/* Claim button */}
                           <Button
                             variant="default"
                             className="mt-3 w-full"
@@ -624,9 +582,8 @@ export default function StakePage() {
                           >
                             {claimTx?.loading ? "Processing..." : "Claim NFT Rewards"}
                           </Button>
-                          {showTxStatus(claimTx)}
+                          {showTxStatusBlock(claimTx)}
 
-                          {/* Unstake button */}
                           <Button
                             variant="outline"
                             className="mt-3 w-full"
@@ -635,41 +592,21 @@ export default function StakePage() {
                           >
                             {unstakeTx?.loading ? "Processing..." : "Unstake NFT"}
                           </Button>
-                          {showTxStatus(unstakeTx)}
+                          {showTxStatusBlock(unstakeTx)}
                         </>
                       )
                     })()}
                   </div>
                 ) : selectedNFT.isOnSale ? (
-                  // Not staked but on sale => cannot stake
                   <p className="text-sm font-bold text-orange-500">
                     This NFT is currently listed for sale. Please unlist it first if you want to stake.
                   </p>
                 ) : (
-                  // Not staked, not on sale => stake button
                   <div className="text-sm text-muted-foreground">
                     <p className="font-bold text-orange-600">Not Staked</p>
                     {(() => {
                       const itemTx = txMap[selectedNFT.itemId.toString()] || {}
                       const stakeTx = itemTx.stake
-                      const showTxStatus = (tx?: ActionTxState) => {
-                        if (!tx) return null
-                        if (tx.loading || tx.success || tx.error) {
-                          return (
-                            <div className="rounded-md border border-border p-3 text-xs mt-2">
-                              <p className="font-medium">Transaction Status:</p>
-                              {tx.loading && <p className="text-muted-foreground">Pending...</p>}
-                              {tx.success && <p className="text-green-600">Transaction Confirmed!</p>}
-                              {tx.error && (
-                                <p className="font-bold text-orange-600">
-                                  Transaction Failed: {tx.error}
-                                </p>
-                              )}
-                            </div>
-                          )
-                        }
-                        return null
-                      }
                       return (
                         <>
                           <Button
@@ -680,7 +617,7 @@ export default function StakePage() {
                           >
                             {stakeTx?.loading ? "Processing..." : "Stake NFT"}
                           </Button>
-                          {showTxStatus(stakeTx)}
+                          {showTxStatusBlock(stakeTx)}
                         </>
                       )
                     })()}
@@ -693,4 +630,23 @@ export default function StakePage() {
       </div>
     </main>
   )
+}
+
+function showTxStatusBlock(tx?: ActionTxState) {
+  if (!tx) return null
+  if (tx.loading || tx.success || tx.error) {
+    return (
+      <div className="rounded-md border border-border p-3 text-xs mt-2">
+        <p className="font-bold">Transaction Status:</p>
+        {tx.loading && <p className="font-bold text-muted-foreground">Pending...</p>}
+        {tx.success && <p className="font-bold text-green-600">Transaction Confirmed!</p>}
+        {tx.error && (
+          <p className="font-bold text-orange-600">
+            Transaction Failed: {tx.error}
+          </p>
+        )}
+      </div>
+    )
+  }
+  return null
 }

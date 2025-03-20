@@ -4,57 +4,73 @@ async function main() {
   const [deployer] = await ethers.getSigners()
   console.log("Deploying contracts with account:", deployer.address)
 
-  // Deploy PlatformRewardPool
+  // 1) Deploy PlatformRewardPool
   const PlatformRewardPool = await ethers.getContractFactory("PlatformRewardPool")
   const rewardPool = await PlatformRewardPool.deploy()
   await rewardPool.deployed()
   console.log("PlatformRewardPool deployed to:", rewardPool.address)
 
-  // Deploy UserExperiencePoints
+  // 2) Deploy UserExperiencePoints
   const UserExperiencePoints = await ethers.getContractFactory("UserExperiencePoints")
   const experience = await UserExperiencePoints.deploy()
   await experience.deployed()
   console.log("UserExperiencePoints deployed to:", experience.address)
 
-  // Deploy NFTMarketplaceHub with rewardPool and experience addresses
-  const NFTMarketplaceHub = await ethers.getContractFactory("NFTMarketplaceHub")
-  const marketplace = await NFTMarketplaceHub.deploy(
+  // 3) Deploy NFTMintingPlatform
+  // Constructor arguments: (address rewardPool, address experienceModule, string name, string symbol)
+  const NFTMintingPlatform = await ethers.getContractFactory("NFTMintingPlatform")
+  const nftMintingPlatform = await NFTMintingPlatform.deploy(
     rewardPool.address,
     experience.address,
     "AIPenGuild",
     "AIPEN"
   )
+  await nftMintingPlatform.deployed()
+  console.log("NFTMintingPlatform deployed to:", nftMintingPlatform.address)
+
+  // 4) Deploy NFTMarketplaceHub
+  // Constructor: (address _rewardPool, address _experienceModule, address _nftMintingPlatform)
+  const NFTMarketplaceHub = await ethers.getContractFactory("NFTMarketplaceHub")
+  const marketplace = await NFTMarketplaceHub.deploy(
+    rewardPool.address,
+    experience.address,
+    nftMintingPlatform.address
+  )
   await marketplace.deployed()
   console.log("NFTMarketplaceHub deployed to:", marketplace.address)
 
-  // Deploy NFTCreatorCollection with initial parameters and the marketplace address
+  // 5) Deploy NFTCreatorCollection
+  // Constructor: (string memory initialName, string memory initialDescription, uint256 initialMintPrice,
+  //              uint256 initialMaxSupply, address minterPlatformAddress)
   const NFTCreatorCollection = await ethers.getContractFactory("NFTCreatorCollection")
   const creatorCollection = await NFTCreatorCollection.deploy(
     "Default Collection",
     "This is a default NFT collection",
     ethers.utils.parseEther("0.1"),
     100,
-    marketplace.address
+    nftMintingPlatform.address
   )
   await creatorCollection.deployed()
   console.log("NFTCreatorCollection deployed to:", creatorCollection.address)
 
-  // Now set collection #0 in the marketplace
-  console.log("Registering primary collection 0 with NFTMarketplaceHub...")
-  const setCollectionTx = await marketplace.setNFTCollection(0, creatorCollection.address)
+  // 6) Register primary collection (#0) in the NFTMintingPlatform
+  // function setNFTCollection(uint256 collectionId, address collectionAddr)
+  console.log("Registering primary collection 0 with NFTMintingPlatform...")
+  const setCollectionTx = await nftMintingPlatform.setNFTCollection(0, creatorCollection.address)
   await setCollectionTx.wait()
-  console.log("Registered collection 0 ->", creatorCollection.address, " in NFTMarketplaceHub!")
+  console.log("Registered collection 0 ->", creatorCollection.address, " in NFTMintingPlatform!")
 
-  // Deploy NFTStakingPool
+  // 7) Deploy NFTStakingPool
+  // constructor(address _nftContract, address _experiencePoints)
   const NFTStakingPool = await ethers.getContractFactory("NFTStakingPool")
   const stakingPool = await NFTStakingPool.deploy(
-    marketplace.address,
+    nftMintingPlatform.address,
     experience.address
   )
   await stakingPool.deployed()
   console.log("NFTStakingPool deployed to:", stakingPool.address)
 
-  // Authorize NFTStakingPool in UserExperiencePoints
+  // 8) Authorize NFTStakingPool in UserExperiencePoints
   console.log("Authorizing NFTStakingPool in UserExperiencePoints as a caller...")
   const authTx = await experience.setAuthorizedCaller(stakingPool.address, true)
   await authTx.wait()

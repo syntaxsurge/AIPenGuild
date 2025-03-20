@@ -1,4 +1,5 @@
 export type CoreContractName =
+  | 'NFTMintingPlatform'
   | 'NFTMarketplaceHub'
   | 'PlatformRewardPool'
   | 'UserExperiencePoints'

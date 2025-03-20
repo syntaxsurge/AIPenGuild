@@ -1,8 +1,10 @@
 export const SUPPORTED_CHAINS = {
-  MOONBASE: 1287
+  MOONBASE: 1287,
+  WESTEND: 420420421
 } as const
 
 type ChainAddresses = {
+  NFTMintingPlatform: string
   NFTMarketplaceHub: string
   PlatformRewardPool: string
   UserExperiencePoints: string
@@ -17,11 +19,21 @@ type ContractAddresses = {
 
 export const CONTRACT_ADDRESSES: ContractAddresses = {
   [SUPPORTED_CHAINS.MOONBASE]: {
-    NFTMarketplaceHub: "0x081becC87fE71F1C7cE68745136e1749dBBfe112",
-    PlatformRewardPool: "0xB2BAa8C1f697c040197F3B7C330D84FaFc7B6CCB",
-    UserExperiencePoints: "0x2D73d115014A8F907Dacbe708aD9cE7f5DAC860A",
-    NFTCreatorCollection: "0x7aaFB88358a608ccF437B8E31c1aD8fa4606e42C",
-    NFTStakingPool: "0x67669d17BB8713c799f8608F1b68Cb4a12F44553",
+    NFTMintingPlatform: "0x1A825672E1De3C5E3f4c297bB626B8b12f6e80cD",
+    NFTMarketplaceHub: "0xCf28651a79bDF1541d8614532408FcF0B5242Dd0",
+    PlatformRewardPool: "0xA099937F48BEecd170EDdF20F66eb738F54d9b63",
+    UserExperiencePoints: "0x79Dc4fbF279862ef631c01d6937A6fC31dfa6e2f",
+    NFTCreatorCollection: "0x04D01Ca2cE168694b5e2CEf22921f002e9955D6e",
+    NFTStakingPool: "0xaA8a0Ca67418885ACa3FF81637fCaBC55c7519ED",
     explorer: "https://moonbase.moonscan.io"
+  },
+  [SUPPORTED_CHAINS.WESTEND]: {
+    NFTMintingPlatform: "",
+    NFTMarketplaceHub: "",
+    PlatformRewardPool: "",
+    UserExperiencePoints: "",
+    NFTCreatorCollection: "",
+    NFTStakingPool: "",
+    explorer: "https://westend.subscan.io"
   }
 }

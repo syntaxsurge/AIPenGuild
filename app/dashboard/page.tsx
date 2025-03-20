@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const { toast } = useToast()
 
   const userExperiencePoints = useContract("UserExperiencePoints")
+  const nftMintingPlatform = useContract("NFTMintingPlatform")
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const nftStakingPool = useContract("NFTStakingPool")
 
@@ -28,13 +29,12 @@ export default function DashboardPage() {
   const [totalStaked, setTotalStaked] = useState(0)
 
   const [loadingItems, setLoadingItems] = useState(false)
-
   const loadedRef = useRef(false)
 
   useEffect(() => {
-    // If user not connected or missing essential references, do nothing.
     if (!address || !publicClient) return
     if (!userExperiencePoints?.address || !userExperiencePoints?.abi) return
+    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
     if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
     if (!nftStakingPool?.address || !nftStakingPool?.abi) return
 
@@ -46,23 +46,22 @@ export default function DashboardPage() {
         setLoadingXp(true)
         setLoadingItems(true)
 
-        // Parallel fetch: XP + total item count
-        const [userXp, totalItemId] = await Promise.all([
-          publicClient?.readContract({
-            address: userExperiencePoints?.address as `0x${string}`,
-            abi: userExperiencePoints?.abi,
-            functionName: "userExperience",
-            args: [address],
-          }) as Promise<bigint>,
-          publicClient?.readContract({
-            address: nftMarketplaceHub?.address as `0x${string}`,
-            abi: nftMarketplaceHub?.abi,
-            functionName: "getLatestItemId",
-            args: [],
-          }) as Promise<bigint>,
-        ])
-
+        // 1) read user XP
+        const userXp = await publicClient?.readContract({
+          address: userExperiencePoints?.address as `0x${string}`,
+          abi: userExperiencePoints?.abi,
+          functionName: "userExperience",
+          args: [address],
+        }) as bigint
         setXp(userXp)
+
+        // 2) read total minted from nftMintingPlatform => getLatestMintedId
+        const totalItemId = await publicClient?.readContract({
+          address: nftMintingPlatform?.address as `0x${string}`,
+          abi: nftMintingPlatform?.abi,
+          functionName: "getLatestMintedId",
+          args: []
+        }) as bigint
 
         const itemCount = Number(totalItemId)
         let mintedCount = 0
@@ -73,44 +72,52 @@ export default function DashboardPage() {
         for (let i = 1; i <= itemCount; i++) {
           const bigI = BigInt(i)
           try {
-            // Read item owner
-            const owner = (await publicClient?.readContract({
-              address: nftMarketplaceHub?.address as `0x${string}`,
-              abi: nftMarketplaceHub?.abi,
+            // read ownerOf
+            const owner = await publicClient?.readContract({
+              address: nftMintingPlatform?.address as `0x${string}`,
+              abi: nftMintingPlatform?.abi,
               functionName: "ownerOf",
-              args: [bigI],
-            })) as `0x${string}`
+              args: [bigI]
+            }) as `0x${string}`
 
-            // itemData => [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl]
-            const data = (await publicClient?.readContract({
+            // read NFT data
+            const itemData = await publicClient?.readContract({
+              address: nftMintingPlatform?.address as `0x${string}`,
+              abi: nftMintingPlatform?.abi,
+              functionName: "nftItems",
+              args: [bigI]
+            }) as [bigint, string, bigint, string] // xpValue, resourceUrl, mintedAt, creator
+
+            const creator = itemData[3]
+
+            // read marketplace data => marketItems(i)
+            const marketItem = await publicClient?.readContract({
               address: nftMarketplaceHub?.address as `0x${string}`,
               abi: nftMarketplaceHub?.abi,
-              functionName: "nftData",
-              args: [bigI],
-            })) as [bigint, string, bigint, boolean, bigint, string]
+              functionName: "marketItems",
+              args: [bigI]
+            }) as [boolean, bigint]
 
-            const creator = data[1]
-            const isOnSale = data[3]
-
-            // check staking info => [staker, startTimestamp, lastClaimed, staked]
-            const stakeData = (await publicClient?.readContract({
+            const isOnSale = marketItem[0]
+            // read stake info
+            const stakeData = await publicClient?.readContract({
               address: nftStakingPool?.address as `0x${string}`,
               abi: nftStakingPool?.abi,
               functionName: "stakes",
               args: [bigI]
-            })) as [string, bigint, bigint, boolean]
+            }) as [string, bigint, bigint, boolean]
 
             const staker = stakeData[0]
-            const isStaked = stakeData[3] && staker.toLowerCase() === address?.toLowerCase()
+            const staked = stakeData[3] && staker.toLowerCase() === address?.toLowerCase()
 
             // minted by user?
             if (creator.toLowerCase() === address?.toLowerCase()) {
               mintedCount++
 
-              // if user minted it but doesn't own => check if staked
+              // if user minted but doesn't own => check if staked
               if (owner.toLowerCase() !== address.toLowerCase()) {
-                if (isStaked) {
-                  // staked by user, not sold
+                if (staked) {
+                  // staked by user anyway
                 } else {
                   soldCount++
                 }
@@ -122,8 +129,8 @@ export default function DashboardPage() {
               listedCount++
             }
 
-            // track staked items
-            if (isStaked) {
+            // track staked
+            if (staked) {
               stakedCount++
             }
 
@@ -136,13 +143,12 @@ export default function DashboardPage() {
         setTotalSold(soldCount)
         setTotalListed(listedCount)
         setTotalStaked(stakedCount)
-
       } catch (err) {
         console.error("[Dashboard] Error fetching data:", err)
         toast({
           title: "Error",
           description: "Failed to fetch dashboard data. Please try again.",
-          variant: "destructive",
+          variant: "destructive"
         })
       } finally {
         setLoadingXp(false)
@@ -155,6 +161,7 @@ export default function DashboardPage() {
     address,
     publicClient,
     userExperiencePoints,
+    nftMintingPlatform,
     nftMarketplaceHub,
     nftStakingPool,
     toast
@@ -175,7 +182,6 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-4 py-12 sm:px-6 md:px-8 bg-background text-foreground">
-      {/* Page Title */}
       <div className="mb-8 text-center">
         <h1 className="mb-4 text-4xl font-extrabold text-primary">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
@@ -183,7 +189,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Cards in 2x2 Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* XP Card */}
         <Card className="border border-border shadow-md">

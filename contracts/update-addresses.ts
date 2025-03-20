@@ -16,6 +16,9 @@ async function updateAddresses() {
       if (line.includes("UserExperiencePoints deployed to:")) {
         addresses.UserExperiencePoints = line.split("UserExperiencePoints deployed to:")[1].trim()
       }
+      if (line.includes("NFTMintingPlatform deployed to:")) {
+        addresses.NFTMintingPlatform = line.split("NFTMintingPlatform deployed to:")[1].trim()
+      }
       if (line.includes("NFTMarketplaceHub deployed to:")) {
         addresses.NFTMarketplaceHub = line.split("NFTMarketplaceHub deployed to:")[1].trim()
       }

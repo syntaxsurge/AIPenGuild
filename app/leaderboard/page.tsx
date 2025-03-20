@@ -18,66 +18,67 @@ interface LeaderboardEntry {
 export default function LeaderboardPage() {
   const { toast } = useToast()
   const userExperiencePoints = useContract("UserExperiencePoints")
-  const nftMarketplaceHub = useContract("NFTMarketplaceHub")
+  const nftMintingPlatform = useContract("NFTMintingPlatform")
   const nftStakingPool = useContract("NFTStakingPool")
-  const publicClient = usePublicClient()
 
   // The primary state for storing the fetched data
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  // Display a spinner (loading) or show the table
+  // Display a spinner or table
   const [loading, setLoading] = useState(true)
 
   // Filter states
   const [addressSearch, setAddressSearch] = useState("")
   const [xpRange, setXpRange] = useState<[number, number]>([0, 1000000])
 
-  // A ref to ensure we don't spam the RPC endpoint
+  const publicClient = usePublicClient()
   const loadedRef = useRef(false)
 
-  // The main fetch function
+  // fetch function
   async function loadLeaderboard() {
-    try {
-      setLoading(true)
+    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
+    if (!nftStakingPool?.address || !nftStakingPool?.abi) return
+    if (!userExperiencePoints?.address || !userExperiencePoints?.abi) return
+    if (!publicClient) return
 
-      // 1) read the total minted items from the marketplace
-      const totalItems = await publicClient?.readContract({
-        address: nftMarketplaceHub?.address as `0x${string}`,
-        abi: nftMarketplaceHub?.abi,
-        functionName: "getLatestItemId",
+    setLoading(true)
+    try {
+      // read total minted from NFTMintingPlatform
+      const totalItems = await publicClient.readContract({
+        address: nftMintingPlatform.address as `0x${string}`,
+        abi: nftMintingPlatform.abi,
+        functionName: "getLatestMintedId",
         args: []
       }) as bigint
 
       if (!totalItems || totalItems < 1n) {
         setLeaderboard([])
+        setLoading(false)
         return
       }
 
-      // We'll do a single multicall to fetch:
-      //   ownerOf(i) and stakes(i) for each item i
       const calls = []
+      // For each token, we want to read ownerOf and also read stake info
       for (let i = 1n; i <= totalItems; i++) {
+        // 1) ownerOf
         calls.push({
-          address: nftMarketplaceHub?.address as `0x${string}`,
-          abi: nftMarketplaceHub?.abi,
+          address: nftMintingPlatform.address as `0x${string}`,
+          abi: nftMintingPlatform.abi,
           functionName: "ownerOf",
           args: [i]
         })
+        // 2) stakes(i)
         calls.push({
-          address: nftStakingPool?.address as `0x${string}`,
-          abi: nftStakingPool?.abi,
+          address: nftStakingPool.address as `0x${string}`,
+          abi: nftStakingPool.abi,
           functionName: "stakes",
           args: [i]
         })
       }
 
-      const multicallRes = await publicClient?.multicall({
+      const multicallRes = await publicClient.multicall({
         contracts: calls,
         allowFailure: true
       })
-      if (!multicallRes) {
-        console.error("multicallRes is undefined")
-        return
-      }
 
       const ownersSet = new Set<string>()
       let index = 0
@@ -92,7 +93,7 @@ export default function LeaderboardPage() {
         }
         if (stakeCall?.result) {
           const [stakerAddr, , , staked] = stakeCall.result as [string, bigint, bigint, boolean]
-          if (staked && stakerAddr && stakerAddr !== "0x0000000000000000000000000000000000000000") {
+          if (staked && stakerAddr !== "0x0000000000000000000000000000000000000000") {
             ownersSet.add(stakerAddr.toLowerCase())
           }
         }
@@ -102,20 +103,20 @@ export default function LeaderboardPage() {
       const resultEntries: LeaderboardEntry[] = []
       for (const addr of ownersSet) {
         try {
-          const xpVal = await publicClient?.readContract({
-            address: userExperiencePoints?.address as `0x${string}`,
-            abi: userExperiencePoints?.abi,
+          const xpVal = await publicClient.readContract({
+            address: userExperiencePoints.address as `0x${string}`,
+            abi: userExperiencePoints.abi,
             functionName: "userExperience",
             args: [addr]
           }) as bigint
 
           resultEntries.push({ address: addr, xp: xpVal })
         } catch {
-          // skip if error
+          // skip
         }
       }
 
-      // Sort descending by XP
+      // sort descending
       resultEntries.sort((a, b) => Number(b.xp - a.xp))
       setLeaderboard(resultEntries)
     } catch (err: any) {
@@ -126,41 +127,18 @@ export default function LeaderboardPage() {
         variant: "destructive"
       })
     } finally {
-      // Done loading
       setLoading(false)
     }
   }
 
-  // We'll run the fetch once references exist, but avoid repeated calls
   useEffect(() => {
-    // If references are not yet available, do nothing
-    if (
-      !publicClient ||
-      !userExperiencePoints?.address ||
-      !userExperiencePoints?.abi ||
-      !nftMarketplaceHub?.address ||
-      !nftMarketplaceHub?.abi ||
-      !nftStakingPool?.address ||
-      !nftStakingPool?.abi
-    ) {
-      return
+    if (!loadedRef.current) {
+      loadedRef.current = true
+      loadLeaderboard()
     }
+  }, [loadLeaderboard])
 
-    // If we've already fetched once, skip
-    if (loadedRef.current) return
-    loadedRef.current = true
-
-    // Now we can call the load function once
-    loadLeaderboard()
-  }, [
-    publicClient,
-    userExperiencePoints,
-    nftMarketplaceHub,
-    nftStakingPool,
-    toast
-  ])
-
-  // Filter the top 10
+  // filter
   const filteredLeaderboard = useMemo(() => {
     const minVal = Math.min(xpRange[0], xpRange[1])
     const maxVal = Math.max(xpRange[0], xpRange[1])
@@ -171,8 +149,7 @@ export default function LeaderboardPage() {
       .filter((entry) => {
         if (entry.xp < minXP || entry.xp > maxXP) return false
         if (addressSearch) {
-          // match substring of address
-          if (!entry.address.toLowerCase().includes(addressSearch.toLowerCase())) {
+          if (!entry.address.includes(addressSearch.toLowerCase())) {
             return false
           }
         }

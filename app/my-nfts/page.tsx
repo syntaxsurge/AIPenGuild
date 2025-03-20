@@ -25,13 +25,16 @@ interface StakeInfo {
 
 interface NFTDetails {
   itemId: bigint
-  creator: string
   xpValue: bigint
+  resourceUrl: string
+  mintedAt: bigint
+  creator: string
+  owner: string
+
   isOnSale: boolean
   salePrice: bigint
-  resourceUrl: string
+
   stakeInfo?: StakeInfo
-  mintedTime?: number
 }
 
 interface MetadataState {
@@ -48,8 +51,9 @@ export default function MyNFTsPage() {
   // Contracts
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const nftStakingPool = useContract("NFTStakingPool")
+  const nftMintingPlatform = useContract("NFTMintingPlatform")
 
-  // List/Unlist contract calls
+  // List/unlist contract calls
   const {
     data: listWriteData,
     error: listError,
@@ -89,15 +93,10 @@ export default function MyNFTsPage() {
   const [currentMaxId, setCurrentMaxId] = useState<bigint | null>(null)
   const [loadingNFTs, setLoadingNFTs] = useState(false)
 
-  // We'll prevent repeated full fetch calls
   const fetchedUserNFTsRef = useRef(false)
   const latestItemIdFetchedRef = useRef(false)
 
-  // Are we busy listing or unlisting
-  const isListingTxBusy = isListPending || isListTxLoading
-  const isUnlistingTxBusy = isUnlistPending || isUnlistTxLoading
-
-  // Watchers for listing
+  // watchers for listing transaction
   useEffect(() => {
     if (isListTxLoading) {
       toast({
@@ -110,7 +109,6 @@ export default function MyNFTsPage() {
         title: "Transaction Successful!",
         description: "Your NFT has been listed for sale."
       })
-      // Update local state
       if (selectedNFT) {
         try {
           const bigPrice = parseEther(price)
@@ -144,7 +142,7 @@ export default function MyNFTsPage() {
     price
   ])
 
-  // Watchers for unlisting
+  // watchers for unlisting
   useEffect(() => {
     if (isUnlistTxLoading) {
       toast({
@@ -157,7 +155,6 @@ export default function MyNFTsPage() {
         title: "Transaction Successful!",
         description: "Your NFT has been unlisted."
       })
-      // Update local state
       if (selectedNFT) {
         setUserNFTs((prev) =>
           prev.map((n) =>
@@ -185,136 +182,125 @@ export default function MyNFTsPage() {
     selectedNFT
   ])
 
-  // 1) Only call getLatestItemId once if not already loaded, or if user changes
+  // (1) load the highest minted itemId from NFTMintingPlatform
   useEffect(() => {
-    // If user is disconnected or references are missing, skip
     if (!wagmiAddress) {
-      // reset
       setCurrentMaxId(null)
       latestItemIdFetchedRef.current = false
       return
     }
-    if (!publicClient || !nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
-
-    // If we already fetched for this session, skip
+    if (!publicClient || !nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
     if (latestItemIdFetchedRef.current) return
     latestItemIdFetchedRef.current = true
 
     async function loadLatestItemId() {
       try {
         const val = await publicClient?.readContract({
-          address: nftMarketplaceHub?.address as `0x${string}`,
-          abi: nftMarketplaceHub?.abi,
-          functionName: "getLatestItemId",
+          address: nftMintingPlatform?.address as `0x${string}`,
+          abi: nftMintingPlatform?.abi,
+          functionName: "getLatestMintedId",
           args: []
         })
         if (typeof val === "bigint") {
           setCurrentMaxId(val)
         }
       } catch (err) {
-        console.error("[MyNFTs] Error reading getLatestItemId:", err)
+        console.error("[MyNFTs] Error reading getLatestMintedId:", err)
       }
     }
     loadLatestItemId()
-  }, [wagmiAddress, nftMarketplaceHub, publicClient])
+  }, [wagmiAddress, nftMintingPlatform, publicClient])
 
-  // 2) Once we have currentMaxId, fetch the user's NFTs
+  // (2) once we have currentMaxId, fetch all user NFTs
   async function fetchUserNFTs() {
     if (!wagmiAddress || !currentMaxId) return
     if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
+    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
     if (!nftStakingPool?.address || !nftStakingPool?.abi) return
     if (!publicClient) return
-
-    // If already fetched for this session, skip
     if (fetchedUserNFTsRef.current) return
     fetchedUserNFTsRef.current = true
 
     setLoadingNFTs(true)
-    const total = Number(currentMaxId)
-    const calls = []
-    for (let i = 1n; i <= BigInt(total); i++) {
-      // nftData
-      calls.push({
-        address: nftMarketplaceHub.address as `0x${string}`,
-        abi: nftMarketplaceHub.abi,
-        functionName: "nftData",
-        args: [i]
-      })
-      // ownerOf
-      calls.push({
-        address: nftMarketplaceHub.address as `0x${string}`,
-        abi: nftMarketplaceHub.abi,
-        functionName: "ownerOf",
-        args: [i]
-      })
-      // stakes
-      calls.push({
-        address: nftStakingPool.address as `0x${string}`,
-        abi: nftStakingPool.abi,
-        functionName: "stakes",
-        args: [i]
-      })
-      // mintedAt
-      calls.push({
-        address: nftMarketplaceHub.address as `0x${string}`,
-        abi: nftMarketplaceHub.abi,
-        functionName: "mintedAt",
-        args: [i]
-      })
-    }
-
     try {
-      const multicallRes = await publicClient.multicall({
-        contracts: calls,
-        allowFailure: true
-      })
-      const found: NFTDetails[] = []
+      const total = Number(currentMaxId)
+      const results: NFTDetails[] = []
 
-      let idx = 0
       for (let i = 1; i <= total; i++) {
-        const dataCall = multicallRes[idx]
-        const ownerCall = multicallRes[idx + 1]
-        const stakeCall = multicallRes[idx + 2]
-        const mintedAtCall = multicallRes[idx + 3]
-        idx += 4
+        const tokenId = BigInt(i)
+        try {
+          // 1) read ownerOf(tokenId) from NFTMintingPlatform
+          const owner = await publicClient.readContract({
+            address: nftMintingPlatform.address as `0x${string}`,
+            abi: nftMintingPlatform.abi,
+            functionName: "ownerOf",
+            args: [tokenId],
+          }) as `0x${string}`
 
-        if (!dataCall.result || !ownerCall.result || !stakeCall.result || mintedAtCall.result === undefined) {
-          continue
-        }
+          // 2) read NFT metadata => nftItems(tokenId)
+          const itemData = await publicClient.readContract({
+            address: nftMintingPlatform.address as `0x${string}`,
+            abi: nftMintingPlatform.abi,
+            functionName: "nftItems",
+            args: [tokenId],
+          }) as [bigint, string, bigint, string] // xp, resource, mintedAt, creator
 
-        const [itemId, creator, xpValue, isOnSale, salePrice, resourceUrl] =
-          dataCall.result as [bigint, string, bigint, boolean, bigint, string]
-        const ownerAddr = ownerCall.result as `0x${string}`
-        const [staker, startTimestamp, lastClaimed, staked] =
-          stakeCall.result as [string, bigint, bigint, boolean]
-        const mintedTimeValue = mintedAtCall.result as bigint
+          const xpValue = itemData[0]
+          const resourceUrl = itemData[1]
+          const mintedAt = itemData[2]
+          const creator = itemData[3]
 
-        // check if user is owner or staker
-        const userIsOwner = ownerAddr.toLowerCase() === wagmiAddress.toLowerCase()
-        const userIsStaker = staked && staker.toLowerCase() === wagmiAddress.toLowerCase()
+          // 3) read marketItems(tokenId) => [isOnSale, salePrice]
+          const marketItem = await publicClient.readContract({
+            address: nftMarketplaceHub.address as `0x${string}`,
+            abi: nftMarketplaceHub.abi,
+            functionName: "marketItems",
+            args: [tokenId],
+          }) as [boolean, bigint]
 
-        if (userIsOwner || userIsStaker) {
-          found.push({
-            itemId,
-            creator,
-            xpValue,
-            isOnSale,
-            salePrice,
-            resourceUrl,
-            stakeInfo: {
-              staker: staker as `0x${string}`,
-              startTimestamp,
-              lastClaimed,
-              staked
-            },
-            mintedTime: Number(mintedTimeValue)
-          })
+          const isOnSale = marketItem[0]
+          const salePrice = marketItem[1]
+
+          // 4) read stake info => stakes(tokenId) => [staker, startTimestamp, lastClaimed, staked]
+          const stakeData = await publicClient.readContract({
+            address: nftStakingPool.address as `0x${string}`,
+            abi: nftStakingPool.abi,
+            functionName: "stakes",
+            args: [tokenId]
+          }) as [string, bigint, bigint, boolean]
+
+          const stakerAddr = stakeData[0]
+          const staked = stakeData[3]
+
+          const userIsOwner = owner.toLowerCase() === wagmiAddress.toLowerCase()
+          const userIsStaker = staked && stakerAddr.toLowerCase() === wagmiAddress.toLowerCase()
+
+          if (userIsOwner || userIsStaker) {
+            results.push({
+              itemId: tokenId,
+              xpValue,
+              resourceUrl,
+              mintedAt,
+              creator,
+              owner,
+              isOnSale,
+              salePrice,
+              stakeInfo: {
+                staker: stakerAddr as `0x${string}`,
+                startTimestamp: stakeData[1],
+                lastClaimed: stakeData[2],
+                staked
+              }
+            })
+          }
+        } catch {
+          // skip
         }
       }
 
-      setUserNFTs(found)
+      setUserNFTs(results)
     } catch (err) {
-      console.error("[MyNFTs] Error in multicall fetching user NFTs:", err)
+      console.error("[MyNFTs] Error in fetchUserNFTs:", err)
       toast({
         title: "Error",
         description: "Unable to fetch your NFTs. Please try again.",
@@ -336,18 +322,16 @@ export default function MyNFTsPage() {
     }
   }, [wagmiAddress, currentMaxId])
 
-  // 3) Load metadata only when userNFTs changes, ignoring metadataMap from dependencies
+  // (3) load metadata if needed (optional - if your NFT uses direct resource links, might skip)
   useEffect(() => {
     if (!userNFTs.length) return
 
     async function loadMetadata() {
-      // We'll build a copy of the current metadata map, filling only missing items
       const newMap = { ...metadataMap }
       let updated = false
 
       for (const nft of userNFTs) {
         const idStr = String(nft.itemId)
-        // skip if we already have an imageUrl for this NFT
         if (newMap[idStr]?.imageUrl !== undefined) {
           continue
         }
@@ -356,24 +340,25 @@ export default function MyNFTsPage() {
         let name = `NFT #${idStr}`
         let description = ""
 
-        try {
-          if (nft.resourceUrl.startsWith("ipfs://")) {
-            const ipfsHttp = nft.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
-            const resp = await fetch(ipfsHttp)
+        // If resourceUrl is an IPFS link or JSON endpoint, attempt to fetch JSON
+        if (
+          nft.resourceUrl.startsWith("ipfs://") ||
+          nft.resourceUrl.startsWith("http://") ||
+          nft.resourceUrl.startsWith("https://")
+        ) {
+          try {
+            let replacedUrl = nft.resourceUrl
+            if (replacedUrl.startsWith("ipfs://")) {
+              replacedUrl = replacedUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
+            }
+            const resp = await fetch(replacedUrl)
             const maybeJson = await resp.json()
             if (maybeJson.image) finalImageUrl = maybeJson.image
             if (maybeJson.name) name = maybeJson.name
             if (maybeJson.description) description = maybeJson.description
-          } else if (nft.resourceUrl.startsWith("https://") || nft.resourceUrl.startsWith("http://")) {
-            // attempt to parse as JSON
-            const resp = await fetch(nft.resourceUrl)
-            const maybeJson = await resp.json()
-            if (maybeJson.image) finalImageUrl = maybeJson.image
-            if (maybeJson.name) name = maybeJson.name
-            if (maybeJson.description) description = maybeJson.description
+          } catch {
+            // possibly direct link or error
           }
-        } catch {
-          // possibly a direct image, or an error
         }
 
         newMap[idStr] = {
@@ -384,18 +369,16 @@ export default function MyNFTsPage() {
         updated = true
       }
 
-      // only update state if there's a change
       if (updated) {
         setMetadataMap(newMap)
       }
     }
 
     loadMetadata()
-    // we only depend on userNFTs. do not add metadataMap to avoid infinite loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userNFTs])
 
-  // Listing
+  // handle listing
   const handleListNFT = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedNFT || !price) {
@@ -432,7 +415,7 @@ export default function MyNFTsPage() {
     }
   }
 
-  // Unlisting
+  // handle unlisting
   const handleUnlistNFT = async () => {
     if (!selectedNFT || !selectedNFT.isOnSale) {
       toast({
@@ -479,8 +462,8 @@ export default function MyNFTsPage() {
     return meta.imageUrl
   }
 
-  function formatTimestamp(ts: number): string {
-    const d = new Date(ts * 1000)
+  function formatTimestamp(ts: bigint): string {
+    const d = new Date(Number(ts) * 1000)
     return d.toLocaleString()
   }
 
@@ -514,15 +497,11 @@ export default function MyNFTsPage() {
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {userNFTs.map((nft) => {
                   const displayUrl = getDisplayUrl(nft)
-                  const isStaked =
-                    nft.stakeInfo?.staked &&
-                    nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
-                  const isForSale = nft.isOnSale
-                  const selected = selectedNFT?.itemId === nft.itemId
-
+                  const isStaked = nft.stakeInfo?.staked && nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
                   let label = ""
                   if (isStaked) label = "(STAKED)"
-                  else if (isForSale) label = "(LISTED)"
+                  else if (nft.isOnSale) label = "(LISTED)"
+                  const selected = selectedNFT?.itemId === nft.itemId
 
                   return (
                     <div
@@ -567,7 +546,6 @@ export default function MyNFTsPage() {
               </p>
             ) : (
               <>
-                {/* Image */}
                 <div className="relative mb-4 h-64 w-full overflow-hidden rounded-md bg-secondary">
                   <Image
                     src={getDisplayUrl(selectedNFT)}
@@ -579,13 +557,9 @@ export default function MyNFTsPage() {
                     className="object-contain"
                   />
                 </div>
-                {/* mintedTime */}
-                {selectedNFT.mintedTime && (
-                  <p className="text-sm mb-1">
-                    <strong>Minted Time:</strong> {formatTimestamp(selectedNFT.mintedTime)}
-                  </p>
-                )}
-                {/* Additional */}
+                <p className="text-sm mb-1">
+                  <strong>Minted Time:</strong> {formatTimestamp(selectedNFT.mintedAt)}
+                </p>
                 <p className="text-sm mb-1">
                   <strong>XP Value:</strong> {selectedNFT.xpValue.toString()}
                 </p>
@@ -600,8 +574,7 @@ export default function MyNFTsPage() {
                 </p>
                 {selectedNFT.isOnSale && (
                   <p className="text-sm mb-1">
-                    <strong>Price:</strong>{" "}
-                    {(Number(selectedNFT.salePrice) / 1e18).toFixed(4)} ETH
+                    <strong>Price:</strong> {(Number(selectedNFT.salePrice) / 1e18).toFixed(4)} ETH
                   </p>
                 )}
                 {selectedNFT.stakeInfo?.staked &&
@@ -613,10 +586,8 @@ export default function MyNFTsPage() {
 
                 {/* Listing form */}
                 {(() => {
-                  const isStaked =
-                    selectedNFT.stakeInfo?.staked &&
+                  const isStaked = selectedNFT.stakeInfo?.staked &&
                     selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
-
                   return (
                     <form onSubmit={handleListNFT} className="mt-4 space-y-4">
                       <div>
@@ -638,10 +609,10 @@ export default function MyNFTsPage() {
                       ) : (
                         <Button
                           type="submit"
-                          disabled={!selectedNFT || !price || isListingTxBusy}
+                          disabled={!selectedNFT || !price || isListPending || isListTxLoading}
                           className="w-full"
                         >
-                          {isListingTxBusy ? "Processing..." : "List for Sale"}
+                          {isListPending || isListTxLoading ? "Processing..." : "List for Sale"}
                         </Button>
                       )}
 
@@ -671,10 +642,10 @@ export default function MyNFTsPage() {
                     <Button
                       variant="outline"
                       onClick={handleUnlistNFT}
-                      disabled={isUnlistingTxBusy}
+                      disabled={isUnlistPending || isUnlistTxLoading}
                       className="mt-4 w-full"
                     >
-                      {isUnlistingTxBusy ? "Processing..." : "Unlist NFT"}
+                      {isUnlistPending || isUnlistTxLoading ? "Processing..." : "Unlist NFT"}
                     </Button>
 
                     {(isUnlistTxLoading || isUnlistTxSuccess || isUnlistTxError) && (
