@@ -46,7 +46,8 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "viem": "^2.21.54",
-    "wagmi": "^2.13.5"
+    "wagmi": "^2.13.5",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
