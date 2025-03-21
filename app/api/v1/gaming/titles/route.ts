@@ -1,0 +1,18 @@
+import { NextResponse } from 'next/server'
+import { XP_TITLES } from '@/lib/experience'
+
+/**
+ * GET /api/v1/gaming/titles
+ *
+ * Returns an array of XP tier ranges and labels, e.g.:
+ * [
+ *   { "label": "Newcomer", "min": 0, "max": 99 },
+ *   ...
+ * ]
+ */
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    titles: XP_TITLES
+  })
+}
