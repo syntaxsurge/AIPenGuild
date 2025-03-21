@@ -11,9 +11,13 @@ import React, { useEffect, useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 
+/**
+ * Uploads a file to IPFS via Unique Network's endpoint.
+ * Returns a full URL if successful.
+ */
 async function uploadFileToIpfs(file: File): Promise<string> {
   const formData = new FormData()
-  // Field name changed to "files"
+  // The field name "files" is required by the Unique IPFS endpoint
   formData.append("files", file)
   const res = await fetch("https://rest.unique.network/opal/v1/ipfs/upload-files", {
     method: "POST",
@@ -25,13 +29,15 @@ async function uploadFileToIpfs(file: File): Promise<string> {
   return data.fullUrl
 }
 
+/**
+ * Uploads arbitrary JSON data to IPFS (by converting it to a file).
+ * Returns the IPFS URL if successful.
+ */
 async function uploadJsonToIpfs(jsonData: any): Promise<string> {
-  // Convert json to a Blob or file
   const blob = new Blob([JSON.stringify(jsonData)], { type: 'application/json' })
   const file = new File([blob], "metadata.json", { type: "application/json" })
 
   const formData = new FormData()
-  // Field name changed to "files"
   formData.append("files", file)
   const res = await fetch("https://rest.unique.network/opal/v1/ipfs/upload-files", {
     method: "POST",
@@ -42,11 +48,30 @@ async function uploadJsonToIpfs(jsonData: any): Promise<string> {
   return data.fullUrl
 }
 
+/**
+ * For manual image uploads, generate random attributes for the metadata JSON.
+ * The user wanted a random attribute set for custom images.
+ */
+function createRandomAttributes() {
+  const randomBetween = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min
+
+  const rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+  const randomRarity = rarities[randomBetween(0, rarities.length - 1)]
+
+  return {
+    power: randomBetween(1, 100),
+    durability: randomBetween(1, 100),
+    rarity: randomRarity
+  }
+}
+
 export default function MintNFTPage() {
   const { address: wagmiAddress } = useAccount()
   const { toast } = useToast()
   const creatorCollection = useContract("NFTCreatorCollection")
 
+  // Wagmi contract write
   const {
     data: writeData,
     error,
@@ -63,6 +88,7 @@ export default function MintNFTPage() {
     error: txError
   } = useWaitForTransactionReceipt({ hash: writeData ?? undefined })
 
+  // Local states
   const [prompt, setPrompt] = useState("")
   const [category, setCategory] = useState("Character")
   const [aiNft, setAiNft] = useState<any>(null)
@@ -76,7 +102,9 @@ export default function MintNFTPage() {
   const [useAIImage, setUseAIImage] = useState(true)
   const [mintError, setMintError] = useState("")
 
-  // Step 1: Combined generation from LLM + replicate
+  /**
+   * Handle AI-based generation for prompt + attributes
+   */
   async function handleGenerateAttributesAndImage() {
     if (!prompt.trim()) {
       setShowPromptError(true)
@@ -87,7 +115,6 @@ export default function MintNFTPage() {
     setGenerateImageError("")
     setGeneratingImage(true)
     try {
-      // We'll call our new route that merges LLM attribute generation + replicate image
       const resp = await fetch("/api/v1/ai-nft/metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,7 +129,7 @@ export default function MintNFTPage() {
       setAiNft(data.metadata)
       toast({
         title: "LLM + Image Generation Complete",
-        description: "We have an AI-generated image and attributes ready. We'll upload them to IPFS before minting."
+        description: "We have an AI-generated image and attributes ready."
       })
     } catch (err: any) {
       setGenerateImageError(err.message || "Failed to generate image")
@@ -116,6 +143,9 @@ export default function MintNFTPage() {
     }
   }
 
+  /**
+   * Handle file upload changes
+   */
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] || null
     setUploadedFile(file)
@@ -128,7 +158,9 @@ export default function MintNFTPage() {
     }
   }
 
-  // Step 2: Do the final mint flow
+  /**
+   * Main Minting Logic
+   */
   async function handleMint() {
     try {
       setMintError("")
@@ -150,7 +182,8 @@ export default function MintNFTPage() {
       }
 
       let finalMetadataUrl = ""
-      // If using advanced LLM path
+
+      // If user is using AI-based generation
       if (useAIImage) {
         if (!aiNft?.image) {
           setMintError("No AI metadata found. Generate or upload an image first.")
@@ -163,23 +196,21 @@ export default function MintNFTPage() {
         }
         toast({ title: "Uploading to IPFS...", description: "Please wait" })
 
-        // We'll store the entire aiNft object in IPFS as metadata
-        // But first we should store the AI image itself in IPFS if we want
-        // The route gave us a direct replicate link. We'll re-upload for permanent IPFS storage
+        // We'll re-upload the AI image to IPFS
         const imageData = await fetch(aiNft.image)
         if (!imageData.ok) throw new Error("Failed to fetch AI image for re-upload to IPFS")
         const blob = await imageData.blob()
         const file = new File([blob], "ai_nft.png", { type: blob.type })
         const imageIpfsUrl = await uploadFileToIpfs(file)
 
-        // now put that IPFS url in the metadata
+        // Prepare final metadata with the IPFS image
         const finalMetadata = {
           ...aiNft,
           image: imageIpfsUrl
         }
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       } else {
-        // Manual upload path
+        // Manual upload path => generate a random JSON attribute
         if (!uploadedFile) {
           setMintError("No manual upload found. Please generate or upload an image first.")
           toast({
@@ -190,19 +221,25 @@ export default function MintNFTPage() {
           return
         }
         toast({ title: "Uploading to IPFS...", description: "Please wait" })
+
+        // 1) upload the user-provided file to IPFS
         const imageIpfsUrl = await uploadFileToIpfs(uploadedFile)
-        // minimal JSON
+
+        // 2) create random attributes
+        const randomAttributes = createRandomAttributes()
+
+        // 3) minimal JSON with random attributes
         const finalMetadata = {
           name: prompt || "Untitled NFT",
           image: imageIpfsUrl,
-          attributes: {}
+          attributes: randomAttributes
         }
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       }
 
       // Step 3: call the contract
-      // function mintFromCollection(uint256 collectionId, string memory imageUrl) payable
-      // We'll store finalMetadataUrl as the "imageUrl" param for simplicity
+      // function: mintFromCollection(uint256 collectionId, string memory imageUrl) payable
+      // We'll store finalMetadataUrl as the imageUrl param
       const mintFromCollectionABI = {
         name: "mintFromCollection",
         type: "function",
@@ -214,9 +251,9 @@ export default function MintNFTPage() {
         outputs: []
       }
 
-      // For example, we use collectionId = 0, with a 0.1 ETH mint fee
+      // For example, use collectionId=0 with a 0.1 ETH mint fee
       await writeContract({
-        address: creatorCollection?.address as `0x\${string}`,
+        address: creatorCollection.address as `0x\${string}`,
         abi: [mintFromCollectionABI],
         functionName: "mintFromCollection",
         args: [0, finalMetadataUrl],
@@ -237,7 +274,9 @@ export default function MintNFTPage() {
     }
   }
 
-  // Show toasts for transaction events
+  /**
+   * Watch for transaction states
+   */
   useEffect(() => {
     if (isTxLoading) {
       toast({
@@ -265,7 +304,7 @@ export default function MintNFTPage() {
       <div className="max-w-5xl w-full">
         <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
         <p className="mb-4 text-center text-sm text-muted-foreground">
-          Generate or upload your NFT image and let an LLM create advanced attributes.
+          Generate or upload your NFT image and optionally let an LLM create advanced attributes.
         </p>
 
         <Card className="border border-border shadow-lg rounded-lg p-6">
@@ -276,6 +315,7 @@ export default function MintNFTPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Toggle AI vs Manual */}
             <div>
               <div className="mb-2 text-sm font-medium text-muted-foreground">
                 Choose how to get your NFT image
