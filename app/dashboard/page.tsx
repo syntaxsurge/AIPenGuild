@@ -100,8 +100,11 @@ export default function DashboardPage() {
           const isUserCreator = item.creator.toLowerCase() === _address.toLowerCase()
           if (isUserCreator) {
             mintedCount++
-            // If the item is not owned by the user, consider it sold.
-            if (item.owner.toLowerCase() !== _address.toLowerCase()) {
+            // If the item is no longer owned by user or staked by user, we consider it sold.
+            const stakedByUser = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === _address.toLowerCase()
+            const ownedByUser = item.owner.toLowerCase() === _address.toLowerCase()
+            // Mark as sold only if the user doesn't own it AND it's not staked by them
+            if (!ownedByUser && !stakedByUser) {
               soldCount++
             }
           }
