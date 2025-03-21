@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Input } from "@/components/ui/input"
+import { TransactionButton } from "@/components/ui/transaction-button"
 import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
@@ -35,8 +36,7 @@ interface BuyTxState {
 }
 
 /**
- * Additional typed fields to facilitate advanced attribute filters:
- * We'll store numeric range for the relevant attributes per category.
+ * Additional typed fields to facilitate advanced attribute filters.
  */
 interface AttributeFilterRanges {
   strength: [number, number]
@@ -72,17 +72,12 @@ export default function MarketplacePage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10])
 
   // New Advanced Filters
-  // Categories (multiple selection)
   const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
 
-  // Rarities (multiple selection)
   const [tempSelectedRarities, setTempSelectedRarities] = useState<string[]>([])
   const [selectedRarities, setSelectedRarities] = useState<string[]>([])
 
-  // Numeric attribute filter states:
-  // We'll define default ranges that cover 0..150 for simplicity
-  // Then store user input in "temp" states, and apply them upon "Apply Filters".
   const defaultAttribRanges: AttributeFilterRanges = {
     strength: [0, 150],
     agility: [0, 150],
@@ -93,10 +88,8 @@ export default function MarketplacePage() {
   const [tempAttribRanges, setTempAttribRanges] = useState<AttributeFilterRanges>(defaultAttribRanges)
   const [attribRanges, setAttribRanges] = useState<AttributeFilterRanges>(defaultAttribRanges)
 
-  // We'll keep a metadata cache
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
 
-  // A local dictionary for each NFT's buy transaction state, keyed by itemId
   const [buyTxMap, setBuyTxMap] = useState<Record<string, BuyTxState>>({})
 
   function updateBuyTxMap(itemId: string, patch: Partial<BuyTxState>) {
@@ -110,6 +103,7 @@ export default function MarketplacePage() {
   }
 
   async function handleBuy(item: NFTItem) {
+    const itemIdStr = String(item.itemId)
     try {
       if (!wagmiAddress) {
         toast({
@@ -151,8 +145,6 @@ export default function MarketplacePage() {
         })
         return
       }
-
-      const itemIdStr = String(item.itemId)
 
       updateBuyTxMap(itemIdStr, {
         loading: true,
@@ -309,7 +301,6 @@ export default function MarketplacePage() {
           const idStr = String(item.itemId)
           const lowerResource = item.resourceUrl.toLowerCase()
           const lowerSearch = searchTerm.toLowerCase()
-          // We check if itemId includes searchTerm or resourceUrl includes it
           if (!idStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
             return false
           }
@@ -318,7 +309,6 @@ export default function MarketplacePage() {
         // advanced filters
         const meta = metadataMap[String(item.itemId)]
         if (!meta) {
-          // If no metadata is found, skip if advanced filters are used
           if (selectedCategories.length > 0 || selectedRarities.length > 0) {
             return false
           }
@@ -343,12 +333,10 @@ export default function MarketplacePage() {
         }
 
         // Numeric attribute filtering
-        // We'll do it only if attribute is present
         for (const [attrName, [minVal, maxVal]] of Object.entries(attribRanges)) {
           if (attributes.hasOwnProperty(attrName)) {
             const numericAttr = Number(attributes[attrName])
             if (isNaN(numericAttr)) {
-              // If we can't parse it, treat as failing the filter
               return false
             }
             if (numericAttr < minVal || numericAttr > maxVal) {
@@ -506,7 +494,7 @@ export default function MarketplacePage() {
                     Specify numeric ranges for each attribute if you'd like to filter by them.
                     Only NFTs that have the attribute in their metadata will be filtered.
                   </p>
-                  {/* Strength range */}
+                  {/* Strength */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium">Strength</label>
                     <DualRangeSlider
@@ -524,7 +512,7 @@ export default function MarketplacePage() {
                     </div>
                   </div>
 
-                  {/* Agility range */}
+                  {/* Agility */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium">Agility</label>
                     <DualRangeSlider
@@ -542,7 +530,7 @@ export default function MarketplacePage() {
                     </div>
                   </div>
 
-                  {/* Durability range */}
+                  {/* Durability */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium">Durability</label>
                     <DualRangeSlider
@@ -560,7 +548,7 @@ export default function MarketplacePage() {
                     </div>
                   </div>
 
-                  {/* Power range */}
+                  {/* Power */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium">Power</label>
                     <DualRangeSlider
@@ -578,7 +566,7 @@ export default function MarketplacePage() {
                     </div>
                   </div>
 
-                  {/* Duration range */}
+                  {/* Duration */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium">Duration</label>
                     <DualRangeSlider
@@ -704,37 +692,30 @@ export default function MarketplacePage() {
                         Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
                       </p>
                       {item.isOnSale && !isOwner && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="mt-2 w-full"
-                          onClick={() => handleBuy(item)}
-                          disabled={buyTx.loading}
-                        >
-                          {buyTx.loading ? (
-                            <>
-                              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            "Buy"
-                          )}
-                        </Button>
+                        <>
+                          <TransactionButton
+                            isLoading={buyTx.loading}
+                            loadingText="Processing..."
+                            onClick={() => handleBuy(item)}
+                            className="mt-2 w-full"
+                          >
+                            Buy
+                          </TransactionButton>
+                          <TransactionStatus
+                            isLoading={buyTx.loading}
+                            isSuccess={buyTx.success}
+                            errorMessage={buyTx.error || undefined}
+                            txHash={buyTx.txHash || undefined}
+                            chainId={chainId}
+                            className="mt-2"
+                          />
+                        </>
                       )}
                       {item.isOnSale && isOwner && (
                         <Button variant="secondary" size="sm" className="mt-2 w-full" disabled>
                           You own this NFT. You cannot buy it.
                         </Button>
                       )}
-
-                      <TransactionStatus
-                        isLoading={buyTx.loading}
-                        isSuccess={buyTx.success}
-                        errorMessage={buyTx.error || undefined}
-                        txHash={buyTx.txHash || undefined}
-                        chainId={chainId}
-                        className="mt-2"
-                      />
                     </div>
                   )
                 })}
@@ -786,36 +767,30 @@ export default function MarketplacePage() {
                           {(Number(item.salePrice) / 1e18).toFixed(4)} {currencySymbol}
                         </span>
                         {item.isOnSale && !isOwner && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleBuy(item)}
-                            disabled={buyTx.loading}
-                          >
-                            {buyTx.loading ? (
-                              <>
-                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                Processing...
-                              </>
-                            ) : (
-                              "Buy"
-                            )}
-                          </Button>
+                          <>
+                            <TransactionButton
+                              isLoading={buyTx.loading}
+                              loadingText="Processing..."
+                              onClick={() => handleBuy(item)}
+                              className="w-full"
+                            >
+                              Buy
+                            </TransactionButton>
+                            <TransactionStatus
+                              isLoading={buyTx.loading}
+                              isSuccess={buyTx.success}
+                              errorMessage={buyTx.error || undefined}
+                              txHash={buyTx.txHash || undefined}
+                              chainId={chainId}
+                              className="mt-2"
+                            />
+                          </>
                         )}
                         {item.isOnSale && isOwner && (
                           <Button variant="secondary" size="sm" disabled>
                             You own this NFT. You cannot buy it.
                           </Button>
                         )}
-
-                        <TransactionStatus
-                          isLoading={buyTx.loading}
-                          isSuccess={buyTx.success}
-                          errorMessage={buyTx.error || undefined}
-                          txHash={buyTx.txHash || undefined}
-                          chainId={chainId}
-                          className="mt-2"
-                        />
                       </div>
                     </div>
                   )

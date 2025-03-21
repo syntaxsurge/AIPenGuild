@@ -1,14 +1,14 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { TransactionButton } from "@/components/ui/transaction-button"
 import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { useRouter } from "next/navigation"
-import React, { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 
@@ -131,9 +131,7 @@ export default function AdminPage() {
   }, [isReferencesReady, ownerLoading, isOwner, platformRewardPool, publicClient, toast])
 
   // Withdraw logic
-  async function handleWithdraw(e: React.FormEvent) {
-    e.preventDefault()
-
+  async function handleWithdraw() {
     if (!platformRewardPool?.address || !platformRewardPool?.abi) {
       toast({
         title: "Error",
@@ -260,7 +258,7 @@ export default function AdminPage() {
               <p className="text-sm text-muted-foreground mb-2">
                 Withdraw funds from the reward pool (owner only).
               </p>
-              <form onSubmit={handleWithdraw} className="flex flex-col gap-2">
+              <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-2">
                 <div className="flex flex-col">
                   <label className="text-xs font-medium">Amount in {currencySymbol}</label>
                   <Input
@@ -269,17 +267,19 @@ export default function AdminPage() {
                     placeholder="0.5"
                   />
                 </div>
-                <Button
-                  type="submit"
+
+                <TransactionButton
+                  isLoading={withdrawTx.loading}
+                  loadingText="Processing..."
+                  onClick={handleWithdraw}
                   disabled={
                     !withdrawAmount ||
                     isNaN(Number(withdrawAmount)) ||
-                    Number(withdrawAmount) <= 0 ||
-                    withdrawTx.loading
+                    Number(withdrawAmount) <= 0
                   }
                 >
-                  {withdrawTx.loading ? "Withdrawing..." : "Withdraw"}
-                </Button>
+                  Withdraw
+                </TransactionButton>
               </form>
 
               <TransactionStatus

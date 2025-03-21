@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { TransactionButton } from "@/components/ui/transaction-button"
 import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
@@ -54,7 +55,7 @@ export default function MintNFTPage() {
   const [mintStage, setMintStage] = useState<MintStage>('idle')
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
 
-  // Check environment variable (defaults to false if not set)
+  // Check environment variable
   const debugUploadCustomImage = process.env.NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE === 'true'
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -168,7 +169,6 @@ export default function MintNFTPage() {
         }
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       } else {
-        // Check environment variable before allowing custom upload
         if (!debugUploadCustomImage) {
           throw new Error("Custom image uploads are disabled in this production build.")
         }
@@ -275,7 +275,6 @@ export default function MintNFTPage() {
         <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
         <p className="mb-4 text-center text-sm text-muted-foreground">
           Generate or upload your NFT image. Choose whether to pay 100 XP or 0.1 {currencySymbol}.
-          We’ll store a full metadata.json on IPFS, and this link is what the smart contract references.
         </p>
 
         <Card className="border border-border shadow-lg rounded-lg p-6">
@@ -384,7 +383,7 @@ export default function MintNFTPage() {
               </div>
             )}
 
-            {/* Only show custom upload if debugUploadCustomImage=true */}
+            {/* custom upload if debugUploadCustomImage=true */}
             {!useAIImage && debugUploadCustomImage && (
               <div className="rounded-md bg-secondary p-4">
                 <label className="mb-2 block text-sm font-medium text-muted-foreground">
@@ -448,14 +447,14 @@ export default function MintNFTPage() {
               </div>
             </div>
             <div className="mt-4">
-              <Button
+              <TransactionButton
+                isLoading={isMinting}
+                loadingText={getMintButtonLabel()}
                 onClick={handleMint}
-                disabled={isMinting}
                 className="w-full flex items-center justify-center gap-2"
               >
-                {isMinting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {getMintButtonLabel()}
-              </Button>
+              </TransactionButton>
             </div>
             {mintError && (
               <div className="mt-2 rounded-md border-l-4 border-red-500 bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900 dark:text-red-100 whitespace-pre-wrap break-words">

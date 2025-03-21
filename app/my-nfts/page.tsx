@@ -1,8 +1,8 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { TransactionButton } from "@/components/ui/transaction-button"
 import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
@@ -11,7 +11,7 @@ import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
-import React, { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { parseEther } from "viem"
 import {
   useAccount,
@@ -208,23 +208,11 @@ export default function MyNFTsPage() {
 
   /**
    * Ensure the marketplace contract is approved (setApprovalForAll) to handle the user's NFTs.
-   * This is necessary so that the Marketplace can call transferFrom(seller -> buyer).
    */
   async function ensureMarketplaceIsApproved() {
-    if (!publicClient || !walletClient) {
-      throw new Error("No publicClient or walletClient found. Please connect your wallet.")
-    }
-    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) {
-      throw new Error("NFTMintingPlatform contract not found.")
-    }
-    if (!nftMarketplaceHub?.address) {
-      throw new Error("NFTMarketplaceHub contract not found.")
-    }
-    if (!wagmiAddress) {
-      throw new Error("No connected wallet address found.")
-    }
+    if (!userAddress || !walletClient || !nftMintingPlatform || !nftMarketplaceHub) return
+    if (!publicClient) return
 
-    // Minimal ABI for isApprovedForAll and setApprovalForAll
     const minimalABI = [
       {
         name: "isApprovedForAll",
@@ -252,7 +240,7 @@ export default function MyNFTsPage() {
       address: nftMintingPlatform.address as `0x${string}`,
       abi: minimalABI,
       functionName: "isApprovedForAll",
-      args: [wagmiAddress, nftMarketplaceHub.address]
+      args: [userAddress, nftMarketplaceHub.address]
     }) as boolean
 
     if (!isApproved) {
@@ -266,7 +254,7 @@ export default function MyNFTsPage() {
         abi: minimalABI,
         functionName: "setApprovalForAll",
         args: [nftMarketplaceHub.address, true],
-        account: wagmiAddress
+        account: userAddress
       })
 
       toast({
@@ -283,8 +271,9 @@ export default function MyNFTsPage() {
     }
   }
 
-  const handleListNFT = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const userAddress = wagmiAddress || ""
+
+  const handleListNFT = async () => {
     if (!selectedNFT || !price) {
       toast({
         title: "Error",
@@ -298,10 +287,8 @@ export default function MyNFTsPage() {
       if (!nftMarketplaceHub?.address) {
         throw new Error("NFTMarketplaceHub contract not found.")
       }
-      // First ensure marketplace is approved
       await ensureMarketplaceIsApproved()
 
-      // Then call listNFTItem
       const abiListNFT = {
         name: "listNFTItem",
         type: "function",
@@ -540,7 +527,7 @@ export default function MyNFTsPage() {
                   )}
 
                 {/* List Form */}
-                <form onSubmit={handleListNFT} className="mt-4 space-y-4">
+                <form onSubmit={(e) => e.preventDefault()} className="mt-4 space-y-4">
                   <div>
                     <label className="text-sm font-medium">Sale Price ({currencySymbol})</label>
                     <Input
@@ -562,13 +549,15 @@ export default function MyNFTsPage() {
                       This NFT is currently staked. Unstake before listing.
                     </p>
                   ) : (
-                    <Button
-                      type="submit"
-                      disabled={!price || isListPending || isListTxLoading}
+                    <TransactionButton
+                      isLoading={isListPending || isListTxLoading}
+                      loadingText="Processing..."
+                      onClick={handleListNFT}
+                      disabled={!price}
                       className="w-full"
                     >
-                      {isListPending || isListTxLoading ? "Processing..." : "List for Sale"}
-                    </Button>
+                      List for Sale
+                    </TransactionButton>
                   )}
                   <TransactionStatus
                     isLoading={isListTxLoading}
@@ -584,14 +573,15 @@ export default function MyNFTsPage() {
                 {/* Unlist */}
                 {selectedNFT.isOnSale && (
                   <>
-                    <Button
-                      variant="outline"
+                    <TransactionButton
+                      isLoading={isUnlistPending || isUnlistTxLoading}
+                      loadingText="Processing..."
                       onClick={handleUnlistNFT}
-                      disabled={isUnlistPending || isUnlistTxLoading}
-                      className="mt-4 w-full"
+                      variant="outline"
+                      className="mt-3 w-full"
                     >
-                      {isUnlistPending || isUnlistTxLoading ? "Processing..." : "Unlist NFT"}
-                    </Button>
+                      Unlist NFT
+                    </TransactionButton>
 
                     <TransactionStatus
                       isLoading={isUnlistTxLoading}

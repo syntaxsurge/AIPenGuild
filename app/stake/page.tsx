@@ -1,18 +1,18 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TransactionButton } from "@/components/ui/transaction-button"
 import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { transformIpfsUriToHttp } from "@/lib/ipfs"
+import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
-import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 
 interface ActionTxState {
   loading: boolean
@@ -186,20 +186,21 @@ export default function StakePage() {
           title: "Approval Required",
           description: "Approving staking contract..."
         })
+        const minimalABI = [
+          {
+            name: "setApprovalForAll",
+            type: "function",
+            stateMutability: "nonpayable",
+            inputs: [
+              { name: "operator", type: "address" },
+              { name: "approved", type: "bool" }
+            ],
+            outputs: []
+          }
+        ]
         const hash = await walletClient.writeContract({
           address: nftMintingPlatform.address as `0x${string}`,
-          abi: [
-            {
-              name: "setApprovalForAll",
-              type: "function",
-              stateMutability: "nonpayable",
-              inputs: [
-                { name: "operator", type: "address" },
-                { name: "approved", type: "bool" }
-              ],
-              outputs: []
-            }
-          ],
+          abi: minimalABI,
           functionName: "setApprovalForAll",
           args: [nftStakingPool.address as `0x${string}`, true],
           account: userAddress
@@ -449,8 +450,7 @@ export default function StakePage() {
                       <p className="mt-1 text-xs font-semibold text-foreground line-clamp-1">
                         {meta.name
                           ? meta.name
-                          : `NFT #${String(nft.itemId)}`
-                        } {label}
+                          : `NFT #${String(nft.itemId)}`} {label}
                       </p>
                     </div>
                   )
@@ -519,14 +519,14 @@ export default function StakePage() {
 
                       return (
                         <>
-                          <Button
-                            variant="default"
-                            className="mt-3 w-full"
+                          <TransactionButton
+                            isLoading={claimTx?.loading || false}
+                            loadingText="Processing..."
                             onClick={() => handleClaim(selectedNFT)}
-                            disabled={claimTx?.loading}
+                            className="mt-3 w-full"
                           >
-                            {claimTx?.loading ? "Processing..." : "Claim NFT Rewards"}
-                          </Button>
+                            Claim NFT Rewards
+                          </TransactionButton>
                           <TransactionStatus
                             isLoading={claimTx?.loading || false}
                             isSuccess={claimTx?.success || false}
@@ -536,14 +536,15 @@ export default function StakePage() {
                             className="mt-2"
                           />
 
-                          <Button
+                          <TransactionButton
+                            isLoading={unstakeTx?.loading || false}
+                            loadingText="Processing..."
+                            onClick={() => handleUnstake(selectedNFT)}
                             variant="outline"
                             className="mt-3 w-full"
-                            onClick={() => handleUnstake(selectedNFT)}
-                            disabled={unstakeTx?.loading}
                           >
-                            {unstakeTx?.loading ? "Processing..." : "Unstake NFT"}
-                          </Button>
+                            Unstake NFT
+                          </TransactionButton>
                           <TransactionStatus
                             isLoading={unstakeTx?.loading || false}
                             isSuccess={unstakeTx?.success || false}
@@ -568,14 +569,14 @@ export default function StakePage() {
                       const stakeTx = itemTx.stake
                       return (
                         <>
-                          <Button
-                            variant="default"
-                            className="mt-2 w-full"
+                          <TransactionButton
+                            isLoading={stakeTx?.loading || false}
+                            loadingText="Processing..."
                             onClick={() => handleStake(selectedNFT)}
-                            disabled={stakeTx?.loading}
+                            className="mt-2 w-full"
                           >
-                            {stakeTx?.loading ? "Processing..." : "Stake NFT"}
-                          </Button>
+                            Stake NFT
+                          </TransactionButton>
                           <TransactionStatus
                             isLoading={stakeTx?.loading || false}
                             isSuccess={stakeTx?.success || false}
