@@ -1,43 +1,23 @@
 'use client'
 
+import { customMoonbeamChain, westendAssetHubChain } from '@/lib/chain-utils'
 import { RainbowKitProvider, darkTheme, getDefaultConfig, getDefaultWallets } from '@rainbow-me/rainbowkit'
 import { ledgerWallet, trustWallet } from '@rainbow-me/rainbowkit/wallets'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import * as React from 'react'
-import { defineChain } from 'viem'
-import { WagmiProvider, http } from 'wagmi'
-import { moonbaseAlpha, moonbeam } from 'wagmi/chains'
+import React from 'react'
+import { moonbaseAlpha } from 'viem/chains'
+import { WagmiProvider } from 'wagmi'
 
+/**
+ * We build a config for Wagmi + RainbowKit that includes the
+ * custom chain definitions we imported from chain-utils.
+ */
 const { wallets } = getDefaultWallets()
-
-export const westendAssetHub = defineChain({
-  id: 420420421,
-  name: 'Westend AssetHub',
-  nativeCurrency: {
-    decimals: 18,
-    name: 'Westend',
-    symbol: 'WND'
-  },
-  rpcUrls: {
-    default: {
-      http: ['https://westend-asset-hub-eth-rpc.polkadot.io'],
-      webSocket: ['wss://westend-asset-hub-eth-rpc.polkadot.io']
-    }
-  },
-  blockExplorers: {
-    default: { name: 'Explorer', url: 'https://assethub-westend.subscan.io' }
-  },
-  contracts: {
-    multicall3: {
-      address: '0x5545dec97cb957e83d3e6a1e82fabfacf9764cf1',
-      blockCreated: 10174702
-    }
-  }
-})
 
 const config = getDefaultConfig({
   appName: 'AIPenGuild.com',
   projectId: '455a9939d641d79b258424737e7f9205',
+  chains: [westendAssetHubChain, customMoonbeamChain, moonbaseAlpha],
   wallets: [
     ...wallets,
     {
@@ -45,12 +25,6 @@ const config = getDefaultConfig({
       wallets: [trustWallet, ledgerWallet]
     }
   ],
-  chains: [westendAssetHub, moonbeam, moonbaseAlpha],
-  transports: {
-    [westendAssetHub.id]: http(),
-    [moonbeam.id]: http(),
-    [moonbaseAlpha.id]: http()
-  },
   ssr: true
 })
 
