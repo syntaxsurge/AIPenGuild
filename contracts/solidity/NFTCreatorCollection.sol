@@ -5,7 +5,7 @@
  *
  * @notice
  *   This updated NFTCreatorCollection now enables users to mint an NFT by paying either:
- *     1) 0.05 in native currency (which will be stored in the PlatformRewardPool), OR
+ *     1) 0.1 in native currency (which will be stored in the PlatformRewardPool), OR
  *     2) 100 XP, which is deducted from their experience points via stakeModifyUserXP.
  *
  *   The admin can withdraw the collected native currency from the PlatformRewardPool using the existing admin panel.
@@ -82,10 +82,10 @@ contract NFTCreatorCollection is Ownable {
     address public immutable experienceModule;
 
     /**
-     * @dev The default cost in native currency if the user opts not to pay with XP, set to 0.05 ETH = 50000000000000000 wei.
+     * @dev The default cost in native currency if the user opts not to pay with XP, set to 0.1 ETH.
      *      Collections can individually set their own "mintPrice," so you can also override per-collection.
      */
-    uint256 public constant DEFAULT_NATIVE_COST = 0.05 ether;
+    uint256 public constant DEFAULT_NATIVE_COST = 0.1 ether;
 
     /**
      * @notice Emitted when a new additional collection is defined.

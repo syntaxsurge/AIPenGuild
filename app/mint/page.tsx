@@ -210,9 +210,9 @@ export default function MintNFTPage() {
           throw new Error(`Insufficient XP. You have ${userXP.toString()} XP, need 100.`)
         }
       } else {
-        // paying with 0.05 native
+        // paying with 0.1 native
         if (userBalanceData?.value) {
-          if (userBalanceData.value < parseEther("0.05")) {
+          if (userBalanceData.value < parseEther("0.1")) {
             throw new Error(`Insufficient balance. You only have ${userBalanceData.formatted} ${userBalanceData.symbol}`)
           }
         }
@@ -251,7 +251,7 @@ export default function MintNFTPage() {
 
       // 3) send transaction
       setMintStage('sendingTx')
-      const mintValue = payWithXP ? undefined : parseEther("0.05")
+      const mintValue = payWithXP ? undefined : parseEther("0.1")
 
       if (!walletClient) {
         throw new Error("No wallet client found. Please connect your wallet.")
@@ -336,7 +336,7 @@ export default function MintNFTPage() {
       <div className="max-w-5xl w-full">
         <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
         <p className="mb-4 text-center text-sm text-muted-foreground">
-          Generate or upload your NFT image. Choose whether to pay 100 XP or 0.05 {currencySymbol}. <br />
+          Generate or upload your NFT image. Choose whether to pay 100 XP or 0.1 {currencySymbol}. <br />
           This version checks your XP or native balance first and provides more helpful error messages.
         </p>
 
@@ -502,7 +502,7 @@ export default function MintNFTPage() {
                   onChange={() => setPayWithXP(false)}
                 />
                 <label htmlFor="payWithNative" className="text-sm">
-                  Pay 0.05 {currencySymbol}
+                  Pay 0.1 {currencySymbol}
                 </label>
               </div>
             </div>
