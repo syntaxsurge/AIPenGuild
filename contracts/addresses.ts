@@ -19,12 +19,12 @@ type ContractAddresses = {
 
 export const CONTRACT_ADDRESSES: ContractAddresses = {
   [SUPPORTED_CHAINS.MOONBASE]: {
-    NFTMintingPlatform: "0xc9c6537a053B5FBf649D016B7FfCf1d20AD2c6Cc",
-    NFTMarketplaceHub: "0xAa771b0190b08e34e3D5906Cbd56e0862dd60B5D",
-    PlatformRewardPool: "0x7E1677F5544d0C50D10247e8c009BfAa1f40643C",
-    UserExperiencePoints: "0xa4835F5becfD842BF527Dae46E1Da9CeD6005E3D",
-    NFTCreatorCollection: "0xfFC63C72920420D64caE7F6Bc16Da168E07182B0",
-    NFTStakingPool: "0x593EBb96FEC6184fFF2CE19124CaCD82F03c27ba",
+    NFTMintingPlatform: "0x8070764F8D71e88aDB9D71dc99ad655AAe886DEA",
+    NFTMarketplaceHub: "0x9aBe808781985E8E6e5F94403cd379e8e8076EE1",
+    PlatformRewardPool: "0xaB609Cd7157510c2624c0bd6Edae30738d1a91b3",
+    UserExperiencePoints: "0xA8282c74d1d704D8dd4Dc9AfD368bADC705428A9",
+    NFTCreatorCollection: "0x41fE0f6e590d1FE2Bf47dBd55B2Bc4c478De613d",
+    NFTStakingPool: "0xD4f754D5D0eA720513C5709c43b27B60D9ed55f0",
     explorer: "https://moonbase.moonscan.io"
   },
   [SUPPORTED_CHAINS.WESTEND]: {
