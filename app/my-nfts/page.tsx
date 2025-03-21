@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
-import { transformIpfsUriToHttp } from "@/lib/ipfs"
+import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import React, { useEffect, useRef, useState } from "react"
@@ -32,18 +32,10 @@ interface NFTDetails {
   mintedAt: bigint
   creator: string
   owner: string
-
   isOnSale: boolean
   salePrice: bigint
-
   stakeInfo?: StakeInfo
-}
-
-interface MetadataState {
-  imageUrl?: string
-  name?: string
-  description?: string
-  attributes?: Record<string, any>
+  metadata?: ParsedNftMetadata
 }
 
 export default function MyNFTsPage() {
@@ -57,7 +49,7 @@ export default function MyNFTsPage() {
   const nftStakingPool = useContract("NFTStakingPool")
   const nftMintingPlatform = useContract("NFTMintingPlatform")
 
-  // List/unlist contract calls
+  // Transaction states for listing/unlisting
   const {
     data: listWriteData,
     error: listError,
@@ -89,18 +81,17 @@ export default function MyNFTsPage() {
     error: unlistTxReceiptError
   } = useWaitForTransactionReceipt({ hash: unlistWriteData ?? undefined })
 
-  // States
+  // Component State
   const [price, setPrice] = useState("")
   const [userNFTs, setUserNFTs] = useState<NFTDetails[]>([])
   const [selectedNFT, setSelectedNFT] = useState<NFTDetails | null>(null)
-  const [metadataMap, setMetadataMap] = useState<Record<string, MetadataState>>({})
   const [currentMaxId, setCurrentMaxId] = useState<bigint | null>(null)
   const [loadingNFTs, setLoadingNFTs] = useState(false)
 
   const fetchedUserNFTsRef = useRef(false)
   const latestItemIdFetchedRef = useRef(false)
 
-  // watchers for listing transaction
+  // Watch for listing transaction completion
   useEffect(() => {
     if (isListTxLoading) {
       toast({
@@ -124,7 +115,7 @@ export default function MyNFTsPage() {
             )
           )
         } catch {
-          // ignore parse error
+          // parse error ignored
         }
       }
     }
@@ -135,18 +126,10 @@ export default function MyNFTsPage() {
         variant: "destructive"
       })
     }
-  }, [
-    isListTxLoading,
-    isListTxSuccess,
-    isListTxError,
-    listTxReceiptError,
-    listError,
-    toast,
-    selectedNFT,
-    price
-  ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isListTxLoading, isListTxSuccess, isListTxError])
 
-  // watchers for unlisting
+  // Watch for unlisting transaction completion
   useEffect(() => {
     if (isUnlistTxLoading) {
       toast({
@@ -176,17 +159,10 @@ export default function MyNFTsPage() {
         variant: "destructive"
       })
     }
-  }, [
-    isUnlistTxLoading,
-    isUnlistTxSuccess,
-    isUnlistTxError,
-    unlistTxReceiptError,
-    unlistError,
-    toast,
-    selectedNFT
-  ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUnlistTxLoading, isUnlistTxSuccess, isUnlistTxError])
 
-  // (1) load the highest minted itemId from NFTMintingPlatform
+  // 1) Load the highest minted itemId from NFTMintingPlatform
   useEffect(() => {
     if (!wagmiAddress) {
       setCurrentMaxId(null)
@@ -215,7 +191,7 @@ export default function MyNFTsPage() {
     loadLatestItemId()
   }, [wagmiAddress, nftMintingPlatform, publicClient])
 
-  // (2) once we have currentMaxId, fetch all user NFTs
+  // 2) Once we have currentMaxId, fetch all user NFTs + metadata
   async function fetchUserNFTs() {
     if (!wagmiAddress || !currentMaxId) return
     if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
@@ -223,17 +199,19 @@ export default function MyNFTsPage() {
     if (!nftStakingPool?.address || !nftStakingPool?.abi) return
     if (!publicClient) return
     if (fetchedUserNFTsRef.current) return
-    fetchedUserNFTsRef.current = true
 
+    fetchedUserNFTsRef.current = true
     setLoadingNFTs(true)
+
     try {
       const total = Number(currentMaxId)
-      const results: NFTDetails[] = []
+      const items: NFTDetails[] = []
 
+      // Collect NFT data in one pass
       for (let i = 1; i <= total; i++) {
         const tokenId = BigInt(i)
         try {
-          // 1) read ownerOf(tokenId)
+          // 1) Read ownerOf(tokenId)
           const owner = await publicClient.readContract({
             address: nftMintingPlatform.address as `0x${string}`,
             abi: nftMintingPlatform.abi,
@@ -247,7 +225,7 @@ export default function MyNFTsPage() {
             abi: nftMintingPlatform.abi,
             functionName: "nftItems",
             args: [tokenId],
-          }) as [bigint, string, bigint, string] // xp, resource, mintedAt, creator
+          }) as [bigint, string, bigint, string]
 
           const xpValue = itemData[0]
           const resourceUrl = itemData[1]
@@ -276,11 +254,12 @@ export default function MyNFTsPage() {
           const stakerAddr = stakeData[0]
           const staked = stakeData[3]
 
+          // Determine if this NFT is relevant to the user (owner or staker)
           const userIsOwner = owner.toLowerCase() === wagmiAddress.toLowerCase()
           const userIsStaker = staked && stakerAddr.toLowerCase() === wagmiAddress.toLowerCase()
 
           if (userIsOwner || userIsStaker) {
-            results.push({
+            items.push({
               itemId: tokenId,
               xpValue,
               resourceUrl,
@@ -298,11 +277,20 @@ export default function MyNFTsPage() {
             })
           }
         } catch {
-          // skip
+          // skip if errors (e.g. token doesn't exist)
         }
       }
 
-      setUserNFTs(results)
+      // Next, fetch metadata for each NFT in parallel
+      const metadataPromises = items.map((nft) => fetchNftMetadata(nft.resourceUrl))
+      const allMetadata = await Promise.all(metadataPromises)
+
+      // Attach metadata to each NFT
+      for (let i = 0; i < items.length; i++) {
+        items[i].metadata = allMetadata[i]
+      }
+
+      setUserNFTs(items)
     } catch (err) {
       console.error("[MyNFTs] Error in fetchUserNFTs:", err)
       toast({
@@ -324,71 +312,7 @@ export default function MyNFTsPage() {
     if (currentMaxId && wagmiAddress) {
       fetchUserNFTs()
     }
-  }, [wagmiAddress, currentMaxId])
-
-  // (3) load metadata if needed
-  useEffect(() => {
-    if (!userNFTs.length) return
-
-    async function loadMetadata() {
-      const newMap = { ...metadataMap }
-      let updated = false
-
-      for (const nft of userNFTs) {
-        const idStr = String(nft.itemId)
-        if (newMap[idStr]?.imageUrl !== undefined) {
-          // Already fetched
-          continue
-        }
-
-        let finalImageUrl = nft.resourceUrl
-        let name = `NFT #${idStr}`
-        let description = ""
-        let attributes: Record<string, any> | undefined
-
-        if (
-          nft.resourceUrl.startsWith("ipfs://") ||
-          nft.resourceUrl.startsWith("http://") ||
-          nft.resourceUrl.startsWith("https://")
-        ) {
-          try {
-            let replacedUrl = transformIpfsUriToHttp(nft.resourceUrl)
-            const resp = await fetch(replacedUrl)
-            const maybeJson = await resp.json()
-            if (maybeJson.image) {
-              finalImageUrl = transformIpfsUriToHttp(maybeJson.image)
-            }
-            if (maybeJson.name) {
-              name = maybeJson.name
-            }
-            if (maybeJson.description) {
-              description = maybeJson.description
-            }
-            if (maybeJson.attributes) {
-              attributes = maybeJson.attributes
-            }
-          } catch {
-            // possibly direct link or error
-          }
-        }
-
-        newMap[idStr] = {
-          imageUrl: finalImageUrl,
-          name,
-          description,
-          attributes
-        }
-        updated = true
-      }
-
-      if (updated) {
-        setMetadataMap(newMap)
-      }
-    }
-
-    loadMetadata()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userNFTs])
+  }, [wagmiAddress, currentMaxId]) // fetch user NFTs whenever we have a connected wallet & maxId
 
   // handle listing
   const handleListNFT = async (e: React.FormEvent) => {
@@ -460,19 +384,6 @@ export default function MyNFTsPage() {
     }
   }
 
-  function getDisplayUrl(nft: NFTDetails): string {
-    const meta = metadataMap[String(nft.itemId)]
-    if (!meta?.imageUrl) {
-      return transformIpfsUriToHttp(nft.resourceUrl)
-    }
-    return meta.imageUrl
-  }
-
-  function formatTimestamp(ts: bigint): string {
-    const d = new Date(Number(ts) * 1000)
-    return d.toLocaleString()
-  }
-
   if (!wagmiAddress) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground px-4 py-12">
@@ -502,32 +413,36 @@ export default function MyNFTsPage() {
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {userNFTs.map((nft) => {
-                  const displayUrl = getDisplayUrl(nft)
                   const isStaked =
-                    nft.stakeInfo?.staked && nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
-                  let label = ""
-                  if (isStaked) label = "(STAKED)"
-                  else if (nft.isOnSale) label = "(LISTED)"
+                    nft.stakeInfo?.staked &&
+                    nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+                  const label = isStaked
+                    ? "(STAKED)"
+                    : nft.isOnSale
+                      ? "(LISTED)"
+                      : ""
                   const selected = selectedNFT?.itemId === nft.itemId
+                  const imageUrl = nft.metadata?.imageUrl || ""
 
                   return (
                     <div
                       key={String(nft.itemId)}
                       onClick={() => setSelectedNFT(nft)}
-                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${
-                        selected ? "border-primary" : "border-border"
-                      }`}
+                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${selected ? "border-primary" : "border-border"
+                        }`}
                     >
                       <div className="relative h-36 w-full overflow-hidden rounded-md bg-secondary">
-                        <Image
-                          src={displayUrl}
-                          alt={`NFT #${String(nft.itemId)}`}
-                          fill
-                          sizes="(max-width: 768px) 100vw,
-                                 (max-width: 1200px) 50vw,
-                                 33vw"
-                          className="object-cover"
-                        />
+                        {imageUrl && (
+                          <Image
+                            src={imageUrl}
+                            alt={`NFT #${String(nft.itemId)}`}
+                            fill
+                            sizes="(max-width: 768px) 100vw,
+                                   (max-width: 1200px) 50vw,
+                                   33vw"
+                            className="object-cover"
+                          />
+                        )}
                       </div>
                       <p className="mt-2 text-xs font-semibold text-foreground line-clamp-1">
                         NFT #{String(nft.itemId)} {label}
@@ -555,33 +470,35 @@ export default function MyNFTsPage() {
             ) : (
               <>
                 <div className="relative mb-4 h-64 w-full overflow-hidden rounded-md border border-border bg-secondary">
-                  <Image
-                    src={getDisplayUrl(selectedNFT)}
-                    alt={`NFT #${String(selectedNFT.itemId)}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw,
-                           (max-width: 1200px) 50vw,
-                           33vw"
-                    className="object-contain"
-                  />
+                  {selectedNFT.metadata?.imageUrl && (
+                    <Image
+                      src={selectedNFT.metadata.imageUrl}
+                      alt={`NFT #${String(selectedNFT.itemId)}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw,
+                             (max-width: 1200px) 50vw,
+                             33vw"
+                      className="object-contain"
+                    />
+                  )}
                 </div>
-                {/* Display NFT metadata (name, description, attributes) */}
+
                 <div className="flex flex-col gap-1 text-sm">
                   <strong>Name:</strong>
-                  <span>{metadataMap[String(selectedNFT.itemId)]?.name || `NFT #${String(selectedNFT.itemId)}`}</span>
+                  <span>{selectedNFT.metadata?.name || `NFT #${String(selectedNFT.itemId)}`}</span>
                 </div>
                 <div className="mt-2 flex flex-col gap-1 text-sm">
                   <strong>Description:</strong>
                   <span className="text-muted-foreground whitespace-pre-wrap">
-                    {metadataMap[String(selectedNFT.itemId)]?.description || "No description"}
+                    {selectedNFT.metadata?.description || "No description"}
                   </span>
                 </div>
-                {metadataMap[String(selectedNFT.itemId)]?.attributes && (
+                {selectedNFT.metadata?.attributes && (
                   <div className="mt-2">
                     <strong className="text-sm">Attributes:</strong>
                     <div className="mt-1 text-sm rounded-md border border-border bg-secondary p-3">
                       <pre className="whitespace-pre-wrap break-all text-muted-foreground">
-                        {JSON.stringify(metadataMap[String(selectedNFT.itemId)]?.attributes, null, 2)}
+                        {JSON.stringify(selectedNFT.metadata.attributes, null, 2)}
                       </pre>
                     </div>
                   </div>
@@ -615,60 +532,55 @@ export default function MyNFTsPage() {
                     </p>
                   )}
 
-                {/* Listing form */}
-                {(() => {
-                  const isStaked =
-                    selectedNFT.stakeInfo?.staked &&
-                    selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
-                  return (
-                    <form onSubmit={handleListNFT} className="mt-4 space-y-4">
-                      <div>
-                        <label className="text-sm font-medium">Sale Price ({currencySymbol})</label>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          placeholder="0.1"
-                          className="mt-1"
-                          disabled={isStaked}
-                        />
-                      </div>
-                      {isStaked ? (
-                        <p className="text-sm text-orange-600 font-semibold">
-                          This NFT is currently staked. Please unstake it first before listing.
+                <form onSubmit={handleListNFT} className="mt-4 space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Sale Price ({currencySymbol})</label>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0.1"
+                      className="mt-1"
+                      disabled={
+                        selectedNFT.stakeInfo?.staked &&
+                        selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+                      }
+                    />
+                  </div>
+                  {selectedNFT.stakeInfo?.staked &&
+                    selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase() ? (
+                    <p className="text-sm text-orange-600 font-semibold">
+                      This NFT is currently staked. Unstake before listing.
+                    </p>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={!price || isListPending || isListTxLoading}
+                      className="w-full"
+                    >
+                      {isListPending || isListTxLoading ? "Processing..." : "List for Sale"}
+                    </Button>
+                  )}
+
+                  {(isListTxLoading || isListTxSuccess || isListTxError) && (
+                    <div className="rounded-md border border-border p-4 mt-2 text-sm">
+                      <p className="font-bold">Transaction Status:</p>
+                      {isListTxLoading && <p className="font-bold text-muted-foreground">Pending confirmation...</p>}
+                      {isListTxSuccess && (
+                        <p className="font-bold text-green-600">
+                          Transaction Confirmed! Your NFT is now listed.
                         </p>
-                      ) : (
-                        <Button
-                          type="submit"
-                          disabled={!selectedNFT || !price || isListPending || isListTxLoading}
-                          className="w-full"
-                        >
-                          {isListPending || isListTxLoading ? "Processing..." : "List for Sale"}
-                        </Button>
                       )}
-
-                      {(isListTxLoading || isListTxSuccess || isListTxError) && (
-                        <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                          <p className="font-bold">Transaction Status:</p>
-                          {isListTxLoading && <p className="font-bold text-muted-foreground">Pending confirmation...</p>}
-                          {isListTxSuccess && (
-                            <p className="font-bold text-green-600">
-                              Transaction Confirmed! Your NFT is now listed.
-                            </p>
-                          )}
-                          {isListTxError && (
-                            <p className="font-bold text-orange-600 dark:text-orange-500">
-                              Transaction Failed: {listTxReceiptError?.message || listError?.message}
-                            </p>
-                          )}
-                        </div>
+                      {isListTxError && (
+                        <p className="font-bold text-orange-600 dark:text-orange-500">
+                          Transaction Failed: {listTxReceiptError?.message || listError?.message}
+                        </p>
                       )}
-                    </form>
-                  )
-                })()}
+                    </div>
+                  )}
+                </form>
 
-                {/* Unlist */}
                 {selectedNFT.isOnSale && (
                   <>
                     <Button
@@ -707,4 +619,9 @@ export default function MyNFTsPage() {
       </div>
     </main>
   )
+}
+
+function formatTimestamp(ts: bigint): string {
+  const d = new Date(Number(ts) * 1000)
+  return d.toLocaleString()
 }
