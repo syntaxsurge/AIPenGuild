@@ -10,49 +10,40 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Input } from "@/components/ui/input"
+import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
-import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { transformIpfsUriToHttp } from "@/lib/ipfs"
+import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
+import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import React, { useEffect, useRef, useState } from "react"
-import {
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useWaitForTransactionReceipt,
-  useWriteContract
-} from "wagmi"
-import { TransactionStatus } from "@/components/ui/transaction-status"
-import { parseEther } from "viem"
-import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
+import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
+
+/**
+ * We'll create a per-item transaction state, stored in a map keyed by itemId. That
+ * way, only the item that's actually being purchased will show the transaction's
+ * loading or success state. The rest remain unaffected.
+ */
+interface BuyTxState {
+  loading: boolean
+  success: boolean
+  error: string | null
+  txHash: `0x${string}` | null
+}
 
 export default function MarketplacePage() {
   const { toast } = useToast()
   const currencySymbol = useNativeCurrencySymbol()
   const { address: wagmiAddress } = useAccount()
+  const { data: walletClient } = useWalletClient()
   const chainId = useChainId() || 1287
-
-  const {
-    data: buyWriteData,
-    error: buyError,
-    isPending: isBuyPending,
-    isSuccess: isBuySuccess,
-    writeContract: writeBuyContract,
-  } = useWriteContract()
-
-  const {
-    data: buyTxReceipt,
-    isLoading: isBuyTxLoading,
-    isSuccess: isBuyTxSuccess,
-    isError: isBuyTxError,
-    error: buyTxReceiptError
-  } = useWaitForTransactionReceipt({ hash: buyWriteData ?? undefined })
-
   const publicClient = usePublicClient()
+
+  // Contracts
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const nftMintingPlatform = useContract("NFTMintingPlatform")
   const nftStakingPool = useContract("NFTStakingPool")
@@ -63,65 +54,177 @@ export default function MarketplacePage() {
   const [isLoading, setIsLoading] = useState(false)
   const fetchedRef = useRef(false)
 
-  // For local filter states
+  // Filter states
   const [tempSearch, setTempSearch] = useState("")
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10])
   // Applied filter states
   const [searchTerm, setSearchTerm] = useState("")
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10])
 
-  // Which item is being purchased
-  const [buyingItemId, setBuyingItemId] = useState<bigint | null>(null)
-
-  // We'll store a local state to show transaction status in the UI
-  const [showBuyTxStatus, setShowBuyTxStatus] = useState(false)
-  const [buyTxError, setBuyTxError] = useState<string | null>(null)
-
+  // We'll keep a metadata cache
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
 
-  // Watch for buy transaction states
-  useEffect(() => {
-    const anyActive = isBuyPending || isBuyTxLoading || isBuyTxSuccess || isBuyTxError
-    setShowBuyTxStatus(anyActive)
+  // A local dictionary for each NFT's buy transaction state, keyed by itemId
+  const [buyTxMap, setBuyTxMap] = useState<Record<string, BuyTxState>>({})
 
-    if (isBuyTxLoading) {
-      toast({
-        title: "Transaction Pending",
-        description: "Your purchase transaction is being confirmed..."
+  function updateBuyTxMap(itemId: string, patch: Partial<BuyTxState>) {
+    setBuyTxMap((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        ...patch
+      }
+    }))
+  }
+
+  // handleBuy logic: each item has its own transaction state
+  async function handleBuy(item: NFTItem) {
+    try {
+      if (!wagmiAddress) {
+        toast({
+          title: "Wallet not connected",
+          description: "Please connect your wallet before buying.",
+          variant: "destructive"
+        })
+        return
+      }
+      if (!item.isOnSale) {
+        toast({
+          title: "Item not for sale",
+          description: "That item is not currently for sale.",
+          variant: "destructive"
+        })
+        return
+      }
+      if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) {
+        toast({
+          title: "No Contract Found",
+          description: "NFTMarketplaceHub contract not found. Check your chain or config.",
+          variant: "destructive"
+        })
+        return
+      }
+      if (item.owner.toLowerCase() === wagmiAddress.toLowerCase()) {
+        toast({
+          title: "Already Owned",
+          description: "You already own this NFT. You can't buy your own NFT.",
+          variant: "destructive"
+        })
+        return
+      }
+      if (!walletClient || !publicClient) {
+        toast({
+          title: "Missing Clients",
+          description: "No wallet or public client found. Please check your connection.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const itemIdStr = String(item.itemId)
+
+      // Initialize buy TX state
+      updateBuyTxMap(itemIdStr, {
+        loading: true,
+        success: false,
+        error: null,
+        txHash: null
       })
-    }
-    if (isBuyTxSuccess) {
+
+      // Execute the purchase
+      const purchaseABI = {
+        name: "purchaseNFTItem",
+        type: "function",
+        stateMutability: "payable",
+        inputs: [{ name: "itemId", type: "uint256" }],
+        outputs: []
+      }
+
+      // Submit the transaction
+      const hash = await walletClient.writeContract({
+        address: nftMarketplaceHub.address as `0x${string}`,
+        abi: [purchaseABI],
+        functionName: "purchaseNFTItem",
+        args: [item.itemId],
+        value: item.salePrice
+      })
+
+      updateBuyTxMap(itemIdStr, {
+        txHash: hash
+      })
+
+      toast({
+        title: "Purchase Transaction",
+        description: "Transaction submitted... awaiting confirmation."
+      })
+
+      // Wait for on-chain confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+
+      if (receipt?.status === "reverted") {
+        // Transaction failed on-chain
+        updateBuyTxMap(itemIdStr, {
+          loading: false,
+          success: false,
+          error: "Transaction reverted on-chain."
+        })
+        toast({
+          title: "Transaction Failed",
+          description: "Reverted on-chain.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      updateBuyTxMap(itemIdStr, {
+        loading: false,
+        success: true,
+        error: null
+      })
+
       toast({
         title: "Transaction Successful!",
         description: "You have purchased the NFT successfully!"
       })
-      setBuyingItemId(null)
-      // Reload marketplace
+
+      // Refresh the marketplace
       fetchMarketplaceItems(true)
-    }
-    if (isBuyTxError) {
-      const errMsg = buyTxReceiptError?.message || buyError?.message || "Something went wrong."
-      setBuyTxError(errMsg)
+    } catch (err: any) {
+      console.error("Error in handleBuy:", err)
+      const msg = err?.message || "Unable to buy NFT"
+      updateBuyTxMap(String(item.itemId), {
+        loading: false,
+        success: false,
+        error: msg
+      })
       toast({
-        title: "Transaction Failed",
-        description: errMsg,
+        title: "Purchase Failure",
+        description: msg,
         variant: "destructive"
       })
-      setBuyingItemId(null)
     }
-  }, [isBuyPending, isBuyTxLoading, isBuyTxSuccess, isBuyTxError, buyTxReceiptError, buyError, toast])
+  }
 
+  // handle filters
   function handleApplyFilters() {
     setSearchTerm(tempSearch)
     setPriceRange(tempPriceRange)
     setSidebarOpen(false)
   }
 
+  // load marketplace items
   async function fetchMarketplaceItems(forceRefresh?: boolean) {
-    if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
-    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
-    if (!nftStakingPool?.address || !nftStakingPool?.abi) return
-    if (!publicClient) return
+    if (
+      !nftMarketplaceHub?.address ||
+      !nftMarketplaceHub?.abi ||
+      !nftMintingPlatform?.address ||
+      !nftMintingPlatform?.abi ||
+      !nftStakingPool?.address ||
+      !nftStakingPool?.abi ||
+      !publicClient
+    ) {
+      return
+    }
 
     if (!forceRefresh && fetchedRef.current) return
     fetchedRef.current = true
@@ -134,19 +237,18 @@ export default function MarketplacePage() {
         nftMarketplaceHub,
         nftStakingPool
       )
-      // We'll only store items that are minted. The function already gets 1.. total minted
-      // So let's just store them in listedItems but filter for isOnSale.
       setListedItems(allNfts)
 
-      // Load metadata
+      // Preload metadata
       const newMap: Record<string, ParsedNftMetadata> = {}
       for (const item of allNfts) {
-        if (!newMap[String(item.itemId)]) {
+        const idStr = String(item.itemId)
+        if (!newMap[idStr]) {
           try {
             const parsed = await fetchNftMetadata(item.resourceUrl)
-            newMap[String(item.itemId)] = parsed
+            newMap[idStr] = parsed
           } catch {
-            newMap[String(item.itemId)] = {
+            newMap[idStr] = {
               imageUrl: transformIpfsUriToHttp(item.resourceUrl),
               name: "",
               description: "",
@@ -172,6 +274,7 @@ export default function MarketplacePage() {
     fetchMarketplaceItems()
   }, [nftMarketplaceHub, nftMintingPlatform, nftStakingPool, publicClient])
 
+  // filter items
   const filteredItems = React.useMemo(() => {
     return listedItems
       .filter((item) => item.isOnSale)
@@ -191,75 +294,6 @@ export default function MarketplacePage() {
         return true
       })
   }, [listedItems, priceRange, searchTerm])
-
-  async function handleBuy(item: NFTItem) {
-    try {
-      if (!wagmiAddress) {
-        toast({
-          title: "Wallet not connected",
-          description: "Please connect your wallet before buying.",
-          variant: "destructive"
-        })
-        return
-      }
-      if (!item.isOnSale) {
-        toast({
-          title: "Item not for sale",
-          description: "That item is not currently for sale.",
-          variant: "destructive"
-        })
-        return
-      }
-      if (!nftMarketplaceHub?.address) {
-        toast({
-          title: "No Contract Found",
-          description: "NFTMarketplaceHub contract not found. Check your chain or config.",
-          variant: "destructive"
-        })
-        return
-      }
-      if (item.owner.toLowerCase() === wagmiAddress.toLowerCase()) {
-        toast({
-          title: "Already Owned",
-          description: "You already own this NFT. You can't buy your own NFT.",
-          variant: "destructive"
-        })
-        return
-      }
-
-      setBuyingItemId(item.itemId)
-      setBuyTxError(null)
-
-      const purchaseABI = {
-        name: "purchaseNFTItem",
-        type: "function",
-        stateMutability: "payable",
-        inputs: [{ name: "itemId", type: "uint256" }],
-        outputs: []
-      }
-
-      await writeBuyContract({
-        address: nftMarketplaceHub.address as `0x${string}`,
-        abi: [purchaseABI],
-        functionName: "purchaseNFTItem",
-        args: [item.itemId],
-        value: item.salePrice
-      })
-
-      toast({
-        title: "Purchase Transaction",
-        description: "Transaction submitted... awaiting confirmation."
-      })
-    } catch (err: any) {
-      setBuyingItemId(null)
-      setBuyTxError(err.message || "Unable to buy NFT")
-      toast({
-        title: "Purchase Failure",
-        description: err.message || "Unable to buy NFT",
-        variant: "destructive"
-      })
-    }
-  }
 
   return (
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
@@ -406,6 +440,12 @@ export default function MarketplacePage() {
                     description: "",
                     attributes: {}
                   }
+                  const buyTx = buyTxMap[itemIdStr] || {
+                    loading: false,
+                    success: false,
+                    error: null,
+                    txHash: null
+                  }
 
                   return (
                     <div
@@ -440,9 +480,9 @@ export default function MarketplacePage() {
                           size="sm"
                           className="mt-2 w-full"
                           onClick={() => handleBuy(item)}
-                          disabled={buyingItemId === item.itemId}
+                          disabled={buyTx.loading}
                         >
-                          {buyingItemId === item.itemId ? (
+                          {buyTx.loading ? (
                             <>
                               <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                               Processing...
@@ -458,14 +498,14 @@ export default function MarketplacePage() {
                         </Button>
                       )}
 
-                      {/* Transaction status display for buy operation */}
+                      {/* Show transaction status for this specific NFT */}
                       <TransactionStatus
-                        isLoading={isBuyPending || isBuyTxLoading}
-                        isSuccess={isBuyTxSuccess}
-                        errorMessage={buyTxError || null}
-                        txHash={buyWriteData ?? null}
+                        isLoading={buyTx.loading}
+                        isSuccess={buyTx.success}
+                        errorMessage={buyTx.error || undefined}
+                        txHash={buyTx.txHash || undefined}
                         chainId={chainId}
-                        className={showBuyTxStatus ? '' : 'hidden'}
+                        className="mt-2"
                       />
                     </div>
                   )
@@ -481,6 +521,12 @@ export default function MarketplacePage() {
                     name: "",
                     description: "",
                     attributes: {}
+                  }
+                  const buyTx = buyTxMap[itemIdStr] || {
+                    loading: false,
+                    success: false,
+                    error: null,
+                    txHash: null
                   }
 
                   return (
@@ -516,9 +562,9 @@ export default function MarketplacePage() {
                             variant="default"
                             size="sm"
                             onClick={() => handleBuy(item)}
-                            disabled={buyingItemId === item.itemId}
+                            disabled={buyTx.loading}
                           >
-                            {buyingItemId === item.itemId ? (
+                            {buyTx.loading ? (
                               <>
                                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                 Processing...
@@ -533,6 +579,16 @@ export default function MarketplacePage() {
                             You own this NFT. You cannot buy it.
                           </Button>
                         )}
+
+                        {/* Show transaction status for this specific NFT */}
+                        <TransactionStatus
+                          isLoading={buyTx.loading}
+                          isSuccess={buyTx.success}
+                          errorMessage={buyTx.error || undefined}
+                          txHash={buyTx.txHash || undefined}
+                          chainId={chainId}
+                          className="mt-2"
+                        />
                       </div>
                     </div>
                   )
