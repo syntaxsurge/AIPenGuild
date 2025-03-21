@@ -18,6 +18,7 @@ import {
   useChainId,
   usePublicClient,
   useWaitForTransactionReceipt,
+  useWalletClient,
   useWriteContract
 } from "wagmi"
 
@@ -25,6 +26,7 @@ export default function MyNFTsPage() {
   const { address: wagmiAddress } = useAccount()
   const currencySymbol = useNativeCurrencySymbol()
   const publicClient = usePublicClient()
+  const { data: walletClient } = useWalletClient()
   const chainId = useChainId() || 1287
   const { toast } = useToast()
 
@@ -204,6 +206,83 @@ export default function MyNFTsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wagmiAddress, nftMarketplaceHub, nftMintingPlatform, nftStakingPool, publicClient])
 
+  /**
+   * Ensure the marketplace contract is approved (setApprovalForAll) to handle the user's NFTs.
+   * This is necessary so that the Marketplace can call transferFrom(seller -> buyer).
+   */
+  async function ensureMarketplaceIsApproved() {
+    if (!publicClient || !walletClient) {
+      throw new Error("No publicClient or walletClient found. Please connect your wallet.")
+    }
+    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) {
+      throw new Error("NFTMintingPlatform contract not found.")
+    }
+    if (!nftMarketplaceHub?.address) {
+      throw new Error("NFTMarketplaceHub contract not found.")
+    }
+    if (!wagmiAddress) {
+      throw new Error("No connected wallet address found.")
+    }
+
+    // Minimal ABI for isApprovedForAll and setApprovalForAll
+    const minimalABI = [
+      {
+        name: "isApprovedForAll",
+        type: "function",
+        stateMutability: "view",
+        inputs: [
+          { name: "owner", type: "address" },
+          { name: "operator", type: "address" }
+        ],
+        outputs: [{ name: "", type: "bool" }]
+      },
+      {
+        name: "setApprovalForAll",
+        type: "function",
+        stateMutability: "nonpayable",
+        inputs: [
+          { name: "operator", type: "address" },
+          { name: "approved", type: "bool" }
+        ],
+        outputs: []
+      }
+    ]
+
+    const isApproved = await publicClient.readContract({
+      address: nftMintingPlatform.address as `0x${string}`,
+      abi: minimalABI,
+      functionName: "isApprovedForAll",
+      args: [wagmiAddress, nftMarketplaceHub.address]
+    }) as boolean
+
+    if (!isApproved) {
+      toast({
+        title: "Marketplace Approval",
+        description: "Approving the Marketplace to transfer your NFTs..."
+      })
+
+      const hash = await walletClient.writeContract({
+        address: nftMintingPlatform.address as `0x${string}`,
+        abi: minimalABI,
+        functionName: "setApprovalForAll",
+        args: [nftMarketplaceHub.address, true],
+        account: wagmiAddress
+      })
+
+      toast({
+        title: "Approval Transaction Sent",
+        description: `Tx Hash: ${String(hash)}`
+      })
+
+      await publicClient.waitForTransactionReceipt({ hash })
+
+      toast({
+        title: "Marketplace Approved",
+        description: "You can now list your NFTs in the Marketplace."
+      })
+    }
+  }
+
   const handleListNFT = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedNFT || !price) {
@@ -214,10 +293,15 @@ export default function MyNFTsPage() {
       })
       return
     }
+
     try {
       if (!nftMarketplaceHub?.address) {
         throw new Error("NFTMarketplaceHub contract not found.")
       }
+      // First ensure marketplace is approved
+      await ensureMarketplaceIsApproved()
+
+      // Then call listNFTItem
       const abiListNFT = {
         name: "listNFTItem",
         type: "function",
