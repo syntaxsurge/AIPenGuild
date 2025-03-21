@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { cn } from "@/lib/utils"
-import { Loader2 } from "lucide-react"
+import { transformIpfsUriToHttp } from "@/lib/ipfs"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useAccount, usePublicClient, useWalletClient } from "wagmi"
+import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 
 interface StakeInfo {
   staker: `0x${string}`
@@ -60,15 +61,13 @@ export default function StakePage() {
 
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null)
   const [txMap, setTxMap] = useState<Record<string, ItemTxState>>({})
-  const [currentTime, setCurrentTime] = useState<number>(
-    Math.floor(Date.now() / 1000)
-  )
+  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000))
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  function formatTimestampSec(sec: bigint): string {
-    return new Date(Number(sec) * 1000).toLocaleString()
-  }
+  // For storing parsed metadata
+  const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
 
+  // keep time updated so we can show unclaimed XP "live"
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setCurrentTime(Math.floor(Date.now() / 1000))
@@ -101,7 +100,7 @@ export default function StakePage() {
     loadXpRate()
   }, [publicClient, nftStakingPool, hasFetchedXpRate])
 
-  // 2) fetch items from NFTMintingPlatform (metadata + ownership) and from NFTMarketplaceHub (sale data) + NFTStakingPool (stake data)
+  // 2) fetch items from NFTMintingPlatform + marketplace + staking
   async function fetchAllNFTs(forceReload?: boolean) {
     if (!userAddress || !publicClient || !nftMintingPlatform || !nftMarketplaceHub || !nftStakingPool) return
     if (!forceReload && fetched) return
@@ -199,17 +198,58 @@ export default function StakePage() {
       setAllItems(newItems)
     } catch (err) {
       console.error("Error loading items via multicall:", err)
+      toast({
+        title: "Error",
+        description: "Unable to fetch your NFTs. Please try again.",
+        variant: "destructive"
+      })
     } finally {
       setLoadingItems(false)
     }
   }
 
+  // load metadata for newly fetched items
+  async function loadNftMetadataForItems(items: NFTItem[]) {
+    const newMap = { ...metadataMap }
+    for (const item of items) {
+      const itemIdStr = String(item.itemId)
+      if (!newMap[itemIdStr]) {
+        try {
+          const parsed = await fetchNftMetadata(item.resourceUrl)
+          newMap[itemIdStr] = parsed
+        } catch {
+          newMap[itemIdStr] = {
+            imageUrl: transformIpfsUriToHttp(item.resourceUrl),
+            name: "",
+            description: "",
+            attributes: {}
+          }
+        }
+      }
+    }
+    setMetadataMap(newMap)
+  }
+
   useEffect(() => {
     fetchAllNFTs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userAddress, publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool])
+  }, [userAddress, nftStakingPool, nftMarketplaceHub, nftMintingPlatform, publicClient])
 
-  // ensure approval
+  // once we have allItems, filter out only user items
+  const userItems = allItems.filter((item) => {
+    if (!userAddress) return false
+    const staked = item.stakeInfo?.staked
+    const stakerIsUser = item.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
+    const ownerIsUser = item.owner.toLowerCase() === userAddress.toLowerCase()
+    return ownerIsUser || (staked && stakerIsUser)
+  })
+
+  // load metadata for user items
+  useEffect(() => {
+    if (userItems.length) {
+      loadNftMetadataForItems(userItems)
+    }
+  }, [userItems]) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function ensureApprovalForAll() {
     if (!userAddress || !walletClient || !nftMintingPlatform || !nftStakingPool) return
     try {
@@ -386,15 +426,6 @@ export default function StakePage() {
     }
   }
 
-  // user items
-  const userItems = allItems.filter((item) => {
-    if (!userAddress) return false
-    const staked = item.stakeInfo?.staked
-    const stakerIsUser = item.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
-    const ownerIsUser = item.owner.toLowerCase() === userAddress.toLowerCase()
-    return ownerIsUser || (staked && stakerIsUser)
-  })
-
   function computeUnclaimedXP(item: NFTItem): bigint {
     if (!xpRate) return 0n
     if (!item.stakeInfo?.staked) return 0n
@@ -426,7 +457,6 @@ export default function StakePage() {
         </p>
       </div>
 
-      {/* Staking Overview */}
       <Card className="mb-6 border border-border rounded-lg shadow-sm">
         <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
           <CardTitle className="text-base font-semibold">Staking Overview</CardTitle>
@@ -467,33 +497,53 @@ export default function StakePage() {
           <CardContent className="p-4">
             {loadingItems ? (
               <div className="flex items-center justify-center gap-2 py-4">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Loading NFTs...</span>
+                <span className="animate-spin inline-block">
+                  <svg
+                    className="h-5 w-5 text-muted-foreground"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                </span>
+                <span className="text-sm">Loading NFTs...</span>
               </div>
             ) : userItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No NFTs found for staking.</p>
+              <p className="text-sm text-muted-foreground">You have no NFTs in your wallet.</p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {userItems.map((item) => {
-                  // transform ipfs if needed
-                  let displayUrl = item.resourceUrl
-                  if (displayUrl.startsWith("ipfs://")) {
-                    displayUrl = displayUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
+                {userItems.map((nft) => {
+                  const itemIdStr = String(nft.itemId)
+                  const meta = metadataMap[itemIdStr] || {
+                    imageUrl: transformIpfsUriToHttp(nft.resourceUrl),
+                    name: "",
+                    description: "",
+                    attributes: {}
                   }
-
                   let label = ""
-                  if (item.stakeInfo?.staked) {
+                  if (nft.stakeInfo?.staked) {
                     label = "(STAKED)"
-                  } else if (item.isOnSale) {
+                  } else if (nft.isOnSale) {
                     label = "(LISTED)"
                   }
-
-                  const selected = selectedNFT?.itemId === item.itemId
+                  const selected = selectedNFT?.itemId === nft.itemId
 
                   return (
                     <div
-                      key={String(item.itemId)}
-                      onClick={() => setSelectedNFT(item)}
+                      key={String(nft.itemId)}
+                      onClick={() => setSelectedNFT(nft)}
                       className={cn(
                         "cursor-pointer rounded-md border p-2 hover:shadow transition",
                         selected ? "border-primary" : "border-border"
@@ -501,8 +551,8 @@ export default function StakePage() {
                     >
                       <div className="relative h-24 w-full overflow-hidden rounded bg-secondary sm:h-28">
                         <Image
-                          src={displayUrl}
-                          alt={`NFT #${String(item.itemId)}`}
+                          src={meta.imageUrl}
+                          alt={`NFT #${String(nft.itemId)}`}
                           fill
                           sizes="(max-width: 768px) 100vw,
                                  (max-width: 1200px) 50vw,
@@ -511,7 +561,10 @@ export default function StakePage() {
                         />
                       </div>
                       <p className="mt-1 text-xs font-semibold text-foreground line-clamp-1">
-                        NFT #{String(item.itemId)} {label}
+                        {meta.name
+                          ? meta.name
+                          : `NFT #${String(nft.itemId)}`
+                        } {label}
                       </p>
                     </div>
                   )
@@ -537,21 +590,28 @@ export default function StakePage() {
               </p>
             ) : (
               <div className="space-y-4">
-                <div className="relative w-full h-96 overflow-hidden rounded-md border border-border bg-secondary">
-                  <Image
-                    src={
-                      selectedNFT.resourceUrl.startsWith("ipfs://")
-                        ? selectedNFT.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
-                        : selectedNFT.resourceUrl
-                    }
-                    alt={`NFT #${String(selectedNFT.itemId)}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw,
-                           (max-width: 1200px) 50vw,
-                           33vw"
-                    className="object-contain"
-                  />
-                </div>
+                {(() => {
+                  const itemIdStr = String(selectedNFT.itemId)
+                  const meta = metadataMap[itemIdStr] || {
+                    imageUrl: transformIpfsUriToHttp(selectedNFT.resourceUrl),
+                    name: "",
+                    description: "",
+                    attributes: {}
+                  }
+                  return (
+                    <div className="relative w-full h-96 overflow-hidden rounded-md border border-border bg-secondary">
+                      <Image
+                        src={meta.imageUrl}
+                        alt={`NFT #${String(selectedNFT.itemId)}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw,
+                               (max-width: 1200px) 50vw,
+                               33vw"
+                        className="object-contain"
+                      />
+                    </div>
+                  )
+                })()}
 
                 {selectedNFT.stakeInfo?.staked ? (
                   <div className="text-sm">
@@ -630,23 +690,27 @@ export default function StakePage() {
       </div>
     </main>
   )
-}
 
-function showTxStatusBlock(tx?: ActionTxState) {
-  if (!tx) return null
-  if (tx.loading || tx.success || tx.error) {
-    return (
-      <div className="rounded-md border border-border p-3 text-xs mt-2">
-        <p className="font-bold">Transaction Status:</p>
-        {tx.loading && <p className="font-bold text-muted-foreground">Pending...</p>}
-        {tx.success && <p className="font-bold text-green-600">Transaction Confirmed!</p>}
-        {tx.error && (
-          <p className="font-bold text-orange-600">
-            Transaction Failed: {tx.error}
-          </p>
-        )}
-      </div>
-    )
+  function formatTimestampSec(sec: bigint): string {
+    return new Date(Number(sec) * 1000).toLocaleString()
   }
-  return null
+
+  function showTxStatusBlock(tx?: ActionTxState) {
+    if (!tx) return null
+    if (tx.loading || tx.success || tx.error) {
+      return (
+        <div className="rounded-md border border-border p-3 text-xs mt-2">
+          <p className="font-bold">Transaction Status:</p>
+          {tx.loading && <p className="font-bold text-muted-foreground">Pending...</p>}
+          {tx.success && <p className="font-bold text-green-600">Transaction Confirmed!</p>}
+          {tx.error && (
+            <p className="font-bold text-orange-600">
+              Transaction Failed: {tx.error}
+            </p>
+          )}
+        </div>
+      )
+    }
+    return null
+  }
 }

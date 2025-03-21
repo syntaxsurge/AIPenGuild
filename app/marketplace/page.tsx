@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { transformIpfsUriToHttp } from "@/lib/ipfs"
 import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
 import Image from "next/image"
@@ -77,6 +78,9 @@ export default function MarketplacePage() {
   // Which item is being purchased
   const [buyingItemId, setBuyingItemId] = useState<bigint | null>(null)
 
+  // For storing metadata from JSON
+  const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
+
   // Transaction watchers
   useEffect(() => {
     if (isBuyTxLoading) {
@@ -91,7 +95,7 @@ export default function MarketplacePage() {
         description: "You have purchased the NFT successfully!",
       })
       setBuyingItemId(null)
-      // Reload
+      // Reload marketplace after successful purchase
       fetchMarketplaceItems(true)
     }
     if (isBuyTxError) {
@@ -161,7 +165,7 @@ export default function MarketplacePage() {
             abi: nftMintingPlatform.abi,
             functionName: "nftItems",
             args: [i],
-          }) as [bigint, string, bigint, string] // xpValue, resourceUrl, mintedAt, creator
+          }) as [bigint, string, bigint, string]
 
           const xpValue = nftItem[0]
           const resourceUrl = nftItem[1]
@@ -198,9 +202,39 @@ export default function MarketplacePage() {
     }
   }
 
+  // Load metadata for newly fetched items
+  async function loadMarketplaceMetadata(items: MarketplaceItem[]) {
+    const newMap: Record<string, ParsedNftMetadata> = { ...metadataMap }
+
+    for (const item of items) {
+      const itemIdStr = String(item.itemId)
+      if (!newMap[itemIdStr]) {
+        try {
+          const parsed = await fetchNftMetadata(item.resourceUrl)
+          newMap[itemIdStr] = parsed
+        } catch {
+          // ignore fetch errors
+          newMap[itemIdStr] = {
+            imageUrl: transformIpfsUriToHttp(item.resourceUrl),
+            name: "",
+            description: "",
+            attributes: {}
+          }
+        }
+      }
+    }
+    setMetadataMap(newMap)
+  }
+
+  // Re-run metadata loading whenever listedItems changes
+  useEffect(() => {
+    if (listedItems.length) {
+      loadMarketplaceMetadata(listedItems)
+    }
+  }, [listedItems]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     fetchMarketplaceItems()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nftMarketplaceHub, nftMintingPlatform, publicClient])
 
   // Final filtered array
@@ -209,10 +243,7 @@ export default function MarketplacePage() {
       .filter((item) => item.isOnSale)
       .filter((item) => {
         const numericPrice = Number(item.salePrice) / 1e18
-        if (
-          numericPrice < priceRange[0] ||
-          numericPrice > priceRange[1]
-        ) {
+        if (numericPrice < priceRange[0] || numericPrice > priceRange[1]) {
           return false
         }
         // Search
@@ -220,10 +251,7 @@ export default function MarketplacePage() {
           const itemIdStr = String(item.itemId)
           const lowerSearch = searchTerm.toLowerCase()
           const lowerResource = item.resourceUrl.toLowerCase()
-          if (
-            !itemIdStr.includes(searchTerm) &&
-            !lowerResource.includes(lowerSearch)
-          ) {
+          if (!itemIdStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
             return false
           }
         }
@@ -444,17 +472,28 @@ export default function MarketplacePage() {
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                 {filteredItems.map((item) => {
                   const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
+                  const itemIdStr = String(item.itemId)
+                  const meta = metadataMap[itemIdStr] || { imageUrl: transformIpfsUriToHttp(item.resourceUrl), name: "", description: "", attributes: {} }
+
                   return (
                     <div
-                      key={String(item.itemId)}
+                      key={itemIdStr}
                       className="group overflow-hidden rounded-lg border border-border p-3 transition-shadow hover:shadow-lg"
                     >
                       <div className="relative h-60 w-full overflow-hidden rounded-md bg-secondary">
-                        <MarketplaceImage resourceUrl={item.resourceUrl} />
+                        <Image
+                          src={meta.imageUrl}
+                          alt="NFT"
+                          fill
+                          sizes="(max-width: 768px) 100vw,
+                                 (max-width: 1200px) 50vw,
+                                 33vw"
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
                       </div>
                       <div className="mt-3 flex items-center justify-between">
                         <h2 className="text-sm font-semibold">
-                          AIPenGuild NFT #{String(item.itemId)}
+                          {meta.name ? meta.name : `AIPenGuild NFT #${itemIdStr}`}
                         </h2>
                         <span className="text-xs font-bold text-primary">
                           {(Number(item.salePrice) / 1e18).toFixed(4)} {currencySymbol}
@@ -494,17 +533,28 @@ export default function MarketplacePage() {
               <div className="flex flex-col gap-4">
                 {filteredItems.map((item) => {
                   const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
+                  const itemIdStr = String(item.itemId)
+                  const meta = metadataMap[itemIdStr] || { imageUrl: transformIpfsUriToHttp(item.resourceUrl), name: "", description: "", attributes: {} }
+
                   return (
                     <div
-                      key={String(item.itemId)}
+                      key={itemIdStr}
                       className="flex flex-col items-start gap-4 rounded-lg border border-border p-4 transition-shadow hover:shadow-md sm:flex-row"
                     >
                       <div className="relative h-36 w-full flex-shrink-0 overflow-hidden rounded-md bg-secondary sm:w-36">
-                        <MarketplaceImage resourceUrl={item.resourceUrl} />
+                        <Image
+                          src={meta.imageUrl}
+                          alt="NFT"
+                          fill
+                          sizes="(max-width: 768px) 100vw,
+                                 (max-width: 1200px) 50vw,
+                                 33vw"
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
                       </div>
                       <div className="flex flex-1 flex-col">
                         <h3 className="text-base font-semibold">
-                          AI NFT #{String(item.itemId)}
+                          {meta.name ? meta.name : `AI NFT #${itemIdStr}`}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
@@ -546,24 +596,5 @@ export default function MarketplacePage() {
         )}
       </div>
     </main>
-  )
-}
-
-/**
- * Helper component to display the NFT image. If IPFS or HTTP,
- * we handle potential ipfs:// -> https://ipfs.io/ipfs/ rewriting.
- */
-function MarketplaceImage({ resourceUrl }: { resourceUrl: string }) {
-  const imageUrl = transformIpfsUriToHttp(resourceUrl)
-  return (
-    <Image
-      src={imageUrl}
-      alt="NFT"
-      fill
-      sizes="(max-width: 768px) 100vw,
-             (max-width: 1200px) 50vw,
-             33vw"
-      className="object-cover transition-transform group-hover:scale-105"
-    />
   )
 }
