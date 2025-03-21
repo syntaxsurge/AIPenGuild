@@ -13,7 +13,8 @@ import { parseEther } from "viem"
 import { useAccount, useBalance, usePublicClient, useWalletClient } from "wagmi"
 
 /**
- * Uploads a file to IPFS via Unique Network's endpoint.
+ * Uploads a file to IPFS via Unique Network's endpoint, returning a URL like:
+ *  https://ipfs.unique.network/ipfs/<CID>/<filename>
  */
 async function uploadFileToIpfs(file: File): Promise<string> {
   const formData = new FormData()
@@ -24,14 +25,28 @@ async function uploadFileToIpfs(file: File): Promise<string> {
   })
   if (!res.ok) throw new Error("Failed to upload file to IPFS")
   const data = await res.json()
-  return data.fullUrl
+
+  // data will have something like:
+  // {
+  //   "cid": "...",
+  //   "fullUrl": "https://ipfs.unique.network/ipfs/...",
+  //   "fileUrl": "https://ipfs.unique.network/ipfs/..."
+  // }
+  // We'll construct a direct link to the file by appending the file name.
+
+  const directFileUrl = data.fullUrl.endsWith('/')
+    ? data.fullUrl + file.name
+    : data.fullUrl + '/' + file.name
+
+  return directFileUrl
 }
 
 /**
- * Uploads JSON data to IPFS.
+ * Uploads JSON data to IPFS as "metadata.json", returning a URL like:
+ *  https://ipfs.unique.network/ipfs/<CID>/metadata.json
  */
 async function uploadJsonToIpfs(jsonData: any): Promise<string> {
-  const blob = new Blob([JSON.stringify(jsonData)], { type: 'application/json' })
+  const blob = new Blob([JSON.stringify(jsonData)], { type: "application/json" })
   const file = new File([blob], "metadata.json", { type: "application/json" })
   const formData = new FormData()
   formData.append("files", file)
@@ -41,7 +56,13 @@ async function uploadJsonToIpfs(jsonData: any): Promise<string> {
   })
   if (!res.ok) throw new Error("Failed to upload JSON to IPFS")
   const data = await res.json()
-  return data.fullUrl
+
+  // data.fullUrl typically points to a directory. We want to ensure the final URL points directly to metadata.json
+  const directMetadataUrl = data.fullUrl.endsWith('/')
+    ? data.fullUrl + 'metadata.json'
+    : data.fullUrl + '/metadata.json'
+
+  return directMetadataUrl
 }
 
 function createRandomAttributes() {
@@ -56,34 +77,6 @@ function createRandomAttributes() {
     durability: randomBetween(1, 100),
     rarity: randomRarity
   }
-}
-
-/**
- * We'll read the XP from the UserExperiencePoints contract if paying with XP.
- */
-async function fetchUserXP(
-  publicClient: ReturnType<typeof usePublicClient>,
-  xpModule: `0x${string}`,
-  user: `0x${string}`
-) {
-  // minimal ABI to read userExperience
-  const xpABI = [
-    {
-      "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
-      "name": "userExperience",
-      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-      "stateMutability": "view",
-      "type": "function"
-    }
-  ]
-
-  const xpVal = await publicClient?.readContract({
-    address: xpModule,
-    abi: xpABI,
-    functionName: "userExperience",
-    args: [user]
-  }) as bigint
-  return xpVal
 }
 
 type MintStage =
@@ -139,6 +132,7 @@ export default function MintNFTPage() {
     setGenerateImageError("")
     setGeneratingImage(true)
     try {
+      // This route calls an AI model to produce JSON with attributes + final image
       const resp = await fetch("/api/v1/ai-nft/metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,6 +172,10 @@ export default function MintNFTPage() {
     }
   }
 
+  /**
+   * Confirm the user either has enough XP (if payWithXP=true) or enough native balance if payWithXP=false.
+   * Then upload an image + JSON to IPFS, and pass the final metadataURL to the contract.
+   */
   async function handleMint() {
     try {
       if (!wagmiAddress) {
@@ -205,9 +203,14 @@ export default function MintNFTPage() {
         if (!publicClient) {
           throw new Error("No public client found. Please connect your wallet.")
         }
-        const userXP = await fetchUserXP(publicClient, xpModule?.address as `0x${string}`, wagmiAddress as `0x${string}`)
-        if (userXP < 100n) {
-          throw new Error(`Insufficient XP. You have ${userXP.toString()} XP, need 100.`)
+        const xpVal = await publicClient.readContract({
+          address: xpModule?.address as `0x${string}`,
+          abi: xpModule?.abi,
+          functionName: "userExperience",
+          args: [wagmiAddress]
+        }) as bigint
+        if (xpVal < 100n) {
+          throw new Error(`Insufficient XP. You have ${xpVal.toString()} XP, need 100.`)
         }
       } else {
         // paying with 0.1 native
@@ -218,21 +221,26 @@ export default function MintNFTPage() {
         }
       }
 
-      // 2) upload to IPFS
+      // 2) upload image + metadata to IPFS
       setMintStage('uploadingImage')
+
       let finalMetadataUrl = ""
       if (useAIImage) {
         if (!aiNft?.image) {
           throw new Error("No AI metadata found. Please generate an image first.")
         }
+        // We'll re-upload the AI image so it can be pinned in your own IPFS folder.
+        // Then create a metadata JSON with that pinned image link
         const imageData = await fetch(aiNft.image)
         if (!imageData.ok) throw new Error("Failed to fetch AI image for re-upload")
         const blob = await imageData.blob()
         const file = new File([blob], "ai_nft.png", { type: blob.type })
         const imageIpfsUrl = await uploadFileToIpfs(file)
+
         const finalMetadata = {
-          ...aiNft,
-          image: imageIpfsUrl
+          name: aiNft.name || "Untitled NFT",
+          image: imageIpfsUrl,
+          attributes: aiNft.attributes || {}
         }
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       } else {
@@ -249,7 +257,7 @@ export default function MintNFTPage() {
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       }
 
-      // 3) send transaction
+      // 3) send transaction to mint, passing finalMetadataUrl as the resourceUrl
       setMintStage('sendingTx')
       const mintValue = payWithXP ? undefined : parseEther("0.1")
 
@@ -336,8 +344,8 @@ export default function MintNFTPage() {
       <div className="max-w-5xl w-full">
         <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
         <p className="mb-4 text-center text-sm text-muted-foreground">
-          Generate or upload your NFT image. Choose whether to pay 100 XP or 0.1 {currencySymbol}. <br />
-          This version checks your XP or native balance first and provides more helpful error messages.
+          Generate or upload your NFT image. Choose whether to pay 100 XP or 0.1 {currencySymbol}.
+          We’ll store a full metadata.json on IPFS, and this link is what the smart contract references.
         </p>
 
         <Card className="border border-border shadow-lg rounded-lg p-6">
