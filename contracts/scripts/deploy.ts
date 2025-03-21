@@ -17,7 +17,7 @@ async function main() {
   console.log("UserExperiencePoints deployed to:", experience.address)
 
   // 3) Deploy NFTMintingPlatform
-  // Constructor arguments: (address rewardPool, address experienceModule, string name, string symbol)
+  //    Constructor arguments: (address rewardPool, address experienceModule, string name, string symbol)
   const NFTMintingPlatform = await ethers.getContractFactory("NFTMintingPlatform")
   const nftMintingPlatform = await NFTMintingPlatform.deploy(
     rewardPool.address,
@@ -29,7 +29,7 @@ async function main() {
   console.log("NFTMintingPlatform deployed to:", nftMintingPlatform.address)
 
   // 4) Deploy NFTMarketplaceHub
-  // Constructor: (address _rewardPool, address _experienceModule, address _nftMintingPlatform)
+  //    Constructor: (address _rewardPool, address _experienceModule, address _nftMintingPlatform)
   const NFTMarketplaceHub = await ethers.getContractFactory("NFTMarketplaceHub")
   const marketplace = await NFTMarketplaceHub.deploy(
     rewardPool.address,
@@ -46,8 +46,8 @@ async function main() {
     "This is a default NFT collection",
     ethers.utils.parseEther("0.1"),
     100,
-    nftMintingPlatform.address,      // minterPlatformAddress
-    experience.address              // xpModuleAddress
+    nftMintingPlatform.address, // minterPlatformAddress
+    experience.address          // xpModuleAddress
   )
   await creatorCollection.deployed()
   console.log("NFTCreatorCollection deployed to:", creatorCollection.address)
@@ -59,7 +59,7 @@ async function main() {
   console.log("Registered collection 0 ->", creatorCollection.address, "in NFTMintingPlatform!")
 
   // 7) Deploy NFTStakingPool
-  // constructor(address _nftContract, address _experiencePoints)
+  //    constructor(address _nftContract, address _experiencePoints)
   const NFTStakingPool = await ethers.getContractFactory("NFTStakingPool")
   const stakingPool = await NFTStakingPool.deploy(
     nftMintingPlatform.address,
@@ -70,9 +70,16 @@ async function main() {
 
   // 8) Authorize NFTStakingPool in UserExperiencePoints
   console.log("Authorizing NFTStakingPool in UserExperiencePoints as a caller...")
-  const authTx = await experience.setAuthorizedCaller(stakingPool.address, true)
+  let authTx = await experience.setAuthorizedCaller(stakingPool.address, true)
   await authTx.wait()
   console.log("Authorized NFTStakingPool to call stakeModifyUserXP!")
+
+  // 9) Authorize NFTCreatorCollection in UserExperiencePoints
+  //    to allow subtracting 100 XP when user pays with XP
+  console.log("Authorizing NFTCreatorCollection in UserExperiencePoints as a caller...")
+  authTx = await experience.setAuthorizedCaller(creatorCollection.address, true)
+  await authTx.wait()
+  console.log("Authorized NFTCreatorCollection to subtract XP from users when they pay with XP!")
 }
 
 main()
