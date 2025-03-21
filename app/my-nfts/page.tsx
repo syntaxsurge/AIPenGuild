@@ -43,6 +43,7 @@ interface MetadataState {
   imageUrl?: string
   name?: string
   description?: string
+  attributes?: Record<string, any>
 }
 
 export default function MyNFTsPage() {
@@ -336,12 +337,14 @@ export default function MyNFTsPage() {
       for (const nft of userNFTs) {
         const idStr = String(nft.itemId)
         if (newMap[idStr]?.imageUrl !== undefined) {
+          // Already fetched
           continue
         }
 
         let finalImageUrl = nft.resourceUrl
         let name = `NFT #${idStr}`
         let description = ""
+        let attributes: Record<string, any> | undefined
 
         if (
           nft.resourceUrl.startsWith("ipfs://") ||
@@ -352,9 +355,18 @@ export default function MyNFTsPage() {
             let replacedUrl = transformIpfsUriToHttp(nft.resourceUrl)
             const resp = await fetch(replacedUrl)
             const maybeJson = await resp.json()
-            if (maybeJson.image) finalImageUrl = transformIpfsUriToHttp(maybeJson.image)
-            if (maybeJson.name) name = maybeJson.name
-            if (maybeJson.description) description = maybeJson.description
+            if (maybeJson.image) {
+              finalImageUrl = transformIpfsUriToHttp(maybeJson.image)
+            }
+            if (maybeJson.name) {
+              name = maybeJson.name
+            }
+            if (maybeJson.description) {
+              description = maybeJson.description
+            }
+            if (maybeJson.attributes) {
+              attributes = maybeJson.attributes
+            }
           } catch {
             // possibly direct link or error
           }
@@ -363,7 +375,8 @@ export default function MyNFTsPage() {
         newMap[idStr] = {
           imageUrl: finalImageUrl,
           name,
-          description
+          description,
+          attributes
         }
         updated = true
       }
@@ -490,7 +503,8 @@ export default function MyNFTsPage() {
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {userNFTs.map((nft) => {
                   const displayUrl = getDisplayUrl(nft)
-                  const isStaked = nft.stakeInfo?.staked && nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+                  const isStaked =
+                    nft.stakeInfo?.staked && nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
                   let label = ""
                   if (isStaked) label = "(STAKED)"
                   else if (nft.isOnSale) label = "(LISTED)"
@@ -500,8 +514,9 @@ export default function MyNFTsPage() {
                     <div
                       key={String(nft.itemId)}
                       onClick={() => setSelectedNFT(nft)}
-                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${selected ? "border-primary" : "border-border"
-                        }`}
+                      className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${
+                        selected ? "border-primary" : "border-border"
+                      }`}
                     >
                       <div className="relative h-36 w-full overflow-hidden rounded-md bg-secondary">
                         <Image
@@ -550,6 +565,29 @@ export default function MyNFTsPage() {
                     className="object-contain"
                   />
                 </div>
+                {/* Display NFT metadata (name, description, attributes) */}
+                <div className="flex flex-col gap-1 text-sm">
+                  <strong>Name:</strong>
+                  <span>{metadataMap[String(selectedNFT.itemId)]?.name || `NFT #${String(selectedNFT.itemId)}`}</span>
+                </div>
+                <div className="mt-2 flex flex-col gap-1 text-sm">
+                  <strong>Description:</strong>
+                  <span className="text-muted-foreground whitespace-pre-wrap">
+                    {metadataMap[String(selectedNFT.itemId)]?.description || "No description"}
+                  </span>
+                </div>
+                {metadataMap[String(selectedNFT.itemId)]?.attributes && (
+                  <div className="mt-2">
+                    <strong className="text-sm">Attributes:</strong>
+                    <div className="mt-1 text-sm rounded-md border border-border bg-secondary p-3">
+                      <pre className="whitespace-pre-wrap break-all text-muted-foreground">
+                        {JSON.stringify(metadataMap[String(selectedNFT.itemId)]?.attributes, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                <hr className="my-4 border-border" />
                 <p className="text-sm mb-1">
                   <strong>Minted Time:</strong> {formatTimestamp(selectedNFT.mintedAt)}
                 </p>
@@ -579,7 +617,8 @@ export default function MyNFTsPage() {
 
                 {/* Listing form */}
                 {(() => {
-                  const isStaked = selectedNFT.stakeInfo?.staked &&
+                  const isStaked =
+                    selectedNFT.stakeInfo?.staked &&
                     selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
                   return (
                     <form onSubmit={handleListNFT} className="mt-4 space-y-4">
@@ -660,16 +699,6 @@ export default function MyNFTsPage() {
                       </div>
                     )}
                   </>
-                )}
-
-                {/* Extended Description */}
-                {metadataMap[String(selectedNFT.itemId)]?.description && (
-                  <div className="mt-4">
-                    <p className="text-sm font-semibold">Description / Story:</p>
-                    <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
-                      {metadataMap[String(selectedNFT.itemId)]?.description}
-                    </p>
-                  </div>
                 )}
               </>
             )}
