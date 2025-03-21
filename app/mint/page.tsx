@@ -8,21 +8,13 @@ import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { useTransactionState } from "@/hooks/use-transaction-state"
 import { uploadFileToIpfs, uploadJsonToIpfs } from "@/lib/ipfs"
 import { Brain, Loader2, Upload, Wand } from "lucide-react"
 import Image from "next/image"
 import React, { useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, useBalance, useChainId, usePublicClient, useWalletClient } from "wagmi"
-
-type MintStage =
-  | 'idle'
-  | 'checkingPrereqs'
-  | 'uploadingImage'
-  | 'sendingTx'
-  | 'waitingForTx'
-  | 'success'
-  | 'failed'
 
 export default function MintNFTPage() {
   const { toast } = useToast()
@@ -40,6 +32,7 @@ export default function MintNFTPage() {
   const creatorCollection = useContract("NFTCreatorCollection")
   const xpModule = useContract("UserExperiencePoints")
 
+  // Basic states
   const [prompt, setPrompt] = useState("")
   const [category, setCategory] = useState<"Character" | "GameItem" | "Powerup">("Character")
   const [aiNft, setAiNft] = useState<any>(null)
@@ -51,12 +44,10 @@ export default function MintNFTPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [payWithXP, setPayWithXP] = useState(false)
   const [useAIImage, setUseAIImage] = useState(true)
-  const [mintError, setMintError] = useState("")
-  const [mintStage, setMintStage] = useState<MintStage>('idle')
-  const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
+  const [debugUploadCustomImage] = useState(process.env.NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE === 'true')
 
-  // Check environment variable
-  const debugUploadCustomImage = process.env.NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE === 'true'
+  // The single unified transaction state
+  const mintTx = useTransactionState()
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] || null
@@ -79,6 +70,7 @@ export default function MintNFTPage() {
     setAiNft(null)
     setGenerateImageError("")
     setGeneratingImage(true)
+
     try {
       const resp = await fetch("/api/v1/ai-nft/metadata", {
         method: "POST",
@@ -108,27 +100,28 @@ export default function MintNFTPage() {
   }
 
   async function handleMint() {
+    if (!wagmiAddress) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet before minting.",
+        variant: "destructive"
+      })
+      return
+    }
+    if (!creatorCollection || !creatorCollection.address || !creatorCollection.abi) {
+      toast({
+        title: "No Contract Found",
+        description: "NFTCreatorCollection contract not found. Check your chain or config.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Start the transaction
+    mintTx.start()
+
     try {
-      if (!wagmiAddress) {
-        toast({
-          title: "Wallet not connected",
-          description: "Please connect your wallet before minting.",
-          variant: "destructive"
-        })
-        return
-      }
-      if (!creatorCollection || !creatorCollection.address || !creatorCollection.abi) {
-        toast({
-          title: "No Contract Found",
-          description: "NFTCreatorCollection contract not found. Check your chain or config.",
-          variant: "destructive"
-        })
-        return
-      }
-
-      setMintError("")
-      setMintStage('checkingPrereqs')
-
+      // Additional checks
       if (payWithXP) {
         if (!publicClient) {
           throw new Error("No public client found. Please connect your wallet.")
@@ -150,7 +143,7 @@ export default function MintNFTPage() {
         }
       }
 
-      setMintStage('uploadingImage')
+      // Upload to IPFS
       let finalMetadataUrl = ""
       if (useAIImage) {
         if (!aiNft?.image) {
@@ -189,13 +182,14 @@ export default function MintNFTPage() {
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       }
 
-      setMintStage('sendingTx')
+      // Prepare writing to contract
       const mintValue = payWithXP ? undefined : parseEther("0.1")
 
       if (!walletClient) {
         throw new Error("No wallet client found. Please connect your wallet.")
       }
 
+      // Send the transaction
       const hash = await walletClient.writeContract({
         address: creatorCollection.address as `0x${string}`,
         abi: creatorCollection.abi,
@@ -209,23 +203,21 @@ export default function MintNFTPage() {
         description: `Tx Hash: ${hash}`
       })
 
-      setTxHash(hash)
-      setMintStage('waitingForTx')
-
+      // Wait for transaction receipt
+      mintTx.start(hash)
       const receipt = await publicClient?.waitForTransactionReceipt({ hash })
       if (receipt?.status === "reverted") {
-        setMintStage('failed')
+        mintTx.fail("Transaction reverted on-chain.")
         throw new Error("Transaction reverted on-chain.")
       }
 
-      setMintStage('success')
+      mintTx.success(hash)
       toast({
         title: "Transaction Confirmed",
         description: "NFT minted successfully!"
       })
     } catch (err: any) {
-      setMintStage('failed')
-      setMintError(err.message || "Minting failed.")
+      mintTx.fail(err.message || "Minting failed.")
       toast({
         title: "Mint Failure",
         description: err.message || "Unable to mint NFT",
@@ -235,30 +227,11 @@ export default function MintNFTPage() {
   }
 
   function getMintButtonLabel() {
-    switch (mintStage) {
-      case 'checkingPrereqs':
-        return "Checking Requirements..."
-      case 'uploadingImage':
-        return "Uploading to IPFS..."
-      case 'sendingTx':
-        return "Sending Transaction..."
-      case 'waitingForTx':
-        return "Awaiting Confirmation..."
-      case 'success':
-        return "Mint Again"
-      case 'failed':
-        return "Retry Mint"
-      default:
-        return "Mint NFT"
-    }
+    if (mintTx.isProcessing) return "Processing..."
+    if (mintTx.isSuccess) return "Mint Again"
+    if (mintTx.error) return "Retry Mint"
+    return "Mint NFT"
   }
-
-  const isMinting = (
-    mintStage === 'checkingPrereqs' ||
-    mintStage === 'uploadingImage' ||
-    mintStage === 'sendingTx' ||
-    mintStage === 'waitingForTx'
-  )
 
   if (!wagmiAddress) {
     return (
@@ -383,7 +356,6 @@ export default function MintNFTPage() {
               </div>
             )}
 
-            {/* custom upload if debugUploadCustomImage=true */}
             {!useAIImage && debugUploadCustomImage && (
               <div className="rounded-md bg-secondary p-4">
                 <label className="mb-2 block text-sm font-medium text-muted-foreground">
@@ -448,30 +420,25 @@ export default function MintNFTPage() {
             </div>
             <div className="mt-4">
               <TransactionButton
-                isLoading={isMinting}
-                loadingText={getMintButtonLabel()}
+                isLoading={mintTx.isProcessing}
+                loadingText="Processing..."
                 onClick={handleMint}
                 className="w-full flex items-center justify-center gap-2"
               >
                 {getMintButtonLabel()}
               </TransactionButton>
             </div>
-            {mintError && (
+            {mintTx.error && (
               <div className="mt-2 rounded-md border-l-4 border-red-500 bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900 dark:text-red-100 whitespace-pre-wrap break-words">
-                <strong>Error:</strong> {mintError}
+                <strong>Error:</strong> {mintTx.error}
               </div>
             )}
 
             <TransactionStatus
-              isLoading={
-                mintStage === 'checkingPrereqs' ||
-                mintStage === 'uploadingImage' ||
-                mintStage === 'sendingTx' ||
-                mintStage === 'waitingForTx'
-              }
-              isSuccess={mintStage === 'success'}
-              errorMessage={mintStage === 'failed' ? mintError : undefined}
-              txHash={txHash}
+              isLoading={mintTx.isProcessing}
+              isSuccess={mintTx.isSuccess}
+              errorMessage={mintTx.error || undefined}
+              txHash={mintTx.txHash || undefined}
               chainId={chainId}
             />
           </CardContent>

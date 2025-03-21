@@ -5,6 +5,7 @@ import { TransactionButton } from "@/components/ui/transaction-button"
 import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { useTransactionState } from "@/hooks/use-transaction-state"
 import { transformIpfsUriToHttp } from "@/lib/ipfs"
 import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
@@ -13,19 +14,6 @@ import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
-
-interface ActionTxState {
-  loading: boolean
-  success: boolean
-  error: string | null
-  txHash?: `0x${string}` | null
-}
-
-interface ItemTxState {
-  stake?: ActionTxState
-  claim?: ActionTxState
-  unstake?: ActionTxState
-}
 
 export default function StakePage() {
   const { address: userAddress } = useAccount()
@@ -38,20 +26,24 @@ export default function StakePage() {
   const nftMintingPlatform = useContract("NFTMintingPlatform")
   const nftStakingPool = useContract("NFTStakingPool")
 
+  // XP rate
+  const [xpPerSecond, setXpPerSecond] = useState<bigint>(1n)
+  const [hasFetchedXpRate, setHasFetchedXpRate] = useState(false)
+
+  // Data
   const [allItems, setAllItems] = useState<NFTItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
   const [fetched, setFetched] = useState(false)
-
-  // xp rate and other states
-  const [xpRate, setXpRate] = useState<bigint>(0n)
-  const [hasFetchedXpRate, setHasFetchedXpRate] = useState(false)
-
   const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null)
-  const [txMap, setTxMap] = useState<Record<string, ItemTxState>>({})
-  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000))
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // We'll keep separate transaction states for each action
+  const stakeTx = useTransactionState()
+  const claimTx = useTransactionState()
+  const unstakeTx = useTransactionState()
 
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
+  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000))
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
@@ -62,6 +54,7 @@ export default function StakePage() {
     }
   }, [])
 
+  // 1) fetch xpPerSecond once
   useEffect(() => {
     async function loadXpRate() {
       if (hasFetchedXpRate) return
@@ -74,7 +67,7 @@ export default function StakePage() {
           args: []
         })
         if (typeof val === "bigint") {
-          setXpRate(val)
+          setXpPerSecond(val)
         }
         setHasFetchedXpRate(true)
       } catch (err) {
@@ -94,7 +87,7 @@ export default function StakePage() {
       const nfts = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
       setAllItems(nfts)
 
-      // Preload metadata for the user items only
+      // Preload metadata for user items only
       const userNfts = nfts.filter((item) => {
         const staked = item.stakeInfo?.staked &&
           item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
@@ -119,7 +112,6 @@ export default function StakePage() {
         }
       }
       setMetadataMap(newMap)
-
     } catch (err) {
       console.error("Error loading items via fetchAllNFTs:", err)
       toast({
@@ -144,24 +136,28 @@ export default function StakePage() {
     }
   }, [])
 
-  function updateTxState(itemId: bigint, action: "stake" | "claim" | "unstake", nextState: Partial<ActionTxState>) {
-    setTxMap((prev) => {
-      const itemIdStr = itemId.toString()
-      const oldItemTxState = prev[itemIdStr] || {}
-      const oldActionState = oldItemTxState[action] || { loading: false, success: false, error: null, txHash: null }
-      const newActionState = { ...oldActionState, ...nextState }
-      return {
-        ...prev,
-        [itemIdStr]: {
-          ...oldItemTxState,
-          [action]: newActionState
-        }
-      }
+  function userItems() {
+    if (!userAddress) return []
+    return allItems.filter((item) => {
+      const staked = item.stakeInfo?.staked &&
+        item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
+      const owned = item.owner.toLowerCase() === userAddress.toLowerCase()
+      return staked || owned
     })
+  }
+
+  function computeUnclaimedXP(item: NFTItem): bigint {
+    if (!xpPerSecond) return 0n
+    if (!item.stakeInfo?.staked) return 0n
+    if (item.stakeInfo.staker.toLowerCase() !== userAddress?.toLowerCase()) return 0n
+
+    const diff = BigInt(currentTime) - item.stakeInfo.lastClaimed
+    return diff > 0 ? diff * xpPerSecond : 0n
   }
 
   async function ensureApprovalForAll() {
     if (!userAddress || !walletClient || !nftMintingPlatform || !nftStakingPool) return
+
     try {
       const isApproved = await publicClient?.readContract({
         address: nftMintingPlatform.address as `0x${string}`,
@@ -225,29 +221,6 @@ export default function StakePage() {
     }
   }
 
-  function userItems() {
-    if (!userAddress) return []
-    return allItems.filter((item) => {
-      const staked = item.stakeInfo?.staked &&
-        item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
-      const owned = item.owner.toLowerCase() === userAddress.toLowerCase()
-      return staked || owned
-    })
-  }
-
-  function computeUnclaimedXP(item: NFTItem): bigint {
-    if (!xpRate) return 0n
-    if (!item.stakeInfo?.staked) return 0n
-    if (item.stakeInfo.staker.toLowerCase() !== userAddress?.toLowerCase()) return 0n
-
-    const diff = BigInt(currentTime) - item.stakeInfo.lastClaimed
-    return diff > 0 ? diff * xpRate : 0n
-  }
-
-  const totalUnclaimed = userItems().reduce((acc, item) => acc + computeUnclaimedXP(item), 0n)
-  const stakedCount = userItems().filter((i) => i.stakeInfo?.staked).length
-  const notStakedCount = userItems().length - stakedCount
-
   async function handleStake(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
     if (item.isOnSale) {
@@ -258,7 +231,8 @@ export default function StakePage() {
       })
       return
     }
-    updateTxState(item.itemId, "stake", { loading: true, success: false, error: null, txHash: null })
+
+    stakeTx.start()
     try {
       await ensureApprovalForAll()
       toast({ title: "Staking...", description: "Sending transaction..." })
@@ -269,16 +243,16 @@ export default function StakePage() {
         args: [item.itemId],
         account: userAddress
       })
-      updateTxState(item.itemId, "stake", { txHash: hash })
+      stakeTx.start(hash)
 
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` })
       await publicClient.waitForTransactionReceipt({ hash })
 
       toast({ title: "Stake Complete", description: "Your NFT is now staked." })
-      updateTxState(item.itemId, "stake", { loading: false, success: true })
+      stakeTx.success(hash)
       fetchAllData(true)
     } catch (err: any) {
-      updateTxState(item.itemId, "stake", { loading: false, success: false, error: err.message })
+      stakeTx.fail(err.message || "Failed to stake NFT")
       toast({
         title: "Stake Error",
         description: err.message || "Failed to stake NFT",
@@ -287,39 +261,10 @@ export default function StakePage() {
     }
   }
 
-  async function handleUnstake(item: NFTItem) {
-    if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
-    updateTxState(item.itemId, "unstake", { loading: true, success: false, error: null, txHash: null })
-    try {
-      toast({ title: "Unstaking...", description: "Sending transaction..." })
-      const hash = await walletClient.writeContract({
-        address: nftStakingPool.address as `0x${string}`,
-        abi: nftStakingPool.abi,
-        functionName: "unstakeNFT",
-        args: [item.itemId],
-        account: userAddress
-      })
-      updateTxState(item.itemId, "unstake", { txHash: hash })
-
-      toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` })
-      await publicClient.waitForTransactionReceipt({ hash })
-
-      toast({ title: "Unstake Complete", description: "Your NFT has been unstaked." })
-      updateTxState(item.itemId, "unstake", { loading: false, success: true })
-      fetchAllData(true)
-    } catch (err: any) {
-      updateTxState(item.itemId, "unstake", { loading: false, success: false, error: err.message })
-      toast({
-        title: "Unstake Error",
-        description: err.message || "Failed to unstake NFT",
-        variant: "destructive"
-      })
-    }
-  }
-
   async function handleClaim(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
-    updateTxState(item.itemId, "claim", { loading: true, success: false, error: null, txHash: null })
+
+    claimTx.start()
     try {
       toast({ title: "Claiming...", description: "Sending transaction..." })
       const hash = await walletClient.writeContract({
@@ -329,19 +274,50 @@ export default function StakePage() {
         args: [item.itemId],
         account: userAddress
       })
-      updateTxState(item.itemId, "claim", { txHash: hash })
+      claimTx.start(hash)
 
       toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` })
       await publicClient.waitForTransactionReceipt({ hash })
 
       toast({ title: "Claim Success", description: "You claimed staking rewards as XP." })
-      updateTxState(item.itemId, "claim", { loading: false, success: true })
+      claimTx.success(hash)
       fetchAllData(true)
     } catch (err: any) {
-      updateTxState(item.itemId, "claim", { loading: false, success: false, error: err.message })
+      claimTx.fail(err.message || "Failed to claim rewards")
       toast({
         title: "Claim Error",
         description: err.message || "Failed to claim rewards",
+        variant: "destructive"
+      })
+    }
+  }
+
+  async function handleUnstake(item: NFTItem) {
+    if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
+
+    unstakeTx.start()
+    try {
+      toast({ title: "Unstaking...", description: "Sending transaction..." })
+      const hash = await walletClient.writeContract({
+        address: nftStakingPool.address as `0x${string}`,
+        abi: nftStakingPool.abi,
+        functionName: "unstakeNFT",
+        args: [item.itemId],
+        account: userAddress
+      })
+      unstakeTx.start(hash)
+
+      toast({ title: "Transaction Submitted", description: `Tx Hash: ${String(hash)}` })
+      await publicClient.waitForTransactionReceipt({ hash })
+
+      toast({ title: "Unstake Complete", description: "Your NFT has been unstaked." })
+      unstakeTx.success(hash)
+      fetchAllData(true)
+    } catch (err: any) {
+      unstakeTx.fail(err.message || "Failed to unstake NFT")
+      toast({
+        title: "Unstake Error",
+        description: err.message || "Failed to unstake NFT",
         variant: "destructive"
       })
     }
@@ -355,6 +331,10 @@ export default function StakePage() {
       </main>
     )
   }
+
+  const stakedCount = userItems().filter((i) => i.stakeInfo?.staked).length
+  const notStakedCount = userItems().length - stakedCount
+  const totalUnclaimed = userItems().reduce((acc, item) => acc + computeUnclaimedXP(item), 0n)
 
   return (
     <main className="mx-auto w-full min-h-screen px-4 py-12 sm:px-6 md:px-8 bg-background text-foreground">
@@ -384,7 +364,7 @@ export default function StakePage() {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Staking Rate (XP/sec):</span>
-            <span className="font-semibold">{xpRate.toString()}</span>
+            <span className="font-semibold">{xpPerSecond.toString()}</span>
           </div>
           <hr className="my-3 border-border" />
           <div className="flex items-center justify-between">
@@ -397,6 +377,7 @@ export default function StakePage() {
       </Card>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Owned/Staked NFTs */}
         <Card className="border border-border rounded-lg shadow-sm">
           <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
             <CardTitle className="text-base font-semibold">Your NFTs</CardTitle>
@@ -460,6 +441,7 @@ export default function StakePage() {
           </CardContent>
         </Card>
 
+        {/* Selected NFT */}
         <Card className="border border-border rounded-lg shadow-sm">
           <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
             <CardTitle className="text-base font-semibold">
@@ -512,50 +494,40 @@ export default function StakePage() {
                         {computeUnclaimedXP(selectedNFT).toString()}
                       </span>
                     </div>
-                    {(() => {
-                      const itemTx = txMap[selectedNFT.itemId.toString()] || {}
-                      const claimTx = itemTx.claim
-                      const unstakeTx = itemTx.unstake
+                    <TransactionButton
+                      isLoading={claimTx.isProcessing}
+                      loadingText="Processing..."
+                      onClick={() => handleClaim(selectedNFT)}
+                      className="mt-3 w-full"
+                    >
+                      Claim NFT Rewards
+                    </TransactionButton>
+                    <TransactionStatus
+                      isLoading={claimTx.isProcessing}
+                      isSuccess={claimTx.isSuccess}
+                      errorMessage={claimTx.error || undefined}
+                      txHash={claimTx.txHash || undefined}
+                      chainId={chainId}
+                      className="mt-2"
+                    />
 
-                      return (
-                        <>
-                          <TransactionButton
-                            isLoading={claimTx?.loading || false}
-                            loadingText="Processing..."
-                            onClick={() => handleClaim(selectedNFT)}
-                            className="mt-3 w-full"
-                          >
-                            Claim NFT Rewards
-                          </TransactionButton>
-                          <TransactionStatus
-                            isLoading={claimTx?.loading || false}
-                            isSuccess={claimTx?.success || false}
-                            errorMessage={claimTx?.error || undefined}
-                            txHash={claimTx?.txHash}
-                            chainId={chainId}
-                            className="mt-2"
-                          />
-
-                          <TransactionButton
-                            isLoading={unstakeTx?.loading || false}
-                            loadingText="Processing..."
-                            onClick={() => handleUnstake(selectedNFT)}
-                            variant="outline"
-                            className="mt-3 w-full"
-                          >
-                            Unstake NFT
-                          </TransactionButton>
-                          <TransactionStatus
-                            isLoading={unstakeTx?.loading || false}
-                            isSuccess={unstakeTx?.success || false}
-                            errorMessage={unstakeTx?.error || undefined}
-                            txHash={unstakeTx?.txHash}
-                            chainId={chainId}
-                            className="mt-2"
-                          />
-                        </>
-                      )
-                    })()}
+                    <TransactionButton
+                      isLoading={unstakeTx.isProcessing}
+                      loadingText="Processing..."
+                      onClick={() => handleUnstake(selectedNFT)}
+                      variant="outline"
+                      className="mt-3 w-full"
+                    >
+                      Unstake NFT
+                    </TransactionButton>
+                    <TransactionStatus
+                      isLoading={unstakeTx.isProcessing}
+                      isSuccess={unstakeTx.isSuccess}
+                      errorMessage={unstakeTx.error || undefined}
+                      txHash={unstakeTx.txHash || undefined}
+                      chainId={chainId}
+                      className="mt-2"
+                    />
                   </div>
                 ) : selectedNFT.isOnSale ? (
                   <p className="text-sm font-bold text-orange-500">
@@ -564,30 +536,22 @@ export default function StakePage() {
                 ) : (
                   <div className="text-sm text-muted-foreground">
                     <p className="font-bold text-orange-600">Not Staked</p>
-                    {(() => {
-                      const itemTx = txMap[selectedNFT.itemId.toString()] || {}
-                      const stakeTx = itemTx.stake
-                      return (
-                        <>
-                          <TransactionButton
-                            isLoading={stakeTx?.loading || false}
-                            loadingText="Processing..."
-                            onClick={() => handleStake(selectedNFT)}
-                            className="mt-2 w-full"
-                          >
-                            Stake NFT
-                          </TransactionButton>
-                          <TransactionStatus
-                            isLoading={stakeTx?.loading || false}
-                            isSuccess={stakeTx?.success || false}
-                            errorMessage={stakeTx?.error || undefined}
-                            txHash={stakeTx?.txHash}
-                            chainId={chainId}
-                            className="mt-2"
-                          />
-                        </>
-                      )
-                    })()}
+                    <TransactionButton
+                      isLoading={stakeTx.isProcessing}
+                      loadingText="Processing..."
+                      onClick={() => handleStake(selectedNFT)}
+                      className="mt-2 w-full"
+                    >
+                      Stake NFT
+                    </TransactionButton>
+                    <TransactionStatus
+                      isLoading={stakeTx.isProcessing}
+                      isSuccess={stakeTx.isSuccess}
+                      errorMessage={stakeTx.error || undefined}
+                      txHash={stakeTx.txHash || undefined}
+                      chainId={chainId}
+                      className="mt-2"
+                    />
                   </div>
                 )}
               </div>

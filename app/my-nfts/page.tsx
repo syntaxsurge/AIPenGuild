@@ -7,6 +7,7 @@ import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { useTransactionState } from "@/hooks/use-transaction-state"
 import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { Loader2 } from "lucide-react"
@@ -17,9 +18,7 @@ import {
   useAccount,
   useChainId,
   usePublicClient,
-  useWaitForTransactionReceipt,
-  useWalletClient,
-  useWriteContract
+  useWalletClient
 } from "wagmi"
 
 export default function MyNFTsPage() {
@@ -34,37 +33,9 @@ export default function MyNFTsPage() {
   const nftStakingPool = useContract("NFTStakingPool")
   const nftMintingPlatform = useContract("NFTMintingPlatform")
 
-  // For list/unlist writes:
-  const {
-    data: listWriteData,
-    error: listError,
-    isPending: isListPending,
-    isSuccess: isListSuccess,
-    writeContract: writeListContract
-  } = useWriteContract()
-
-  const {
-    data: listTxReceipt,
-    isLoading: isListTxLoading,
-    isSuccess: isListTxSuccess,
-    isError: isListTxError,
-    error: listTxReceiptError
-  } = useWaitForTransactionReceipt({ hash: listWriteData ?? undefined })
-
-  const {
-    data: unlistWriteData,
-    error: unlistError,
-    isPending: isUnlistPending,
-    writeContract: writeUnlistContract
-  } = useWriteContract()
-
-  const {
-    data: unlistTxReceipt,
-    isLoading: isUnlistTxLoading,
-    isSuccess: isUnlistTxSuccess,
-    isError: isUnlistTxError,
-    error: unlistTxReceiptError
-  } = useWaitForTransactionReceipt({ hash: unlistWriteData ?? undefined })
+  // Single transaction state for listing/unlisting
+  const listTx = useTransactionState()
+  const unlistTx = useTransactionState()
 
   const [price, setPrice] = useState("")
   const [userNFTs, setUserNFTs] = useState<NFTItem[]>([])
@@ -73,75 +44,6 @@ export default function MyNFTsPage() {
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
 
   const fetchedRef = useRef(false)
-
-  // Watchers for listing transaction
-  useEffect(() => {
-    if (isListTxLoading) {
-      toast({
-        title: "Transaction Pending",
-        description: "Your list transaction is being confirmed..."
-      })
-    }
-    if (isListTxSuccess) {
-      toast({
-        title: "Transaction Successful!",
-        description: "Your NFT has been listed for sale."
-      })
-      if (selectedNFT) {
-        try {
-          const bigPrice = parseEther(price)
-          setUserNFTs((prev) =>
-            prev.map((n) =>
-              n.itemId === selectedNFT.itemId
-                ? { ...n, isOnSale: true, salePrice: bigPrice }
-                : n
-            )
-          )
-        } catch {
-          // parse error ignored
-        }
-      }
-    }
-    if (isListTxError) {
-      toast({
-        title: "Transaction Failed",
-        description: listTxReceiptError?.message || listError?.message || "Something went wrong.",
-        variant: "destructive"
-      })
-    }
-  }, [isListTxLoading, isListTxSuccess, isListTxError, listTxReceiptError, listError, toast, selectedNFT, price])
-
-  // Watchers for unlisting transaction
-  useEffect(() => {
-    if (isUnlistTxLoading) {
-      toast({
-        title: "Transaction Pending",
-        description: "Your unlist transaction is being confirmed..."
-      })
-    }
-    if (isUnlistTxSuccess) {
-      toast({
-        title: "Transaction Successful!",
-        description: "Your NFT has been unlisted."
-      })
-      if (selectedNFT) {
-        setUserNFTs((prev) =>
-          prev.map((n) =>
-            n.itemId === selectedNFT.itemId
-              ? { ...n, isOnSale: false, salePrice: 0n }
-              : n
-          )
-        )
-      }
-    }
-    if (isUnlistTxError) {
-      toast({
-        title: "Transaction Failed",
-        description: unlistTxReceiptError?.message || unlistError?.message || "Something went wrong.",
-        variant: "destructive"
-      })
-    }
-  }, [isUnlistTxLoading, isUnlistTxSuccess, isUnlistTxError, unlistTxReceiptError, unlistError, toast, selectedNFT])
 
   // Main loader for user's NFTs
   async function loadMyNFTs() {
@@ -172,7 +74,6 @@ export default function MyNFTsPage() {
           const parsed = await fetchNftMetadata(item.resourceUrl)
           newMap[String(item.itemId)] = parsed
         } catch {
-          // fallback
           newMap[String(item.itemId)] = {
             imageUrl: item.resourceUrl,
             name: "",
@@ -203,14 +104,13 @@ export default function MyNFTsPage() {
       return
     }
     loadMyNFTs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wagmiAddress, nftMarketplaceHub, nftMintingPlatform, nftStakingPool, publicClient])
 
   /**
    * Ensure the marketplace contract is approved (setApprovalForAll) to handle the user's NFTs.
    */
   async function ensureMarketplaceIsApproved() {
-    if (!userAddress || !walletClient || !nftMintingPlatform || !nftMarketplaceHub) return
+    if (!wagmiAddress || !walletClient || !nftMintingPlatform || !nftMarketplaceHub) return
     if (!publicClient) return
 
     const minimalABI = [
@@ -240,7 +140,7 @@ export default function MyNFTsPage() {
       address: nftMintingPlatform.address as `0x${string}`,
       abi: minimalABI,
       functionName: "isApprovedForAll",
-      args: [userAddress, nftMarketplaceHub.address]
+      args: [wagmiAddress, nftMarketplaceHub.address]
     }) as boolean
 
     if (!isApproved) {
@@ -254,7 +154,7 @@ export default function MyNFTsPage() {
         abi: minimalABI,
         functionName: "setApprovalForAll",
         args: [nftMarketplaceHub.address, true],
-        account: userAddress
+        account: wagmiAddress
       })
 
       toast({
@@ -263,7 +163,6 @@ export default function MyNFTsPage() {
       })
 
       await publicClient.waitForTransactionReceipt({ hash })
-
       toast({
         title: "Marketplace Approved",
         description: "You can now list your NFTs in the Marketplace."
@@ -271,9 +170,7 @@ export default function MyNFTsPage() {
     }
   }
 
-  const userAddress = wagmiAddress || ""
-
-  const handleListNFT = async () => {
+  async function handleListNFT() {
     if (!selectedNFT || !price) {
       toast({
         title: "Error",
@@ -287,6 +184,7 @@ export default function MyNFTsPage() {
       if (!nftMarketplaceHub?.address) {
         throw new Error("NFTMarketplaceHub contract not found.")
       }
+      listTx.start()
       await ensureMarketplaceIsApproved()
 
       const abiListNFT = {
@@ -299,13 +197,45 @@ export default function MyNFTsPage() {
         ],
         outputs: []
       }
-      await writeListContract({
+      const hash = await walletClient?.writeContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: [abiListNFT],
         functionName: "listNFTItem",
         args: [selectedNFT.itemId, parseEther(price)]
       })
+      if (!hash) {
+        throw new Error("Write failed. No transaction hash returned.")
+      }
+      listTx.start(hash)
+
+      toast({
+        title: "Transaction Pending",
+        description: "Your list transaction is being confirmed..."
+      })
+      await publicClient?.waitForTransactionReceipt({ hash })
+
+      listTx.success(hash)
+      toast({
+        title: "Transaction Successful!",
+        description: "Your NFT has been listed for sale."
+      })
+
+      if (selectedNFT) {
+        try {
+          const bigPrice = parseEther(price)
+          setUserNFTs((prev) =>
+            prev.map((n) =>
+              n.itemId === selectedNFT.itemId
+                ? { ...n, isOnSale: true, salePrice: bigPrice }
+                : n
+            )
+          )
+        } catch {
+          // parse error ignored
+        }
+      }
     } catch (err: any) {
+      listTx.fail(err.message || "An error occurred while listing the NFT")
       toast({
         title: "Error",
         description: err.message || "An error occurred while listing the NFT",
@@ -314,7 +244,7 @@ export default function MyNFTsPage() {
     }
   }
 
-  const handleUnlistNFT = async () => {
+  async function handleUnlistNFT() {
     if (!selectedNFT || !selectedNFT.isOnSale) {
       toast({
         title: "Error",
@@ -327,6 +257,7 @@ export default function MyNFTsPage() {
       if (!nftMarketplaceHub?.address) {
         throw new Error("NFTMarketplaceHub contract not found.")
       }
+      unlistTx.start()
       const abiUnlistNFT = {
         name: "unlistNFTItem",
         type: "function",
@@ -334,13 +265,40 @@ export default function MyNFTsPage() {
         inputs: [{ name: "itemId", type: "uint256" }],
         outputs: []
       }
-      await writeUnlistContract({
+      const hash = await walletClient?.writeContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: [abiUnlistNFT],
         functionName: "unlistNFTItem",
         args: [selectedNFT.itemId]
       })
+      if (!hash) {
+        throw new Error("Write failed. No transaction hash returned.")
+      }
+      unlistTx.start(hash)
+
+      toast({
+        title: "Transaction Pending",
+        description: "Your unlist transaction is being confirmed..."
+      })
+      await publicClient?.waitForTransactionReceipt({ hash })
+
+      unlistTx.success(hash)
+      toast({
+        title: "Transaction Successful!",
+        description: "Your NFT has been unlisted."
+      })
+
+      if (selectedNFT) {
+        setUserNFTs((prev) =>
+          prev.map((n) =>
+            n.itemId === selectedNFT.itemId
+              ? { ...n, isOnSale: false, salePrice: 0n }
+              : n
+          )
+        )
+      }
     } catch (err: any) {
+      unlistTx.fail(err.message || "An error occurred while unlisting the NFT")
       toast({
         title: "Error",
         description: err.message || "An error occurred while unlisting the NFT",
@@ -466,7 +424,7 @@ export default function MyNFTsPage() {
                   })()}
                 </div>
 
-                {/* Display name/desc/attributes from metadata */}
+                {/* Metadata */}
                 {(() => {
                   const itemIdStr = String(selectedNFT.itemId)
                   const meta = metadataMap[itemIdStr] || {
@@ -526,7 +484,6 @@ export default function MyNFTsPage() {
                     </p>
                   )}
 
-                {/* List Form */}
                 <form onSubmit={(e) => e.preventDefault()} className="mt-4 space-y-4">
                   <div>
                     <label className="text-sm font-medium">Sale Price ({currencySymbol})</label>
@@ -550,7 +507,7 @@ export default function MyNFTsPage() {
                     </p>
                   ) : (
                     <TransactionButton
-                      isLoading={isListPending || isListTxLoading}
+                      isLoading={listTx.isProcessing}
                       loadingText="Processing..."
                       onClick={handleListNFT}
                       disabled={!price}
@@ -560,21 +517,18 @@ export default function MyNFTsPage() {
                     </TransactionButton>
                   )}
                   <TransactionStatus
-                    isLoading={isListTxLoading}
-                    isSuccess={isListTxSuccess}
-                    errorMessage={
-                      isListTxError ? (listTxReceiptError?.message || listError?.message) : null
-                    }
-                    txHash={listWriteData ?? null}
+                    isLoading={listTx.isProcessing}
+                    isSuccess={listTx.isSuccess}
+                    errorMessage={listTx.error || null}
+                    txHash={listTx.txHash || undefined}
                     chainId={chainId}
                   />
                 </form>
 
-                {/* Unlist */}
                 {selectedNFT.isOnSale && (
                   <>
                     <TransactionButton
-                      isLoading={isUnlistPending || isUnlistTxLoading}
+                      isLoading={unlistTx.isProcessing}
                       loadingText="Processing..."
                       onClick={handleUnlistNFT}
                       variant="outline"
@@ -584,14 +538,10 @@ export default function MyNFTsPage() {
                     </TransactionButton>
 
                     <TransactionStatus
-                      isLoading={isUnlistTxLoading}
-                      isSuccess={isUnlistTxSuccess}
-                      errorMessage={
-                        isUnlistTxError
-                          ? (unlistTxReceiptError?.message || unlistError?.message)
-                          : null
-                      }
-                      txHash={unlistWriteData ?? null}
+                      isLoading={unlistTx.isProcessing}
+                      isSuccess={unlistTx.isSuccess}
+                      errorMessage={unlistTx.error || null}
+                      txHash={unlistTx.txHash || undefined}
                       chainId={chainId}
                       className="mt-2"
                     />

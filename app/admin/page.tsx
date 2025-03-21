@@ -7,16 +7,11 @@ import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { useTransactionState } from "@/hooks/use-transaction-state"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { parseEther } from "viem"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
-
-interface TxStatus {
-  loading: boolean
-  success: boolean
-  error: string | null
-}
 
 export default function AdminPage() {
   const router = useRouter()
@@ -51,14 +46,8 @@ export default function AdminPage() {
   // Withdraw input
   const [withdrawAmount, setWithdrawAmount] = useState("")
 
-  // Transaction state
-  const [withdrawTx, setWithdrawTx] = useState<TxStatus>({
-    loading: false,
-    success: false,
-    error: null
-  })
-  // We'll track the transaction hash, so we can show a link in <TransactionStatus />
-  const [withdrawHash, setWithdrawHash] = useState<`0x${string}` | null>(null)
+  // A single unified transaction state for withdrawal
+  const withdrawTx = useTransactionState()
 
   const referencesCheckedRef = useRef(false)
   const balanceLoadedRef = useRef(false)
@@ -132,6 +121,7 @@ export default function AdminPage() {
 
   // Withdraw logic
   async function handleWithdraw() {
+    // Make sure references are valid
     if (!platformRewardPool?.address || !platformRewardPool?.abi) {
       toast({
         title: "Error",
@@ -140,7 +130,6 @@ export default function AdminPage() {
       })
       return
     }
-
     if (!walletClient || !publicClient) {
       toast({
         title: "No Wallet or Public Client",
@@ -150,14 +139,14 @@ export default function AdminPage() {
       return
     }
 
-    setWithdrawTx({ loading: true, success: false, error: null })
-    setWithdrawHash(null)
-
+    // Start transaction
+    withdrawTx.start()
     const weiAmount = parseEther(withdrawAmount)
+
     try {
       toast({
         title: "Transaction Submitted",
-        description: `Withdrawing ${withdrawAmount} ${currencySymbol} from reward pool...`
+        description: `Withdrawing ${withdrawAmount} ${currencySymbol}...`
       })
 
       const hash = await walletClient.writeContract({
@@ -168,15 +157,18 @@ export default function AdminPage() {
         account: wagmiAddress
       })
 
-      setWithdrawHash(hash)
+      // We may set the txHash right away if desired
+      withdrawTx.start(hash)
 
+      // Wait for receipt
       await publicClient.waitForTransactionReceipt({ hash })
 
+      // Mark success
+      withdrawTx.success(hash)
       toast({
         title: "Withdrawal Successful",
-        description: "Funds withdrawn from reward pool"
+        description: "Funds withdrawn from reward pool."
       })
-      setWithdrawTx({ loading: false, success: true, error: null })
 
       // Reset input, reload balance
       setWithdrawAmount("")
@@ -190,7 +182,7 @@ export default function AdminPage() {
         setPoolBalance(val)
       }
     } catch (err: any) {
-      setWithdrawTx({ loading: false, success: false, error: err.message })
+      withdrawTx.fail(err.message || "Transaction Failed")
       toast({
         title: "Transaction Failed",
         description: err.message || "Something went wrong",
@@ -269,7 +261,7 @@ export default function AdminPage() {
                 </div>
 
                 <TransactionButton
-                  isLoading={withdrawTx.loading}
+                  isLoading={withdrawTx.isProcessing}
                   loadingText="Processing..."
                   onClick={handleWithdraw}
                   disabled={
@@ -283,10 +275,10 @@ export default function AdminPage() {
               </form>
 
               <TransactionStatus
-                isLoading={withdrawTx.loading}
-                isSuccess={withdrawTx.success}
+                isLoading={withdrawTx.isProcessing}
+                isSuccess={withdrawTx.isSuccess}
                 errorMessage={withdrawTx.error}
-                txHash={withdrawHash}
+                txHash={withdrawTx.txHash}
                 chainId={chainId}
               />
             </div>
