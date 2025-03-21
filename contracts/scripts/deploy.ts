@@ -40,25 +40,23 @@ async function main() {
   console.log("NFTMarketplaceHub deployed to:", marketplace.address)
 
   // 5) Deploy NFTCreatorCollection
-  // Constructor: (string memory initialName, string memory initialDescription, uint256 initialMintPrice,
-  //              uint256 initialMaxSupply, address minterPlatformAddress)
   const NFTCreatorCollection = await ethers.getContractFactory("NFTCreatorCollection")
   const creatorCollection = await NFTCreatorCollection.deploy(
     "Default Collection",
     "This is a default NFT collection",
     ethers.utils.parseEther("0.1"),
     100,
-    nftMintingPlatform.address
+    nftMintingPlatform.address,      // minterPlatformAddress
+    experience.address              // xpModuleAddress
   )
   await creatorCollection.deployed()
   console.log("NFTCreatorCollection deployed to:", creatorCollection.address)
 
   // 6) Register primary collection (#0) in the NFTMintingPlatform
-  // function setNFTCollection(uint256 collectionId, address collectionAddr)
   console.log("Registering primary collection 0 with NFTMintingPlatform...")
   const setCollectionTx = await nftMintingPlatform.setNFTCollection(0, creatorCollection.address)
   await setCollectionTx.wait()
-  console.log("Registered collection 0 ->", creatorCollection.address, " in NFTMintingPlatform!")
+  console.log("Registered collection 0 ->", creatorCollection.address, "in NFTMintingPlatform!")
 
   // 7) Deploy NFTStakingPool
   // constructor(address _nftContract, address _experiencePoints)

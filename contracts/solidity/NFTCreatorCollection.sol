@@ -4,22 +4,11 @@
  * @title NFTCreatorCollection
  *
  * @notice
- *   The NFTCreatorCollection contract represents a group ("collection") of NFTs
- *   that a creator can sell. Each collection has:
- *     - A name and description.
- *     - A mint price per NFT.
- *     - A maximum supply (no more NFTs can be minted after reaching this limit).
- *     - An optional active/inactive status to pause or resume minting.
+ *   This updated NFTCreatorCollection now enables users to mint an NFT by paying either:
+ *     1) 0.05 in native currency (which will be stored in the PlatformRewardPool), OR
+ *     2) 100 XP, which is deducted from their experience points via stakeModifyUserXP.
  *
- *   Whenever a new NFT is minted through this collection, 10% of the incoming Ether
- *   goes to the platform’s reward pool, and the remaining 90% goes to this contract's owner
- *   (the collection creator).
- *
- * Non-technical Explanation:
- * --------------------------
- *   - This contract is basically a "catalog" for a set of NFTs created by one person or team.
- *   - People can mint NFTs from this collection by paying the specified mint price.
- *   - Part of the sale goes to the platform for upkeep, and the rest to the collection’s owner.
+ *   The admin can withdraw the collected native currency from the PlatformRewardPool using the existing admin panel.
  */
 
 pragma solidity ^0.8.2;
@@ -27,7 +16,7 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @dev Interface for the NFTMintingPlatform, which actually handles minting logic.
+ * @dev Interface for the NFTMintingPlatform, which handles the actual NFT minting logic.
  */
 interface INFTMintingPlatformForCollection {
     function getRewardPool() external view returns (address);
@@ -38,16 +27,25 @@ interface INFTMintingPlatformForCollection {
     ) external payable;
 }
 
+interface IUserExperiencePointsForCollection {
+    function stakeModifyUserXP(address user, uint256 xp, bool add) external;
+    function userExperience(address user) external view returns (uint256);
+}
+
+/**
+ * @title NFTCreatorCollection
+ * @notice A collection contract that now supports payment by XP or native currency.
+ */
 contract NFTCreatorCollection is Ownable {
     /**
      * @notice Stores configuration about a single collection.
      *
-     * @param name The name of the collection, e.g. "My Art Collection".
-     * @param description A description or short text about the collection.
-     * @param mintPrice The price in wei that users must pay to mint an NFT from this collection.
-     * @param maxSupply The total maximum number of NFTs that can be minted from this collection.
-     * @param currentSupply The number of NFTs already minted from this collection.
-     * @param active Whether minting is currently enabled (true) or paused (false).
+     * @param name The name of the collection.
+     * @param description A description of the collection.
+     * @param mintPrice The price in wei if the user chooses to pay with native currency.
+     * @param maxSupply The total maximum number of NFTs that can be minted.
+     * @param currentSupply The number of NFTs already minted.
+     * @param active Whether minting is currently enabled.
      */
     struct CollectionData {
         string name;
@@ -59,28 +57,38 @@ contract NFTCreatorCollection is Ownable {
     }
 
     /**
-     * @notice The primary collection (ID=0), initially set in the constructor.
+     * @notice Primary collection (ID=0).
      */
     CollectionData public primaryCollection;
 
     /**
-     * @notice Additional collections (ID=1,2,3...) can also be defined by the owner.
+     * @notice Additional collections stored in a mapping.
      */
     mapping(uint256 => CollectionData) public additionalCollections;
 
     /**
-     * @notice An internal counter to keep track of how many collections (beyond the primary) exist.
+     * @dev The index for additional collections.
      */
     uint256 private collectionIndex;
 
     /**
-     * @dev The address of the NFTMintingPlatform used for actual NFT minting.
-     *      This contract delegates the actual creation of NFT tokens to that platform.
+     * @dev Address of the NFTMintingPlatform used for actual minting calls.
      */
     address public immutable minterPlatform;
 
     /**
-     * @notice Emitted when a new additional collection is defined by the owner.
+     * @dev Address of the experience module, so we can deduct 100 XP if user chooses XP payment.
+     */
+    address public immutable experienceModule;
+
+    /**
+     * @dev The default cost in native currency if the user opts not to pay with XP, set to 0.05 ETH = 50000000000000000 wei.
+     *      Collections can individually set their own "mintPrice," so you can also override per-collection.
+     */
+    uint256 public constant DEFAULT_NATIVE_COST = 0.05 ether;
+
+    /**
+     * @notice Emitted when a new additional collection is defined.
      */
     event NewCollectionDefined(
         uint256 indexed collectionId,
@@ -91,37 +99,39 @@ contract NFTCreatorCollection is Ownable {
     );
 
     /**
-     * @notice Constructor that sets up the primary collection and the address of the NFTMintingPlatform.
-     *
-     * @param initialName The name of the primary collection.
-     * @param initialDescription A descriptive text for the primary collection.
-     * @param initialMintPrice The initial mint price for the primary collection.
-     * @param initialMaxSupply The maximum supply for the primary collection.
-     * @param minterPlatformAddress The contract address of the NFTMintingPlatform.
+     * @notice Constructor that sets the primary collection and references to minterPlatform, XP module.
+     * @param initialName - name of the primary collection
+     * @param initialDescription - description of the primary collection
+     * @param initialMintPrice - mint price in wei (if paying with native currency)
+     * @param initialMaxSupply - max supply for the primary collection
+     * @param minterPlatformAddress - address of NFTMintingPlatform
+     * @param xpModuleAddress - address of UserExperiencePoints contract
      */
     constructor(
         string memory initialName,
         string memory initialDescription,
         uint256 initialMintPrice,
         uint256 initialMaxSupply,
-        address minterPlatformAddress
+        address minterPlatformAddress,
+        address xpModuleAddress
     ) {
         primaryCollection = CollectionData({
             name: initialName,
             description: initialDescription,
-            mintPrice: initialMintPrice,
+            mintPrice: initialMintPrice > 0 ? initialMintPrice : DEFAULT_NATIVE_COST,
             maxSupply: initialMaxSupply,
             currentSupply: 0,
             active: true
         });
 
         require(minterPlatformAddress != address(0), "Invalid minter platform");
+        require(xpModuleAddress != address(0), "Invalid XP module");
         minterPlatform = minterPlatformAddress;
+        experienceModule = xpModuleAddress;
     }
 
     /**
-     * @notice Allows the contract owner to update the mint price for the primary collection.
-     *
+     * @notice Update the mint price (if paying with native currency) for the primary collection.
      * @param newPrice The new price in wei.
      */
     function updateMintPrice(uint256 newPrice) external onlyOwner {
@@ -129,19 +139,18 @@ contract NFTCreatorCollection is Ownable {
     }
 
     /**
-     * @notice Toggles (switches) the active status of the primary collection between enabled and paused.
+     * @notice Toggle active status of the primary collection.
      */
     function toggleCollectionActivity() external onlyOwner {
         primaryCollection.active = !primaryCollection.active;
     }
 
     /**
-     * @notice Define a new "additional" collection with unique parameters (price, supply limit, etc.).
-     *
-     * @param nameValue The name for the new collection.
-     * @param descriptionValue A description for the new collection.
-     * @param price The mint price in wei for the new collection.
-     * @param supplyLimit The maximum supply of NFTs that can be minted from this new collection.
+     * @notice Define a new additional collection.
+     * @param nameValue The name for the new collection
+     * @param descriptionValue The description for the new collection
+     * @param price The mint price if paying with native currency
+     * @param supplyLimit The max supply for this new collection
      */
     function defineNewCollection(
         string memory nameValue,
@@ -166,54 +175,49 @@ contract NFTCreatorCollection is Ownable {
     }
 
     /**
-     * @notice Users call this function to buy (mint) a new NFT from a specific collection in this contract.
+     * @notice Mint an NFT from a specific collection by paying either 100 XP or the native mint price in wei.
      *
-     * @dev
-     *  1) Checks if the collection has capacity and is still active.
-     *  2) Takes a 10% platform fee and sends it to the platform's reward pool (found by calling getRewardPool()).
-     *  3) Sends the remaining Ether to this contract's owner.
-     *  4) Calls `generateNFTItem` on the NFTMintingPlatform to create the actual NFT.
-     *
-     * @param collectionId The ID of the collection to mint from (0 for primary, or an additional).
-     * @param imageUrl The URL or IPFS link for the NFT’s artwork.
+     * @param collectionId The ID of the collection (0 for primary).
+     * @param imageUrl The URL or IPFS link for the NFT's artwork.
+     * @param payWithXP Whether the user wants to pay with XP (true) or native currency (false).
      */
-    function mintFromCollection(uint256 collectionId, string memory imageUrl) external payable {
+    function mintFromCollection(uint256 collectionId, string memory imageUrl, bool payWithXP) external payable {
         CollectionData storage info;
-
         if (collectionId == 0) {
             require(primaryCollection.active, "Primary collection not active");
             require(primaryCollection.currentSupply < primaryCollection.maxSupply, "Sold out");
-            require(msg.value >= primaryCollection.mintPrice, "Insufficient funds");
             info = primaryCollection;
         } else {
-            info = additionalCollections[collectionId];
-            require(info.active, "Collection not active");
-            require(info.currentSupply < info.maxSupply, "Sold out");
-            require(msg.value >= info.mintPrice, "Insufficient funds");
+            CollectionData storage additional = additionalCollections[collectionId];
+            require(additional.active, "Collection not active");
+            require(additional.currentSupply < additional.maxSupply, "Sold out");
+            info = additional;
         }
 
-        // Calculate the 10% platform fee
-        uint256 platformFee = (msg.value * 10) / 100;
+        if (payWithXP) {
+            // Deduct 100 XP from user if they choose to pay with XP
+            IUserExperiencePointsForCollection xpContract = IUserExperiencePointsForCollection(experienceModule);
+            uint256 userXP = xpContract.userExperience(msg.sender);
+            require(userXP >= 100, "Not enough XP (need 100)");
+            // remove 100 XP
+            xpContract.stakeModifyUserXP(msg.sender, 100, false);
+            // no native currency required
+            require(msg.value == 0, "Cannot send ETH if paying with XP");
+        } else {
+            // Must pay with native currency
+            uint256 requiredPrice = info.mintPrice > 0 ? info.mintPrice : DEFAULT_NATIVE_COST;
+            require(msg.value >= requiredPrice, "Insufficient native payment");
 
-        // Find out where to send the platform fee by asking the NFTMintingPlatform
-        address rewardPool = INFTMintingPlatformForCollection(minterPlatform).getRewardPool();
+            // Entire fee goes to the reward pool for the admin to withdraw
+            address rewardPool = INFTMintingPlatformForCollection(minterPlatform).getRewardPool();
+            (bool success, ) = rewardPool.call{value: msg.value}("");
+            require(success, "Fee payment to reward pool failed");
+        }
 
-        // Transfer the platform fee to that reward pool
-        (bool feeSuccess, ) = rewardPool.call{value: platformFee}("");
-        require(feeSuccess, "Fee payment failed");
+        // Actually mint the NFT
+        INFTMintingPlatformForCollection(minterPlatform).generateNFTItem(msg.sender, collectionId, imageUrl);
 
-        // The remainder goes to the contract's owner
-        (bool creatorPaid, ) = payable(owner()).call{value: msg.value - platformFee}("");
-        require(creatorPaid, "Creator payment failed");
-
-        // Actually mint the NFT by calling the NFTMintingPlatform
-        INFTMintingPlatformForCollection(minterPlatform).generateNFTItem(
-            msg.sender,
-            collectionId,
-            imageUrl
-        );
-
-        // Bump the supply count
+        // Increment supply count
         info.currentSupply++;
     }
 }
