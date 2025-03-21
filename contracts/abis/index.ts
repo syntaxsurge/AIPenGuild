@@ -7,10 +7,10 @@ import UserExperiencePointsArtifact from "../artifacts/solidity/UserExperiencePo
 
 // Use .abi from the compiled artifacts
 export const ABIS = {
-  NFTMintingPlatform: NFTMintingPlatformArtifact.abi,
+  NFTCreatorCollection: NFTCreatorCollectionArtifact.abi,
   NFTMarketplaceHub: NFTMarketplaceHubArtifact.abi,
+  NFTMintingPlatform: NFTMintingPlatformArtifact.abi,
   NFTStakingPool: NFTStakingPoolArtifact.abi,
   PlatformRewardPool: PlatformRewardPoolArtifact.abi,
   UserExperiencePoints: UserExperiencePointsArtifact.abi,
-  NFTCreatorCollection: NFTCreatorCollectionArtifact.abi
 }

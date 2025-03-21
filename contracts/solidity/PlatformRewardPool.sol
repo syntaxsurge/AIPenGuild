@@ -4,77 +4,57 @@
  * @title PlatformRewardPool
  *
  * @notice
- *  The PlatformRewardPool contract acts like a savings account ("piggy bank") for collecting
- *  platform fees in the form of Ether (ETH). This contract only allows the owner (the contract
- *  deployer or whomever the ownership is transferred to) to withdraw these accumulated funds.
+ *  The PlatformRewardPool is a simple contract that accumulates Ether (native currency)
+ *  from fees collected by the platform. Only the owner can withdraw the funds.
  *
- *  In simpler terms, whenever there's a fee from selling or minting NFTs, some of that fee is
- *  sent here. The owner can later withdraw the collected Ether for platform-related expenses
- *  or profits.
- *
- *  Non-Technical Explanation:
- *  --------------------------
- *  - Think of this contract as the place where the platform’s earnings are stored.
- *  - It’s set up so that only the owner can take money out.
- *
- * Technical Summary:
- *  - Inherits from OpenZeppelin's Ownable to manage ownership.
- *  - Ether is collected by default in the fallback/receive function.
- *  - Only the owner can call `withdrawPoolFunds`.
- *  - `getPoolBalance` returns how much Ether is currently stored.
+ * Non-technical summary:
+ *   - Any time the platform charges a fee (like 10% from the marketplace), it's sent here.
+ *   - The contract just holds the Ether until the platform owner withdraws it.
+ *   - This is effectively the "treasury" or "piggy bank" of the system.
  */
 
 pragma solidity ^0.8.2;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 
+/**
+ * @title PlatformRewardPool
+ * @notice A minimal Ether holding contract that collects fees for the platform. The contract
+ *         has a receive function to accept Ether, plus a method for the owner to withdraw.
+ */
 contract PlatformRewardPool is Ownable {
   /**
-   * @dev Emitted whenever Ether is sent to this contract (i.e., fees).
-   *
+   * @notice Emitted whenever Ether is deposited into the contract.
    * @param depositor The address that sent the Ether.
-   * @param amount The amount of Ether received (in wei).
+   * @param amount The amount of Ether received.
    */
   event PoolDeposit(address indexed depositor, uint256 amount);
 
   /**
-   * @dev Emitted whenever the owner withdraws Ether from the pool.
-   *
-   * @param recipient The owner receiving the withdrawn funds.
-   * @param amount The amount (in wei) withdrawn.
+   * @notice Emitted whenever the owner withdraws Ether from the pool.
+   * @param recipient The owner (withdrawer) address.
+   * @param amount How much Ether was withdrawn.
    */
   event PoolWithdrawal(address indexed recipient, uint256 amount);
 
   /**
-   * @notice The constructor uses Ownable's default mechanism to set the initial owner
-   *         as the deployer of this contract. No extra initialization is needed.
+   * @notice The constructor sets the deployer as the owner. No additional logic.
    */
   constructor() {
-    // Ownable sets owner = msg.sender by default.
+    // Ownable constructor sets owner = msg.sender by default
   }
 
   /**
-   * @notice A special function that is called automatically whenever Ether is sent
-   *         to this contract with no other data. It records a deposit event.
-   *
-   * @dev The 'receive()' function is an important fallback that helps
-   *      this contract collect Ether from sales or other transactions.
+   * @notice Fallback function that triggers whenever Ether is sent directly to this contract's address.
+   *         It logs a deposit event.
    */
   receive() external payable {
     emit PoolDeposit(msg.sender, msg.value);
   }
 
   /**
-   * @notice Allows the owner to withdraw a specified amount of Ether from the pool.
-   *
-   * @dev Only the contract owner can call this function. The function checks the pool's
-   *      balance to ensure there is enough Ether to withdraw.
-   *
-   * @param amount The amount in wei that the owner wants to withdraw.
-   *
-   * Requirements:
-   * - The pool must have at least `amount` in balance.
-   * - The Ether transfer to the owner must succeed.
+   * @notice The owner can withdraw a specified amount of Ether from this contract to their own address.
+   * @param amount The amount (in wei) to withdraw.
    */
   function withdrawPoolFunds(uint256 amount) external onlyOwner {
     require(address(this).balance >= amount, 'Insufficient pool balance');
@@ -85,9 +65,8 @@ contract PlatformRewardPool is Ownable {
   }
 
   /**
-   * @notice Returns how much Ether is currently stored in this contract.
-   *
-   * @return The balance of this contract in wei.
+   * @notice Shows how much Ether is currently stored in this reward pool.
+   * @return The contract's Ether balance, in wei.
    */
   function getPoolBalance() public view returns (uint256) {
     return address(this).balance;

@@ -4,24 +4,14 @@
  * @title UserExperiencePoints
  *
  * @notice
- *   This contract manages "experience points" (XP) for NFT owners. Each NFT can have a certain
- *   amount of XP assigned to it (for example, assigned randomly upon minting). Whenever a user
- *   holds an NFT, they effectively gain the XP of that NFT. If the user sells or transfers the NFT
- *   away, they lose that XP because they no longer hold the NFT. The contract also supports
- *   staking logic, where an authorized staking contract can add or remove extra XP to a user.
+ *   This contract manages a user's "experience points" (XP), which can come from owning NFTs
+ *   that have XP assigned, staking activities that grant XP, or direct XP additions/removals
+ *   from authorized contracts.
  *
- * Non-technical Explanation:
- * --------------------------
- *   - Imagine a scoreboard that keeps track of each player's total XP.
- *   - When you get a new NFT with some XP assigned, your total XP increases.
- *   - When you lose an NFT, your total XP decreases accordingly.
- *   - Certain special contracts (like a Staking contract) can also give or remove XP from you.
- *
- * Technical Summary:
- *  - Inherits from OpenZeppelin's Ownable to manage admin tasks.
- *  - XP is stored per itemId, and user total XP is updated by calling `modifyUserXP`.
- *  - The random XP is assigned once at mint time with `assignRandomXP`.
- *  - Another function `stakeModifyUserXP` is restricted to authorized callers for staking expansions.
+ * Non-technical summary:
+ *   - If you hold an NFT worth 50 XP, your userExperience is incremented by 50.
+ *   - If you sell or transfer that NFT, you lose that 50 XP.
+ *   - Staking or special in-game actions might add or remove XP from you, performed by authorized contracts.
  */
 
 pragma solidity ^0.8.2;
@@ -30,97 +20,96 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 
 /**
  * @title IUserExperiencePoints
- * @notice Interface for external contracts (like a StakingPool) that interact with XP.
+ * @notice Interface to ensure external contracts can interact with XP functionalities, such as random assignment,
+ *         adding/removing XP for a user, etc.
  */
 interface IUserExperiencePoints {
+  /**
+   * @notice Assign a random XP (1–100) to an NFT item, typically when minted.
+   * @param itemId The NFT ID.
+   * @return generatedXP The random XP assigned.
+   */
   function assignRandomXP(uint256 itemId) external returns (uint256);
 
+  /**
+   * @notice Adjust the user's XP based on obtaining or losing an NFT.
+   * @param user The user in question.
+   * @param itemId The NFT ID (which has a stored XP value).
+   * @param add If true, user gains that NFT's XP. If false, user loses it.
+   */
   function modifyUserXP(address user, uint256 itemId, bool add) external;
 
+  /**
+   * @notice A method for authorized (staking or other) contracts to add or remove arbitrary XP from a user.
+   * @param user The user whose XP is modified.
+   * @param xp The numeric XP to add or remove.
+   * @param add If true, add XP; if false, remove XP.
+   */
   function stakeModifyUserXP(address user, uint256 xp, bool add) external;
 }
 
 /**
  * @title UserExperiencePoints
- * @notice The concrete implementation of the XP system. Manages assignment of XP to NFTs
- *         and overall XP totals for each user.
+ * @notice Central registry tracking how much XP each user has. Also tracks how much XP each NFT is worth.
+ *         When a user obtains an NFT, they gain that NFT's XP. If they lose it, they lose that XP. Additionally,
+ *         special authorized contracts can adjust a user's XP for other reasons (like staking).
  */
 contract UserExperiencePoints is Ownable, IUserExperiencePoints {
   /**
-   * @notice A mapping from user address => total XP
-   *
-   * Explanation:
-   *  - "userExperience" tracks how many total XP points each user currently has.
-   *  - This includes XP from any NFTs they hold, as well as any extra XP from staking.
+   * @notice Maps each user's address => total XP they have currently.
    */
   mapping(address => uint256) public userExperience;
 
   /**
-   * @notice A mapping from itemId => the XP assigned specifically to that item (NFT).
-   *
-   * Explanation:
-   *  - "itemExperience" stores how many XP points an NFT is "worth."
-   *  - If you own that NFT, you effectively gain that XP.
+   * @notice Maps an NFT itemId => the XP assigned to that item. This is set typically at mint time.
    */
   mapping(uint256 => uint256) public itemExperience;
 
   /**
-   * @notice Tracks whether a given user has already been credited or debited XP for a specific NFT.
-   *
-   * Explanation:
-   *  - If "hasGainedXP[user][itemId]" is true, that means user has been assigned the XP
-   *    of that NFT. This helps avoid accidentally double-counting the same item for a user.
+   * @notice A user can only gain the XP from a specific NFT once. This tracks if the user currently "has" it.
+   *         If `hasGainedXP[user][itemId]` is true, that user is credited with that NFT's XP.
    */
   mapping(address => mapping(uint256 => bool)) public hasGainedXP;
 
   /**
-   * @notice Tracks which contracts are allowed to call `stakeModifyUserXP`.
-   *
-   * Explanation:
-   *  - For instance, the NFTStakingPool contract might be authorized to call `stakeModifyUserXP`
-   *    to grant users XP for staking their NFTs.
+   * @notice Tracks which contracts are authorized to call `stakeModifyUserXP` for advanced XP adjustments.
    */
   mapping(address => bool) public authorizedCallers;
 
   /**
-   * @notice Emitted whenever a user's total XP changes, for external visibility.
+   * @notice Emitted whenever a user's XP changes (either by obtaining/losing an NFT or by direct staking adjustments).
+   * @param user The user whose XP is updated.
+   * @param updatedXP The new total XP of that user.
    */
   event ExperienceUpdated(address indexed user, uint256 updatedXP);
 
   /**
-   * @notice Emitted whenever random XP is assigned to a newly minted NFT.
-   *
-   * @param itemId The ID of the NFT that is assigned random XP.
-   * @param xpValue How many points of XP were assigned.
+   * @notice Emitted whenever an NFT is assigned a random XP.
+   * @param itemId The NFT itemId.
+   * @param xpValue How many XP points were assigned.
    */
   event ExperienceAssigned(uint256 indexed itemId, uint256 xpValue);
 
   /**
-   * @notice Constructor relies on Ownable (which sets the contract deployer as the owner).
+   * @notice Constructor. Ownable sets `owner = msg.sender`. No special config needed here.
    */
   constructor() {
-    // No extra logic; just rely on Ownable to set `owner`.
+    // No custom logic
   }
 
   /**
-   * @notice Allows only the owner to designate certain contracts (like a StakingPool)
-   *         as authorized to call `stakeModifyUserXP`.
-   *
-   * @param _caller The address of the contract to be authorized or deauthorized.
-   * @param _status true = grant authorization, false = revoke.
+   * @notice Allow the owner to designate a contract (like a staking pool) as authorized to call stakeModifyUserXP.
+   * @param _caller The contract address to authorize or deauthorize.
+   * @param _status True = authorized, false = deauthorized.
    */
   function setAuthorizedCaller(address _caller, bool _status) external onlyOwner {
     authorizedCallers[_caller] = _status;
   }
 
   /**
-   * @notice Assign a random XP (range: 1–100) to an NFT item, typically when the NFT is minted.
-   *
-   * @dev This function uses a simple pseudo-random number approach:
-   *      keccak256 of (block timestamp + itemId), modulo 100, plus 1.
-   *
-   * @param itemId The unique ID of the NFT item being assigned XP.
-   * @return generatedXP The random XP assigned to this NFT item.
+   * @notice Assign random XP to an NFT, typically at the time of minting. Range: 1–100.
+   * @param itemId The NFT to which we assign random XP.
+   * @return generatedXP The XP value assigned.
    */
   function assignRandomXP(uint256 itemId) external override returns (uint256) {
     uint256 generatedXP = (uint256(keccak256(abi.encodePacked(block.timestamp, itemId))) % 100) + 1;
@@ -131,15 +120,13 @@ contract UserExperiencePoints is Ownable, IUserExperiencePoints {
   }
 
   /**
-   * @notice Called by marketplace or minting platforms to update user XP when they gain or lose an NFT.
+   * @notice Modify a user's XP based on an NFT item that they are gaining or losing.
+   *         For example, if the NFT is worth 50 XP, and the user is gaining the NFT, add 50 to userExperience.
+   *         If the user is losing it, remove 50.
    *
-   * @param user The user who is gaining or losing XP.
-   * @param itemId The NFT item in question.
-   * @param add If true, user is acquiring the NFT's XP; if false, user is losing it.
-   *
-   * Requirements:
-   * - The caller must not be address(0).
-   * - `hasGainedXP[user][itemId]` ensures we do not double-count the same NFT for the same user.
+   * @param user The user in question.
+   * @param itemId The NFT item.
+   * @param add True to add XP, false to remove XP.
    */
   function modifyUserXP(address user, uint256 itemId, bool add) external override {
     require(msg.sender != address(0), 'Invalid caller');
@@ -147,7 +134,7 @@ contract UserExperiencePoints is Ownable, IUserExperiencePoints {
     uint256 xpVal = itemExperience[itemId];
 
     if (add) {
-      // The user is gaining the NFT => gain its XP
+      // The user is acquiring the NFT => gain its XP
       require(!hasGainedXP[user][itemId], 'XP already granted for this item to user');
       userExperience[user] += xpVal;
       hasGainedXP[user][itemId] = true;
@@ -166,16 +153,12 @@ contract UserExperiencePoints is Ownable, IUserExperiencePoints {
   }
 
   /**
-   * @notice Allows an authorized contract (e.g., a staking contract) to directly add or remove XP from a user.
+   * @notice Allows an authorized contract to add or remove a specified amount of XP from a user.
+   *         Typically used by staking or special game logic.
    *
-   * @dev This bypasses item-based logic. Instead, it modifies a user’s XP with a raw number.
-   *
-   * @param user The address of the user whose XP will be modified.
+   * @param user The user whose XP is modified.
    * @param xp The amount of XP to add or remove.
-   * @param add True to add XP, false to remove XP.
-   *
-   * Requirements:
-   * - The caller must be in the `authorizedCallers` mapping.
+   * @param add True if we add XP, false if we remove XP.
    */
   function stakeModifyUserXP(address user, uint256 xp, bool add) external override {
     require(authorizedCallers[msg.sender], 'Caller not authorized to modify XP');

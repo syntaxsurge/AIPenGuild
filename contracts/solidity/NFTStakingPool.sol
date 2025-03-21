@@ -4,23 +4,17 @@
  * @title NFTStakingPool
  *
  * @notice
- *   This contract lets users stake their NFTs to earn additional XP over time. By staking, you lock
- *   your NFT in the contract, and it accrues XP at a rate of `xpPerSecond`. You can claim the XP
- *   whenever you want, and eventually unstake your NFT to retrieve it.
+ *  This contract allows users to "stake" their NFTs in order to earn additional XP (experience points)
+ *  over time. The XP is accumulated at a rate of `xpPerSecond` for as long as the NFT remains staked.
  *
- * Non-technical Explanation:
- * --------------------------
- *   - Think of it like a bank for NFTs, where you deposit (stake) your NFT and slowly earn
- *     interest in the form of XP.
- *   - As time passes, your XP goes up. You can claim that XP at any point, and also remove your
- *     NFT from the pool (unstake) if you want to stop earning.
+ *  Non-technical summary:
+ *   - You deposit (stake) an NFT into this contract, which locks it so you can't trade it in the meantime.
+ *   - While staked, you accrue XP each second, which you can claim.
+ *   - If you want your NFT back, you can unstake it, which automatically claims any remaining XP.
  *
- * Technical Summary:
- *  - Inherits from Ownable and ReentrancyGuard for safe patterns.
- *  - xpPerSecond can be adjusted by the owner to control the earning rate.
- *  - When a user stakes, the NFT is transferred to this contract, and we track the time of stake.
- *  - The user must call `claimStakingRewards` to get the XP added to their account, or it also happens
- *    automatically during `unstakeNFT`.
+ * Real-world scenario:
+ *   - Imagine a game that rewards players for "staking" their collectible NFTs. The longer you stake,
+ *     the more XP you get. This XP might unlock new levels, skins, or features in the game.
  */
 
 pragma solidity ^0.8.2;
@@ -30,31 +24,35 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import './UserExperiencePoints.sol';
 
+/**
+ * @title NFTStakingPool
+ * @notice Manages logic for staking an NFT to accumulate XP over time. Each staked NFT has
+ *         a record of the staker, the time staked, and the time of last claim. The user
+ *         can claim XP (based on how long they've staked) and eventually unstake the NFT,
+ *         retrieving it from the pool.
+ */
 contract NFTStakingPool is Ownable, ReentrancyGuard {
   /**
-   * @notice The rate at which XP is accrued per second for each staked NFT.
-   *
-   * @dev e.g. `xpPerSecond = 1` means 1 XP is gained each second the NFT remains staked.
+   * @notice The rate (XP per second) at which staked NFTs accumulate XP for their staker.
    */
   uint256 public xpPerSecond = 1;
 
   /**
-   * @dev The address of the NFT (ERC721) contract. Typically the NFTMintingPlatform.
+   * @dev Address of the ERC721 contract (the minted NFTs). Typically the NFTMintingPlatform address.
    */
   address public immutable nftContract;
 
   /**
-   * @dev The address of the UserExperiencePoints contract. Used to grant or remove XP from stakers.
+   * @dev Address of the UserExperiencePoints contract, used to add XP to the user as they stake.
    */
   address public immutable experiencePoints;
 
   /**
-   * @notice Holds information on each staked NFT.
-   *
-   * @param staker         The address that staked the NFT.
-   * @param startTimestamp When the NFT was first staked (in seconds).
-   * @param lastClaimed    When XP was last claimed for this staked NFT.
-   * @param staked         Whether this NFT is currently staked or not.
+   * @notice Holds data for each staked NFT:
+   *         - staker: who currently has it staked.
+   *         - startTimestamp: when the NFT was first staked.
+   *         - lastClaimed: the last time XP was claimed.
+   *         - staked: boolean indicating if it's currently staked.
    */
   struct StakeInfo {
     address staker;
@@ -64,42 +62,42 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
   }
 
   /**
-   * @notice Maps an NFT's itemId => StakeInfo for that NFT's stake status.
+   * @notice A mapping from itemId (NFT ID) => staking info (who staked it, timestamps, etc.).
    */
   mapping(uint256 => StakeInfo) public stakes;
 
   /**
-   * @notice Emitted when a user stakes an NFT.
+   * @notice Emitted when a user stakes an NFT into this contract.
    *
-   * @param user   The address of the user who staked.
-   * @param itemId The ID of the staked NFT.
-   * @param timestamp The time when staked.
+   * @param user The user who staked.
+   * @param itemId The ID of the NFT staked.
+   * @param timestamp The time of staking.
    */
   event NFTStaked(address indexed user, uint256 indexed itemId, uint256 timestamp);
 
   /**
-   * @notice Emitted when a user unstakes an NFT.
+   * @notice Emitted when a user unstakes an NFT (removes it from the pool).
    *
-   * @param user   The address of the user who unstaked.
-   * @param itemId The ID of the unstaked NFT.
-   * @param timestamp The time when unstaked.
+   * @param user The user who unstaked.
+   * @param itemId The ID of the NFT unstaked.
+   * @param timestamp The time of unstaking.
    */
   event NFTUnstaked(address indexed user, uint256 indexed itemId, uint256 timestamp);
 
   /**
-   * @notice Emitted when a user claims XP rewards for their staked NFT.
+   * @notice Emitted when a user claims XP for a staked NFT.
    *
-   * @param user   The address claiming the rewards.
-   * @param itemId The ID of the NFT for which rewards are claimed.
-   * @param xpAmount The amount of XP gained.
+   * @param user The user who claimed XP.
+   * @param itemId The NFT for which rewards were claimed.
+   * @param xpAmount The total XP that was granted in this claim.
    */
   event RewardsClaimed(address indexed user, uint256 indexed itemId, uint256 xpAmount);
 
   /**
-   * @notice Constructor sets up which NFT contract can be staked and where XP is tracked.
+   * @notice Constructor sets which NFT contract can be staked, and which XP contract to credit XP in.
    *
-   * @param _nftContract The address of the ERC721 contract (e.g., NFTMintingPlatform).
-   * @param _experiencePoints The address of the XP tracking contract.
+   * @param _nftContract The address of the ERC721 contract (likely NFTMintingPlatform).
+   * @param _experiencePoints The address of the XP tracking contract (UserExperiencePoints).
    */
   constructor(address _nftContract, address _experiencePoints) {
     require(_nftContract != address(0), 'Invalid NFT contract');
@@ -109,9 +107,8 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
   }
 
   /**
-   * @notice Allows the contract owner to update how much XP is earned per second.
-   *
-   * @param _xpPerSecond New XP rate for staked NFTs.
+   * @notice The contract owner can adjust the XP accrual rate (per second).
+   * @param _xpPerSecond The new XP rate (e.g., 1 means 1 XP per second).
    */
   function setXpPerSecond(uint256 _xpPerSecond) external onlyOwner {
     xpPerSecond = _xpPerSecond;
@@ -119,15 +116,14 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
 
   /**
    * @notice Stake an NFT by transferring it from your wallet into this contract.
+   *         The NFT must be approved for transfer by this contract prior to calling stakeNFT.
    *
-   * @dev The user must approve this contract to transfer their NFT beforehand.
-   *
-   * @param itemId The ID of the NFT to stake.
+   * @param itemId The ID of the NFT to stake (tokenId on the nftContract).
    */
   function stakeNFT(uint256 itemId) external nonReentrant {
     require(!stakes[itemId].staked, 'Already staked');
 
-    // Transfer NFT from the user's wallet to the staking contract
+    // Transfer the NFT from the user to the staking contract
     IERC721(nftContract).safeTransferFrom(msg.sender, address(this), itemId);
 
     // Record the stake details
@@ -142,20 +138,19 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
   }
 
   /**
-   * @notice Claim any XP that has accumulated since the last claim for a given staked NFT.
-   *
-   * @param itemId The ID of the staked NFT to claim rewards for.
+   * @notice Claim the XP that has been accumulated so far for a given staked NFT,
+   *         without unstaking the NFT.
+   * @param itemId The ID of the staked NFT.
    */
   function claimStakingRewards(uint256 itemId) external nonReentrant {
     _claimStakingRewards(itemId);
   }
 
   /**
-   * @notice Unstake (remove) your NFT from the contract. Automatically claims any unclaimed XP.
+   * @notice Unstake (remove) your NFT from this contract, returning it to your wallet.
+   *         This automatically claims any unclaimed XP prior to unstaking.
    *
-   * @dev The NFT is returned back to your wallet if you were the staker.
-   *
-   * @param itemId The ID of the staked NFT to unstake.
+   * @param itemId The ID of the staked NFT to remove.
    */
   function unstakeNFT(uint256 itemId) external nonReentrant {
     StakeInfo storage stakeData = stakes[itemId];
@@ -165,7 +160,7 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
     // First, claim any outstanding XP
     _claimStakingRewards(itemId);
 
-    // Transfer NFT back to the user
+    // Transfer the NFT back to the user
     IERC721(nftContract).safeTransferFrom(address(this), msg.sender, itemId);
 
     // Mark as unstaked
@@ -175,8 +170,7 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
   }
 
   /**
-   * @dev An internal function that handles XP calculation and claims it for the user.
-   *
+   * @dev Internal function to handle the XP calculation and awarding it to the user.
    * @param itemId The ID of the NFT that is staked.
    */
   function _claimStakingRewards(uint256 itemId) private {
@@ -184,7 +178,6 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
     require(stakeData.staked, 'Not staked');
     require(stakeData.staker == msg.sender, 'Not your stake');
 
-    // Calculate how long it has been since last claim
     uint256 timeDiff = block.timestamp - stakeData.lastClaimed;
     if (timeDiff == 0) {
       // No time has passed => no XP to claim
@@ -197,18 +190,17 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
     // Update lastClaimed to now
     stakeData.lastClaimed = block.timestamp;
 
-    // Grant XP to the user
+    // Increase the user's XP
     IUserExperiencePoints(experiencePoints).stakeModifyUserXP(msg.sender, xpEarned, true);
 
     emit RewardsClaimed(msg.sender, itemId, xpEarned);
   }
 
   /**
-   * @dev Part of the ERC721 "safeTransferFrom" standard. This function ensures that this contract
-   *      can receive ERC721 tokens. It returns a special byte value (0x150b7a02).
+   * @dev Required by the ERC721 standard to allow this contract to receive NFTs safely.
    */
   function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
-    // This is the "magic value" that signifies the contract can safely receive ERC721 tokens.
+    // Return the magic value that signifies safe receipt of ERC721 tokens
     return 0x150b7a02;
   }
 }
