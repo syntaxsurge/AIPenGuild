@@ -9,6 +9,7 @@ import { XP_TITLES } from '@/lib/experience'
  *   { "label": "Newcomer", "min": 0, "max": 99 },
  *   ...
  * ]
+ * This one doesn't rely on chain data, so no chainId param is necessary.
  */
 export async function GET() {
   return NextResponse.json({

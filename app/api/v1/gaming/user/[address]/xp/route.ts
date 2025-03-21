@@ -1,47 +1,63 @@
 import { NextResponse } from 'next/server'
 import { createPublicClient, http } from 'viem'
-import { moonbaseAlpha } from 'wagmi/chains'
+import { moonbaseAlpha, moonbeam } from 'wagmi/chains'
+import { westendAssetHub } from '@/providers/rainbowkit-wallet-provider'
 import { CONTRACT_ADDRESSES } from '@/contracts/addresses'
 import { ABIS } from '@/contracts/abis'
 
 /**
- * GET /api/v1/gaming/user/[address]/xp
+ * GET /api/v1/gaming/user/[address]/xp?chainId=...
  *
- * Returns { success: boolean, address: string, xp: string }
+ * Returns { success: boolean, chainId: number, address: string, xp: string }
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { address: string } }
 ) {
   try {
-    const userAddress = params.address.toLowerCase()
+    // 1) Parse chainId from query param
+    const { searchParams } = new URL(request.url)
+    let chainIdParam = searchParams.get('chainId')
+    let chainId = chainIdParam ? parseInt(chainIdParam, 10) : 1287
+    if (!chainId || !CONTRACT_ADDRESSES[chainId]) {
+      chainId = 1287 // fallback
+    }
 
-    // Setup a public client to read from MoonbaseAlpha by default.
+    // 2) Determine chain object
+    let chainObj = moonbaseAlpha
+    if (chainId === 420420421) {
+      chainObj = westendAssetHub
+    } else if (chainId === 1284 || chainId === 1285) {
+      chainObj = moonbeam
+    } else if (chainId !== 1287) {
+      chainObj = moonbaseAlpha
+    }
+
+    // 3) Initialize public client
     const publicClient = createPublicClient({
-      chain: moonbaseAlpha,
+      chain: chainObj,
       transport: http()
     })
 
-    const chainId = moonbaseAlpha.id
+    // 4) Retrieve addresses
     const addresses = CONTRACT_ADDRESSES[chainId]
-
     if (!addresses.UserExperiencePoints) {
       return NextResponse.json(
         {
           success: false,
-          error: 'UserExperiencePoints contract not configured for this chain.'
+          error: `UserExperiencePoints contract not configured for chainId ${chainId}.`
         },
         { status: 500 }
       )
     }
 
+    const userAddress = params.address.toLowerCase()
     const userExperiencePoints = {
       address: addresses.UserExperiencePoints as `0x${string}`,
       abi: ABIS.UserExperiencePoints
     }
 
-    // userExperience mapping: user => XP in the contract
-    // function userExperience(address user) external view returns (uint256);
+    // 5) Read user XP
     const xpVal = await publicClient.readContract({
       address: userExperiencePoints.address,
       abi: userExperiencePoints.abi,
@@ -51,6 +67,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
+      chainId,
       address: userAddress,
       xp: xpVal.toString()
     })

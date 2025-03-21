@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createPublicClient, http } from 'viem'
-import { moonbaseAlpha } from 'wagmi/chains'
+import { moonbaseAlpha, moonbeam } from 'wagmi/chains'
+import { westendAssetHub } from '@/providers/rainbowkit-wallet-provider'
 import { CONTRACT_ADDRESSES } from '@/contracts/addresses'
 import { ABIS } from '@/contracts/abis'
 import { fetchAllNFTs } from '@/lib/nft-data'
@@ -8,38 +9,47 @@ import { fetchNftMetadata } from '@/lib/nft-metadata'
 import { transformIpfsUriToHttp } from '@/lib/ipfs'
 
 /**
- * GET /api/v1/gaming/user/[address]/nfts
+ * GET /api/v1/gaming/user/[address]/nfts?chainId=...
  *
- * Returns all NFTs that the user either owns or has staked, including:
- * - itemId
- * - xpValue
- * - resourceUrl
- * - mintedAt
- * - creator
- * - owner
- * - isOnSale
- * - salePrice
- * - stakeInfo
- * - metadata (parsed from IPFS, if valid)
+ * chainId can be 1287 (Moonbase Alpha), 420420421 (Westend AssetHub), or 1284/1285 for Moonbeam, etc.
+ * If missing or not recognized, default to 1287 (MoonbaseAlpha).
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { address: string } }
 ) {
   try {
-    const userAddress = params.address.toLowerCase()
+    // 1) Parse chainId from query param
+    const { searchParams } = new URL(request.url)
+    let chainIdParam = searchParams.get('chainId')
+    let chainId = chainIdParam ? parseInt(chainIdParam, 10) : 1287
+    if (!chainId || !CONTRACT_ADDRESSES[chainId]) {
+      chainId = 1287 // fallback
+    }
 
-    // Setup a public client to read from MoonbaseAlpha by default.
+    // 2) Determine which chain object to use for the public client
+    let chainObj = moonbaseAlpha // default
+    if (chainId === 420420421) {
+      chainObj = westendAssetHub
+    } else if (chainId === 1284 || chainId === 1285) {
+      // If you want to handle actual Moonbeam or Moonriver, adjust as needed
+      chainObj = moonbeam
+    } else if (chainId !== 1287) {
+      // fallback
+      chainObj = moonbaseAlpha
+    }
+
+    // 3) Initialize public client
     const publicClient = createPublicClient({
-      chain: moonbaseAlpha,
-      transport: http(CONTRACT_ADDRESSES[moonbaseAlpha.id].NFTMintingPlatform ? {} : undefined)
+      chain: chainObj,
+      transport: http()
     })
 
-    // Build minimal contract configs from addresses & ABIs
-    const chainId = moonbaseAlpha.id
+    // 4) Retrieve addresses for the chainId
     const addresses = CONTRACT_ADDRESSES[chainId]
+    const userAddress = params.address.toLowerCase()
 
-    // If any of these addresses are empty or missing, we can't proceed reliably
+    // If any addresses are missing for this chain, can't proceed
     if (
       !addresses.NFTMintingPlatform ||
       !addresses.NFTMarketplaceHub ||
@@ -48,12 +58,13 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          error: 'Contracts not configured for this chain.'
+          error: `Contracts not fully configured for chainId ${chainId}.`
         },
         { status: 500 }
       )
     }
 
+    // 5) Build minimal contract configs from addresses & ABIs
     const nftMintingPlatform = {
       address: addresses.NFTMintingPlatform as `0x${string}`,
       abi: ABIS.NFTMintingPlatform
@@ -67,22 +78,24 @@ export async function GET(
       abi: ABIS.NFTStakingPool
     }
 
+    // 6) Fetch all minted NFTs, then filter by user ownership/staker
     const allNfts = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
-    // Filter by user ownership or staker
     const userItems = allNfts.filter((item) => {
-      const stakedByUser = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress
+      const stakedByUser =
+        item.stakeInfo?.staked &&
+        item.stakeInfo.staker.toLowerCase() === userAddress
       const ownedByUser = item.owner.toLowerCase() === userAddress
       return stakedByUser || ownedByUser
     })
 
-    // Optionally fetch IPFS metadata for each
+    // 7) Optionally fetch IPFS metadata
     const results = []
     for (const nft of userItems) {
       let metadata = null
       try {
         metadata = await fetchNftMetadata(nft.resourceUrl)
       } catch {
-        // ignore errors, fallback to null
+        // ignore
       }
 
       results.push({
@@ -115,6 +128,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
+      chainId,
       nfts: results
     })
   } catch (error: any) {
