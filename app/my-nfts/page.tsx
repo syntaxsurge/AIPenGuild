@@ -3,9 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
-import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
+import { transformIpfsUriToHttp } from "@/lib/ipfs"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import React, { useEffect, useRef, useState } from "react"
@@ -231,7 +232,7 @@ export default function MyNFTsPage() {
       for (let i = 1; i <= total; i++) {
         const tokenId = BigInt(i)
         try {
-          // 1) read ownerOf(tokenId) from NFTMintingPlatform
+          // 1) read ownerOf(tokenId)
           const owner = await publicClient.readContract({
             address: nftMintingPlatform.address as `0x${string}`,
             abi: nftMintingPlatform.abi,
@@ -252,7 +253,7 @@ export default function MyNFTsPage() {
           const mintedAt = itemData[2]
           const creator = itemData[3]
 
-          // 3) read marketItems(tokenId) => [isOnSale, salePrice]
+          // 3) read marketItems(tokenId)
           const marketItem = await publicClient.readContract({
             address: nftMarketplaceHub.address as `0x${string}`,
             abi: nftMarketplaceHub.abi,
@@ -263,7 +264,7 @@ export default function MyNFTsPage() {
           const isOnSale = marketItem[0]
           const salePrice = marketItem[1]
 
-          // 4) read stake info => stakes(tokenId) => [staker, startTimestamp, lastClaimed, staked]
+          // 4) read stake info
           const stakeData = await publicClient.readContract({
             address: nftStakingPool.address as `0x${string}`,
             abi: nftStakingPool.abi,
@@ -324,7 +325,7 @@ export default function MyNFTsPage() {
     }
   }, [wagmiAddress, currentMaxId])
 
-  // (3) load metadata if needed (optional - if your NFT uses direct resource links, might skip)
+  // (3) load metadata if needed
   useEffect(() => {
     if (!userNFTs.length) return
 
@@ -342,20 +343,16 @@ export default function MyNFTsPage() {
         let name = `NFT #${idStr}`
         let description = ""
 
-        // If resourceUrl is an IPFS link or JSON endpoint, attempt to fetch JSON
         if (
           nft.resourceUrl.startsWith("ipfs://") ||
           nft.resourceUrl.startsWith("http://") ||
           nft.resourceUrl.startsWith("https://")
         ) {
           try {
-            let replacedUrl = nft.resourceUrl
-            if (replacedUrl.startsWith("ipfs://")) {
-              replacedUrl = replacedUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
-            }
+            let replacedUrl = transformIpfsUriToHttp(nft.resourceUrl)
             const resp = await fetch(replacedUrl)
             const maybeJson = await resp.json()
-            if (maybeJson.image) finalImageUrl = maybeJson.image
+            if (maybeJson.image) finalImageUrl = transformIpfsUriToHttp(maybeJson.image)
             if (maybeJson.name) name = maybeJson.name
             if (maybeJson.description) description = maybeJson.description
           } catch {
@@ -453,13 +450,7 @@ export default function MyNFTsPage() {
   function getDisplayUrl(nft: NFTDetails): string {
     const meta = metadataMap[String(nft.itemId)]
     if (!meta?.imageUrl) {
-      if (nft.resourceUrl.startsWith("ipfs://")) {
-        return nft.resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
-      }
-      return nft.resourceUrl
-    }
-    if (meta.imageUrl.startsWith("ipfs://")) {
-      return meta.imageUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
+      return transformIpfsUriToHttp(nft.resourceUrl)
     }
     return meta.imageUrl
   }
@@ -548,7 +539,7 @@ export default function MyNFTsPage() {
               </p>
             ) : (
               <>
-                <div className="relative mb-4 h-64 w-full overflow-hidden rounded-md bg-secondary">
+                <div className="relative mb-4 h-64 w-full overflow-hidden rounded-md border border-border bg-secondary">
                   <Image
                     src={getDisplayUrl(selectedNFT)}
                     alt={`NFT #${String(selectedNFT.itemId)}`}

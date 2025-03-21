@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Input } from "@/components/ui/input"
+import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { transformIpfsUriToHttp } from "@/lib/ipfs"
 import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import React, { useEffect, useRef, useState } from "react"
-import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 
 interface MarketplaceItem {
@@ -110,17 +111,6 @@ export default function MarketplacePage() {
     toast,
   ])
 
-  useEffect(() => {
-    if (buyError) {
-      setBuyingItemId(null)
-      toast({
-        title: "Transaction Rejected",
-        description: buyError.message || "User canceled transaction or error occurred.",
-        variant: "destructive",
-      })
-    }
-  }, [buyError, toast])
-
   // Filter application
   function handleApplyFilters() {
     setSearchTerm(tempSearch)
@@ -178,7 +168,7 @@ export default function MarketplacePage() {
           const mintedAt = nftItem[2]
           const creator = nftItem[3]
 
-          // read current owner from NFTMintingPlatform
+          // read current owner
           const owner = await publicClient.readContract({
             address: nftMintingPlatform.address as `0x${string}`,
             abi: nftMintingPlatform.abi,
@@ -314,9 +304,8 @@ export default function MarketplacePage() {
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
       {/* Sidebar (Filters) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:relative md:translate-x-0`}
       >
         <Card className="h-full border-r border-border rounded-none">
           <CardHeader className="p-4 border-b border-border bg-secondary text-secondary-foreground">
@@ -358,7 +347,7 @@ export default function MarketplacePage() {
                       value={tempPriceRange}
                       onValueChange={(val) => setTempPriceRange([val[0], val[1]])}
                     />
-                    <div className="flex justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="flex justify-between mt-2 text-xs text-muted-foreground">
                       <span>{tempPriceRange[0]} {currencySymbol}</span>
                       <span>{tempPriceRange[1]} {currencySymbol}</span>
                     </div>
@@ -565,10 +554,7 @@ export default function MarketplacePage() {
  * we handle potential ipfs:// -> https://ipfs.io/ipfs/ rewriting.
  */
 function MarketplaceImage({ resourceUrl }: { resourceUrl: string }) {
-  let imageUrl = resourceUrl
-  if (resourceUrl.startsWith("ipfs://")) {
-    imageUrl = resourceUrl.replace("ipfs://", "https://ipfs.io/ipfs/")
-  }
+  const imageUrl = transformIpfsUriToHttp(resourceUrl)
   return (
     <Image
       src={imageUrl}

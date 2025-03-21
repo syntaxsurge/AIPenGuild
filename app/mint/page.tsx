@@ -6,78 +6,13 @@ import { Input } from "@/components/ui/input"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { getTxUrl } from "@/lib/explorer"
+import { uploadFileToIpfs, uploadJsonToIpfs } from "@/lib/ipfs"
 import { Brain, Loader2, Upload, Wand } from "lucide-react"
 import Image from "next/image"
 import React, { useState } from "react"
 import { parseEther } from "viem"
-import { useAccount, useBalance, usePublicClient, useWalletClient } from "wagmi"
-
-/**
- * Uploads a file to IPFS via Unique Network's endpoint, returning a URL like:
- *  https://ipfs.unique.network/ipfs/<CID>/<filename>
- */
-async function uploadFileToIpfs(file: File): Promise<string> {
-  const formData = new FormData()
-  formData.append("files", file)
-  const res = await fetch("https://rest.unique.network/opal/v1/ipfs/upload-files", {
-    method: "POST",
-    body: formData
-  })
-  if (!res.ok) throw new Error("Failed to upload file to IPFS")
-  const data = await res.json()
-
-  // data will have something like:
-  // {
-  //   "cid": "...",
-  //   "fullUrl": "https://ipfs.unique.network/ipfs/...",
-  //   "fileUrl": "https://ipfs.unique.network/ipfs/..."
-  // }
-  // We'll construct a direct link to the file by appending the file name.
-
-  const directFileUrl = data.fullUrl.endsWith('/')
-    ? data.fullUrl + file.name
-    : data.fullUrl + '/' + file.name
-
-  return directFileUrl
-}
-
-/**
- * Uploads JSON data to IPFS as "metadata.json", returning a URL like:
- *  https://ipfs.unique.network/ipfs/<CID>/metadata.json
- */
-async function uploadJsonToIpfs(jsonData: any): Promise<string> {
-  const blob = new Blob([JSON.stringify(jsonData)], { type: "application/json" })
-  const file = new File([blob], "metadata.json", { type: "application/json" })
-  const formData = new FormData()
-  formData.append("files", file)
-  const res = await fetch("https://rest.unique.network/opal/v1/ipfs/upload-files", {
-    method: "POST",
-    body: formData
-  })
-  if (!res.ok) throw new Error("Failed to upload JSON to IPFS")
-  const data = await res.json()
-
-  // data.fullUrl typically points to a directory. We want to ensure the final URL points directly to metadata.json
-  const directMetadataUrl = data.fullUrl.endsWith('/')
-    ? data.fullUrl + 'metadata.json'
-    : data.fullUrl + '/metadata.json'
-
-  return directMetadataUrl
-}
-
-function createRandomAttributes() {
-  const randomBetween = (min: number, max: number) =>
-    Math.floor(Math.random() * (max - min + 1)) + min
-
-  const rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-  const randomRarity = rarities[randomBetween(0, rarities.length - 1)]
-
-  return {
-    power: randomBetween(1, 100),
-    durability: randomBetween(1, 100),
-    rarity: randomRarity
-  }
-}
+import { useAccount, useBalance, useChainId, usePublicClient, useWalletClient } from "wagmi"
 
 type MintStage =
   | 'idle'
@@ -93,6 +28,7 @@ export default function MintNFTPage() {
   const { address: wagmiAddress } = useAccount()
   const publicClient = usePublicClient()
   const { data: walletClient } = useWalletClient()
+  const chainId = useChainId() || 1287
 
   const currencySymbol = useNativeCurrencySymbol()
 
@@ -248,7 +184,12 @@ export default function MintNFTPage() {
           throw new Error("No manual upload found. Please upload an image.")
         }
         const imageIpfsUrl = await uploadFileToIpfs(uploadedFile)
-        const randomAttrs = createRandomAttributes()
+        const randomAttrs = {
+          // Some random attributes
+          power: Math.floor(Math.random() * 100) + 1,
+          durability: Math.floor(Math.random() * 100) + 1,
+          rarity: "Random"
+        }
         const finalMetadata = {
           name: prompt || "Untitled NFT",
           image: imageIpfsUrl,
@@ -292,7 +233,6 @@ export default function MintNFTPage() {
         title: "Transaction Confirmed",
         description: "NFT minted successfully!"
       })
-
     } catch (err: any) {
       setMintStage('failed')
       setMintError(err.message || "Minting failed.")
@@ -340,7 +280,7 @@ export default function MintNFTPage() {
   }
 
   return (
-    <main className="w-full min-h-screen bg-background text-foreground flex justify-center px-4 py-12 sm:px-6 md:px-8">
+    <main className="w-full min-h-screen bg-background text-foreground flex justify-center px-4 py-12 sm:px=6 md:px=8">
       <div className="max-w-5xl w-full">
         <h1 className="mb-4 text-center text-4xl font-extrabold text-primary">Create AI NFT</h1>
         <p className="mb-4 text-center text-sm text-muted-foreground">
@@ -533,7 +473,7 @@ export default function MintNFTPage() {
               <div className="rounded-md border border-border p-4 mt-2 text-sm">
                 <p className="font-bold">Transaction Hash:</p>
                 <a
-                  href={`https://moonbase.moonscan.io/tx/${txHash}`}
+                  href={getTxUrl(chainId, txHash)}
                   target="_blank"
                   rel="noreferrer"
                   className="underline text-primary"
