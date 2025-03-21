@@ -54,6 +54,9 @@ export default function MintNFTPage() {
   const [mintStage, setMintStage] = useState<MintStage>('idle')
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
 
+  // Check environment variable (defaults to false if not set)
+  const debugUploadCustomImage = process.env.NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE === 'true'
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] || null
     setUploadedFile(file)
@@ -165,6 +168,10 @@ export default function MintNFTPage() {
         }
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       } else {
+        // Check environment variable before allowing custom upload
+        if (!debugUploadCustomImage) {
+          throw new Error("Custom image uploads are disabled in this production build.")
+        }
         if (!uploadedFile) {
           throw new Error("No manual upload found. Please upload an image.")
         }
@@ -294,17 +301,19 @@ export default function MintNFTPage() {
                   <Brain className="mr-1 h-4 w-4" />
                   Generate with AI
                 </Button>
-                <Button
-                  variant={!useAIImage ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setUseAIImage(false)
-                    setAiNft(null)
-                  }}
-                >
-                  <Upload className="mr-1 h-4 w-4" />
-                  Upload Custom Image
-                </Button>
+                {debugUploadCustomImage && (
+                  <Button
+                    variant={!useAIImage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setUseAIImage(false)
+                      setAiNft(null)
+                    }}
+                  >
+                    <Upload className="mr-1 h-4 w-4" />
+                    Upload Custom Image
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -375,7 +384,8 @@ export default function MintNFTPage() {
               </div>
             )}
 
-            {!useAIImage && (
+            {/* Only show custom upload if debugUploadCustomImage=true */}
+            {!useAIImage && debugUploadCustomImage && (
               <div className="rounded-md bg-secondary p-4">
                 <label className="mb-2 block text-sm font-medium text-muted-foreground">
                   Upload Custom Image
