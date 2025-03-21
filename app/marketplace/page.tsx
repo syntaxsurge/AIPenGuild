@@ -4,7 +4,7 @@ import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
+  AccordionTrigger
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,10 @@ import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { transformIpfsUriToHttp } from "@/lib/ipfs"
+import {
+  NFT_CATEGORIES,
+  NFT_RARITIES
+} from "@/lib/metadata-constants"
 import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
@@ -23,16 +27,23 @@ import Link from "next/link"
 import React, { useEffect, useRef, useState } from "react"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 
-/**
- * We'll create a per-item transaction state, stored in a map keyed by itemId. That
- * way, only the item that's actually being purchased will show the transaction's
- * loading or success state. The rest remain unaffected.
- */
 interface BuyTxState {
   loading: boolean
   success: boolean
   error: string | null
   txHash: `0x${string}` | null
+}
+
+/**
+ * Additional typed fields to facilitate advanced attribute filters:
+ * We'll store numeric range for the relevant attributes per category.
+ */
+interface AttributeFilterRanges {
+  strength: [number, number]
+  agility: [number, number]
+  durability: [number, number]
+  power: [number, number]
+  duration: [number, number]
 }
 
 export default function MarketplacePage() {
@@ -54,12 +65,33 @@ export default function MarketplacePage() {
   const [isLoading, setIsLoading] = useState(false)
   const fetchedRef = useRef(false)
 
-  // Filter states
+  // Basic Filters
   const [tempSearch, setTempSearch] = useState("")
   const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 10])
-  // Applied filter states
   const [searchTerm, setSearchTerm] = useState("")
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10])
+
+  // New Advanced Filters
+  // Categories (multiple selection)
+  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+
+  // Rarities (multiple selection)
+  const [tempSelectedRarities, setTempSelectedRarities] = useState<string[]>([])
+  const [selectedRarities, setSelectedRarities] = useState<string[]>([])
+
+  // Numeric attribute filter states:
+  // We'll define default ranges that cover 0..150 for simplicity
+  // Then store user input in "temp" states, and apply them upon "Apply Filters".
+  const defaultAttribRanges: AttributeFilterRanges = {
+    strength: [0, 150],
+    agility: [0, 150],
+    durability: [0, 150],
+    power: [0, 150],
+    duration: [0, 300]
+  }
+  const [tempAttribRanges, setTempAttribRanges] = useState<AttributeFilterRanges>(defaultAttribRanges)
+  const [attribRanges, setAttribRanges] = useState<AttributeFilterRanges>(defaultAttribRanges)
 
   // We'll keep a metadata cache
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
@@ -77,7 +109,6 @@ export default function MarketplacePage() {
     }))
   }
 
-  // handleBuy logic: each item has its own transaction state
   async function handleBuy(item: NFTItem) {
     try {
       if (!wagmiAddress) {
@@ -123,7 +154,6 @@ export default function MarketplacePage() {
 
       const itemIdStr = String(item.itemId)
 
-      // Initialize buy TX state
       updateBuyTxMap(itemIdStr, {
         loading: true,
         success: false,
@@ -131,7 +161,6 @@ export default function MarketplacePage() {
         txHash: null
       })
 
-      // Execute the purchase
       const purchaseABI = {
         name: "purchaseNFTItem",
         type: "function",
@@ -140,7 +169,6 @@ export default function MarketplacePage() {
         outputs: []
       }
 
-      // Submit the transaction
       const hash = await walletClient.writeContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: [purchaseABI],
@@ -149,20 +177,15 @@ export default function MarketplacePage() {
         value: item.salePrice
       })
 
-      updateBuyTxMap(itemIdStr, {
-        txHash: hash
-      })
+      updateBuyTxMap(itemIdStr, { txHash: hash })
 
       toast({
         title: "Purchase Transaction",
         description: "Transaction submitted... awaiting confirmation."
       })
 
-      // Wait for on-chain confirmation
       const receipt = await publicClient.waitForTransactionReceipt({ hash })
-
       if (receipt?.status === "reverted") {
-        // Transaction failed on-chain
         updateBuyTxMap(itemIdStr, {
           loading: false,
           success: false,
@@ -190,7 +213,6 @@ export default function MarketplacePage() {
       // Refresh the marketplace
       fetchMarketplaceItems(true)
     } catch (err: any) {
-      console.error("Error in handleBuy:", err)
       const msg = err?.message || "Unable to buy NFT"
       updateBuyTxMap(String(item.itemId), {
         loading: false,
@@ -205,14 +227,15 @@ export default function MarketplacePage() {
     }
   }
 
-  // handle filters
   function handleApplyFilters() {
     setSearchTerm(tempSearch)
     setPriceRange(tempPriceRange)
+    setSelectedCategories([...tempSelectedCategories])
+    setSelectedRarities([...tempSelectedRarities])
+    setAttribRanges({ ...tempAttribRanges })
     setSidebarOpen(false)
   }
 
-  // load marketplace items
   async function fetchMarketplaceItems(forceRefresh?: boolean) {
     if (
       !nftMarketplaceHub?.address ||
@@ -225,7 +248,6 @@ export default function MarketplacePage() {
     ) {
       return
     }
-
     if (!forceRefresh && fetchedRef.current) return
     fetchedRef.current = true
 
@@ -239,7 +261,6 @@ export default function MarketplacePage() {
       )
       setListedItems(allNfts)
 
-      // Preload metadata
       const newMap: Record<string, ParsedNftMetadata> = {}
       for (const item of allNfts) {
         const idStr = String(item.itemId)
@@ -259,7 +280,6 @@ export default function MarketplacePage() {
       }
       setMetadataMap(newMap)
     } catch (err) {
-      console.error("Error fetching marketplace items:", err)
       toast({
         title: "Error",
         description: "Unable to load marketplace items. Try again later.",
@@ -274,26 +294,100 @@ export default function MarketplacePage() {
     fetchMarketplaceItems()
   }, [nftMarketplaceHub, nftMintingPlatform, nftStakingPool, publicClient])
 
-  // filter items
   const filteredItems = React.useMemo(() => {
     return listedItems
       .filter((item) => item.isOnSale)
       .filter((item) => {
+        // Price filter
         const numericPrice = Number(item.salePrice) / 1e18
         if (numericPrice < priceRange[0] || numericPrice > priceRange[1]) {
           return false
         }
+
+        // searchTerm filter
         if (searchTerm) {
           const idStr = String(item.itemId)
           const lowerResource = item.resourceUrl.toLowerCase()
           const lowerSearch = searchTerm.toLowerCase()
+          // We check if itemId includes searchTerm or resourceUrl includes it
           if (!idStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
             return false
           }
         }
+
+        // advanced filters
+        const meta = metadataMap[String(item.itemId)]
+        if (!meta) {
+          // If no metadata is found, skip if advanced filters are used
+          if (selectedCategories.length > 0 || selectedRarities.length > 0) {
+            return false
+          }
+          return true
+        }
+
+        const { attributes } = meta
+        // Category filter
+        if (selectedCategories.length > 0) {
+          const nftCategory = (attributes.category as string) || ""
+          if (!selectedCategories.includes(nftCategory)) {
+            return false
+          }
+        }
+
+        // Rarity filter
+        if (selectedRarities.length > 0) {
+          const nftRarity = (attributes.rarity as string) || ""
+          if (!selectedRarities.includes(nftRarity)) {
+            return false
+          }
+        }
+
+        // Numeric attribute filtering
+        // We'll do it only if attribute is present
+        for (const [attrName, [minVal, maxVal]] of Object.entries(attribRanges)) {
+          if (attributes.hasOwnProperty(attrName)) {
+            const numericAttr = Number(attributes[attrName])
+            if (isNaN(numericAttr)) {
+              // If we can't parse it, treat as failing the filter
+              return false
+            }
+            if (numericAttr < minVal || numericAttr > maxVal) {
+              return false
+            }
+          }
+        }
+
         return true
       })
-  }, [listedItems, priceRange, searchTerm])
+  }, [
+    listedItems,
+    priceRange,
+    searchTerm,
+    selectedCategories,
+    selectedRarities,
+    attribRanges,
+    metadataMap
+  ])
+
+  function toggleCategory(cat: string) {
+    setTempSelectedCategories((prev) => {
+      if (prev.includes(cat)) {
+        return prev.filter((c) => c !== cat)
+      } else {
+        return [...prev, cat]
+      }
+    })
+  }
+
+  function toggleRarity(r: string) {
+    setTempSelectedRarities((prev) => {
+      if (prev.includes(r)) {
+        return prev.filter((c) => c !== r)
+      } else {
+        return [...prev, r]
+      }
+    })
+  }
 
   return (
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
@@ -302,7 +396,7 @@ export default function MarketplacePage() {
           } md:relative md:translate-x-0`}
       >
         <Card className="h-full border-r border-border rounded-none">
-          <CardHeader className="p-4 border-b border-border bg-secondary text-secondary-foreground">
+          <CardHeader className="p-4 border-b border-border bg-secondary text-secondary-foreground rounded-t-lg">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-bold">Filters</CardTitle>
               <Button
@@ -364,6 +458,141 @@ export default function MarketplacePage() {
                         }}
                         className="w-20"
                       />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="categories">
+                <AccordionTrigger>Categories</AccordionTrigger>
+                <AccordionContent>
+                  <div className="flex flex-col gap-2 mt-2">
+                    {NFT_CATEGORIES.map((cat) => (
+                      <div key={cat} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={tempSelectedCategories.includes(cat)}
+                          onChange={() => toggleCategory(cat)}
+                        />
+                        <label>{cat}</label>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="rarities">
+                <AccordionTrigger>Rarity</AccordionTrigger>
+                <AccordionContent>
+                  <div className="flex flex-col gap-2 mt-2">
+                    {NFT_RARITIES.map((r) => (
+                      <div key={r} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={tempSelectedRarities.includes(r)}
+                          onChange={() => toggleRarity(r)}
+                        />
+                        <label>{r}</label>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="attributes">
+                <AccordionTrigger>Attributes</AccordionTrigger>
+                <AccordionContent>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Specify numeric ranges for each attribute if you'd like to filter by them.
+                    Only NFTs that have the attribute in their metadata will be filtered.
+                  </p>
+                  {/* Strength range */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium">Strength</label>
+                    <DualRangeSlider
+                      min={0}
+                      max={150}
+                      step={1}
+                      value={tempAttribRanges.strength}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, strength: [val[0], val[1]] }))
+                      }
+                    />
+                    <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{tempAttribRanges.strength[0]}</span>
+                      <span>{tempAttribRanges.strength[1]}</span>
+                    </div>
+                  </div>
+
+                  {/* Agility range */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium">Agility</label>
+                    <DualRangeSlider
+                      min={0}
+                      max={150}
+                      step={1}
+                      value={tempAttribRanges.agility}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, agility: [val[0], val[1]] }))
+                      }
+                    />
+                    <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{tempAttribRanges.agility[0]}</span>
+                      <span>{tempAttribRanges.agility[1]}</span>
+                    </div>
+                  </div>
+
+                  {/* Durability range */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium">Durability</label>
+                    <DualRangeSlider
+                      min={0}
+                      max={150}
+                      step={1}
+                      value={tempAttribRanges.durability}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, durability: [val[0], val[1]] }))
+                      }
+                    />
+                    <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{tempAttribRanges.durability[0]}</span>
+                      <span>{tempAttribRanges.durability[1]}</span>
+                    </div>
+                  </div>
+
+                  {/* Power range */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium">Power</label>
+                    <DualRangeSlider
+                      min={0}
+                      max={150}
+                      step={1}
+                      value={tempAttribRanges.power}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, power: [val[0], val[1]] }))
+                      }
+                    />
+                    <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{tempAttribRanges.power[0]}</span>
+                      <span>{tempAttribRanges.power[1]}</span>
+                    </div>
+                  </div>
+
+                  {/* Duration range */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium">Duration</label>
+                    <DualRangeSlider
+                      min={0}
+                      max={300}
+                      step={1}
+                      value={tempAttribRanges.duration}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, duration: [val[0], val[1]] }))
+                      }
+                    />
+                    <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{tempAttribRanges.duration[0]}</span>
+                      <span>{tempAttribRanges.duration[1]}</span>
                     </div>
                   </div>
                 </AccordionContent>
@@ -498,7 +727,6 @@ export default function MarketplacePage() {
                         </Button>
                       )}
 
-                      {/* Show transaction status for this specific NFT */}
                       <TransactionStatus
                         isLoading={buyTx.loading}
                         isSuccess={buyTx.success}
@@ -580,7 +808,6 @@ export default function MarketplacePage() {
                           </Button>
                         )}
 
-                        {/* Show transaction status for this specific NFT */}
                         <TransactionStatus
                           isLoading={buyTx.loading}
                           isSuccess={buyTx.success}
