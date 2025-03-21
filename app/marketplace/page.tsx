@@ -264,9 +264,8 @@ export default function MarketplacePage() {
   return (
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:relative md:translate-x-0`}
       >
         <Card className="h-full border-r border-border rounded-none">
           <CardHeader className="p-4 border-b border-border bg-secondary text-secondary-foreground">
@@ -458,6 +457,16 @@ export default function MarketplacePage() {
                           You own this NFT. You cannot buy it.
                         </Button>
                       )}
+
+                      {/* Transaction status display for buy operation */}
+                      <TransactionStatus
+                        isLoading={isBuyPending || isBuyTxLoading}
+                        isSuccess={isBuyTxSuccess}
+                        errorMessage={buyTxError || null}
+                        txHash={buyWriteData ?? null}
+                        chainId={chainId}
+                        className={showBuyTxStatus ? '' : 'hidden'}
+                      />
                     </div>
                   )
                 })}
@@ -532,16 +541,6 @@ export default function MarketplacePage() {
             )}
           </>
         )}
-
-        {/* Transaction status display for buy operation */}
-        <TransactionStatus
-          isLoading={isBuyPending || isBuyTxLoading}
-          isSuccess={isBuyTxSuccess}
-          errorMessage={buyTxError || null}
-          txHash={buyWriteData ?? null}
-          chainId={chainId}
-          className={showBuyTxStatus ? '' : 'hidden'}
-        />
       </div>
     </main>
   )
