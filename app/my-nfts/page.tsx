@@ -7,6 +7,7 @@ import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
+import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
@@ -20,26 +21,6 @@ import {
   useWriteContract
 } from "wagmi"
 
-interface StakeInfo {
-  staker: `0x${string}`
-  startTimestamp: bigint
-  lastClaimed: bigint
-  staked: boolean
-}
-
-interface NFTDetails {
-  itemId: bigint
-  xpValue: bigint
-  resourceUrl: string
-  mintedAt: bigint
-  creator: string
-  owner: string
-  isOnSale: boolean
-  salePrice: bigint
-  stakeInfo?: StakeInfo
-  metadata?: ParsedNftMetadata
-}
-
 export default function MyNFTsPage() {
   const { address: wagmiAddress } = useAccount()
   const currencySymbol = useNativeCurrencySymbol()
@@ -51,13 +32,13 @@ export default function MyNFTsPage() {
   const nftStakingPool = useContract("NFTStakingPool")
   const nftMintingPlatform = useContract("NFTMintingPlatform")
 
-  // For list/unlist writes
+  // For list/unlist writes:
   const {
     data: listWriteData,
     error: listError,
     isPending: isListPending,
     isSuccess: isListSuccess,
-    writeContract: writeListContract,
+    writeContract: writeListContract
   } = useWriteContract()
 
   const {
@@ -84,15 +65,14 @@ export default function MyNFTsPage() {
   } = useWaitForTransactionReceipt({ hash: unlistWriteData ?? undefined })
 
   const [price, setPrice] = useState("")
-  const [userNFTs, setUserNFTs] = useState<NFTDetails[]>([])
-  const [selectedNFT, setSelectedNFT] = useState<NFTDetails | null>(null)
-  const [currentMaxId, setCurrentMaxId] = useState<bigint | null>(null)
+  const [userNFTs, setUserNFTs] = useState<NFTItem[]>([])
+  const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null)
   const [loadingNFTs, setLoadingNFTs] = useState(false)
+  const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
 
-  const fetchedUserNFTsRef = useRef(false)
-  const latestItemIdFetchedRef = useRef(false)
+  const fetchedRef = useRef(false)
 
-  // watchers for listing
+  // Watchers for listing transaction
   useEffect(() => {
     if (isListTxLoading) {
       toast({
@@ -129,7 +109,7 @@ export default function MyNFTsPage() {
     }
   }, [isListTxLoading, isListTxSuccess, isListTxError, listTxReceiptError, listError, toast, selectedNFT, price])
 
-  // watchers for unlisting
+  // Watchers for unlisting transaction
   useEffect(() => {
     if (isUnlistTxLoading) {
       toast({
@@ -161,126 +141,49 @@ export default function MyNFTsPage() {
     }
   }, [isUnlistTxLoading, isUnlistTxSuccess, isUnlistTxError, unlistTxReceiptError, unlistError, toast, selectedNFT])
 
-  useEffect(() => {
-    if (!wagmiAddress) {
-      setCurrentMaxId(null)
-      latestItemIdFetchedRef.current = false
-      return
-    }
-    if (!publicClient || !nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
-    if (latestItemIdFetchedRef.current) return
-    latestItemIdFetchedRef.current = true
-
-    async function loadLatestItemId() {
-      try {
-        const val = await publicClient?.readContract({
-          address: nftMintingPlatform?.address as `0x${string}`,
-          abi: nftMintingPlatform?.abi,
-          functionName: "getLatestMintedId",
-          args: []
-        })
-        if (typeof val === "bigint") {
-          setCurrentMaxId(val)
-        }
-      } catch (err) {
-        console.error("[MyNFTs] Error reading getLatestMintedId:", err)
-      }
-    }
-    loadLatestItemId()
-  }, [wagmiAddress, nftMintingPlatform, publicClient])
-
-  async function fetchUserNFTs() {
-    if (!wagmiAddress || !currentMaxId) return
-    if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
-    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
-    if (!nftStakingPool?.address || !nftStakingPool?.abi) return
+  // Main loader for user's NFTs
+  async function loadMyNFTs() {
+    if (!wagmiAddress) return
+    if (!nftMarketplaceHub || !nftMarketplaceHub.address) return
+    if (!nftMintingPlatform || !nftMintingPlatform.address) return
+    if (!nftStakingPool || !nftStakingPool.address) return
     if (!publicClient) return
-    if (fetchedUserNFTsRef.current) return
+    if (fetchedRef.current) return
 
-    fetchedUserNFTsRef.current = true
+    fetchedRef.current = true
     setLoadingNFTs(true)
 
     try {
-      const total = Number(currentMaxId)
-      const items: NFTDetails[] = []
+      // fetch all minted items
+      const allItems = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
+      // filter for items that belong to or are staked by user
+      const myItems = allItems.filter((item) => {
+        const staked = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+        const owned = item.owner.toLowerCase() === wagmiAddress.toLowerCase()
+        return staked || owned
+      })
 
-      for (let i = 1; i <= total; i++) {
-        const tokenId = BigInt(i)
+      // fetch metadata for each item
+      const newMap: Record<string, ParsedNftMetadata> = {}
+      for (const item of myItems) {
         try {
-          const owner = await publicClient.readContract({
-            address: nftMintingPlatform.address as `0x${string}`,
-            abi: nftMintingPlatform.abi,
-            functionName: "ownerOf",
-            args: [tokenId],
-          }) as `0x${string}`
-
-          const itemData = await publicClient.readContract({
-            address: nftMintingPlatform.address as `0x${string}`,
-            abi: nftMintingPlatform.abi,
-            functionName: "nftItems",
-            args: [tokenId],
-          }) as [bigint, string, bigint, string]
-
-          const xpValue = itemData[0]
-          const resourceUrl = itemData[1]
-          const mintedAt = itemData[2]
-          const creator = itemData[3]
-
-          const marketItem = await publicClient.readContract({
-            address: nftMarketplaceHub.address as `0x${string}`,
-            abi: nftMarketplaceHub.abi,
-            functionName: "marketItems",
-            args: [tokenId],
-          }) as [boolean, bigint]
-
-          const isOnSale = marketItem[0]
-          const salePrice = marketItem[1]
-
-          const stakeData = await publicClient.readContract({
-            address: nftStakingPool.address as `0x${string}`,
-            abi: nftStakingPool.abi,
-            functionName: "stakes",
-            args: [tokenId]
-          }) as [string, bigint, bigint, boolean]
-
-          const stakerAddr = stakeData[0]
-          const staked = stakeData[3]
-
-          const userIsOwner = owner.toLowerCase() === wagmiAddress.toLowerCase()
-          const userIsStaker = staked && stakerAddr.toLowerCase() === wagmiAddress.toLowerCase()
-
-          if (userIsOwner || userIsStaker) {
-            items.push({
-              itemId: tokenId,
-              xpValue,
-              resourceUrl,
-              mintedAt,
-              creator,
-              owner,
-              isOnSale,
-              salePrice,
-              stakeInfo: {
-                staker: stakerAddr as `0x${string}`,
-                startTimestamp: stakeData[1],
-                lastClaimed: stakeData[2],
-                staked
-              }
-            })
-          }
+          const parsed = await fetchNftMetadata(item.resourceUrl)
+          newMap[String(item.itemId)] = parsed
         } catch {
-          // skip
+          // fallback
+          newMap[String(item.itemId)] = {
+            imageUrl: item.resourceUrl,
+            name: "",
+            description: "",
+            attributes: {}
+          }
         }
       }
 
-      const metadataPromises = items.map((nft) => fetchNftMetadata(nft.resourceUrl))
-      const allMetadata = await Promise.all(metadataPromises)
-      for (let i = 0; i < items.length; i++) {
-        items[i].metadata = allMetadata[i]
-      }
-
-      setUserNFTs(items)
+      setMetadataMap(newMap)
+      setUserNFTs(myItems)
     } catch (err) {
-      console.error("[MyNFTs] Error in fetchUserNFTs:", err)
+      console.error("Error in loadMyNFTs:", err)
       toast({
         title: "Error",
         description: "Unable to fetch your NFTs. Please try again.",
@@ -294,13 +197,12 @@ export default function MyNFTsPage() {
   useEffect(() => {
     if (!wagmiAddress) {
       setUserNFTs([])
-      fetchedUserNFTsRef.current = false
+      fetchedRef.current = false
       return
     }
-    if (currentMaxId && wagmiAddress) {
-      fetchUserNFTs()
-    }
-  }, [wagmiAddress, currentMaxId]) // fetch user NFTs whenever we have a connected wallet & maxId
+    loadMyNFTs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wagmiAddress, nftMarketplaceHub, nftMintingPlatform, nftStakingPool, publicClient])
 
   const handleListNFT = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -313,6 +215,9 @@ export default function MyNFTsPage() {
       return
     }
     try {
+      if (!nftMarketplaceHub?.address) {
+        throw new Error("NFTMarketplaceHub contract not found.")
+      }
       const abiListNFT = {
         name: "listNFTItem",
         type: "function",
@@ -324,7 +229,7 @@ export default function MyNFTsPage() {
         outputs: []
       }
       await writeListContract({
-        address: nftMarketplaceHub?.address as `0x${string}`,
+        address: nftMarketplaceHub.address as `0x${string}`,
         abi: [abiListNFT],
         functionName: "listNFTItem",
         args: [selectedNFT.itemId, parseEther(price)]
@@ -348,6 +253,9 @@ export default function MyNFTsPage() {
       return
     }
     try {
+      if (!nftMarketplaceHub?.address) {
+        throw new Error("NFTMarketplaceHub contract not found.")
+      }
       const abiUnlistNFT = {
         name: "unlistNFTItem",
         type: "function",
@@ -356,7 +264,7 @@ export default function MyNFTsPage() {
         outputs: []
       }
       await writeUnlistContract({
-        address: nftMarketplaceHub?.address as `0x${string}`,
+        address: nftMarketplaceHub.address as `0x${string}`,
         abi: [abiUnlistNFT],
         functionName: "unlistNFTItem",
         args: [selectedNFT.itemId]
@@ -383,6 +291,7 @@ export default function MyNFTsPage() {
     <main className="w-full min-h-screen bg-background text-foreground px-4 py-12 sm:px-6 md:px=8">
       <h1 className="mb-6 text-center text-4xl font-extrabold text-primary">My NFTs</h1>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Left Card: NFT Grid */}
         <Card className="border border-border rounded-lg shadow-xl">
           <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
             <CardTitle className="text-lg font-semibold">Your NFTs</CardTitle>
@@ -398,6 +307,13 @@ export default function MyNFTsPage() {
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {userNFTs.map((nft) => {
+                  const itemIdStr = String(nft.itemId)
+                  const meta = metadataMap[itemIdStr] || {
+                    imageUrl: nft.resourceUrl,
+                    name: "",
+                    description: "",
+                    attributes: {}
+                  }
                   const isStaked =
                     nft.stakeInfo?.staked &&
                     nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
@@ -407,19 +323,18 @@ export default function MyNFTsPage() {
                       ? "(LISTED)"
                       : ""
                   const selected = selectedNFT?.itemId === nft.itemId
-                  const imageUrl = nft.metadata?.imageUrl || ""
 
                   return (
                     <div
-                      key={String(nft.itemId)}
+                      key={itemIdStr}
                       onClick={() => setSelectedNFT(nft)}
                       className={`cursor-pointer rounded-md border-2 p-2 transition-transform hover:scale-[1.02] ${selected ? "border-primary" : "border-border"
                         }`}
                     >
                       <div className="relative h-36 w-full overflow-hidden rounded-md bg-secondary">
-                        {imageUrl && (
+                        {meta.imageUrl && (
                           <Image
-                            src={imageUrl}
+                            src={meta.imageUrl}
                             alt={`NFT #${String(nft.itemId)}`}
                             fill
                             sizes="(max-width: 768px) 100vw,
@@ -430,7 +345,7 @@ export default function MyNFTsPage() {
                         )}
                       </div>
                       <p className="mt-2 text-xs font-semibold text-foreground line-clamp-1">
-                        NFT #{String(nft.itemId)} {label}
+                        NFT #{itemIdStr} {label}
                       </p>
                     </div>
                   )
@@ -440,6 +355,7 @@ export default function MyNFTsPage() {
           </CardContent>
         </Card>
 
+        {/* Right Card: Details */}
         <Card className="border border-border rounded-lg shadow-xl">
           <CardHeader className="p-4 bg-accent text-accent-foreground rounded-t-lg">
             <CardTitle className="text-lg font-semibold">
@@ -449,49 +365,72 @@ export default function MyNFTsPage() {
           <CardContent className="p-6">
             {!selectedNFT ? (
               <p className="text-sm text-muted-foreground">
-                Click on one of your NFTs on the left to view details.
+                Click one of your NFTs on the left to view details.
               </p>
             ) : (
               <>
+                {/* Image */}
                 <div className="relative mb-4 h-64 w-full overflow-hidden rounded-md border border-border bg-secondary">
-                  {selectedNFT.metadata?.imageUrl && (
-                    <Image
-                      src={selectedNFT.metadata.imageUrl}
-                      alt={`NFT #${String(selectedNFT.itemId)}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw,
-                             (max-width: 1200px) 50vw,
-                             33vw"
-                      className="object-contain"
-                    />
-                  )}
+                  {(() => {
+                    const itemIdStr = String(selectedNFT.itemId)
+                    const meta = metadataMap[itemIdStr] || {
+                      imageUrl: selectedNFT.resourceUrl,
+                      name: "",
+                      description: "",
+                      attributes: {}
+                    }
+                    if (!meta.imageUrl) return null
+
+                    return (
+                      <Image
+                        src={meta.imageUrl}
+                        alt={`NFT #${String(selectedNFT.itemId)}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw,
+                               (max-width: 1200px) 50vw,
+                               33vw"
+                        className="object-contain"
+                      />
+                    )
+                  })()}
                 </div>
 
-                <div className="flex flex-col gap-1 text-sm">
-                  <strong>Name:</strong>
-                  <span>{selectedNFT.metadata?.name || `NFT #${String(selectedNFT.itemId)}`}</span>
-                </div>
-                <div className="mt-2 flex flex-col gap-1 text-sm">
-                  <strong>Description:</strong>
-                  <span className="text-muted-foreground whitespace-pre-wrap">
-                    {selectedNFT.metadata?.description || "No description"}
-                  </span>
-                </div>
-                {selectedNFT.metadata?.attributes && (
-                  <div className="mt-2">
-                    <strong className="text-sm">Attributes:</strong>
-                    <div className="mt-1 text-sm rounded-md border border-border bg-secondary p-3">
-                      <pre className="whitespace-pre-wrap break-all text-muted-foreground">
-                        {JSON.stringify(selectedNFT.metadata.attributes, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                )}
+                {/* Display name/desc/attributes from metadata */}
+                {(() => {
+                  const itemIdStr = String(selectedNFT.itemId)
+                  const meta = metadataMap[itemIdStr] || {
+                    imageUrl: selectedNFT.resourceUrl,
+                    name: "",
+                    description: "",
+                    attributes: {}
+                  }
+                  return (
+                    <>
+                      <div className="flex flex-col gap-1 text-sm">
+                        <strong>Name:</strong>
+                        <span>{meta.name || `NFT #${String(selectedNFT.itemId)}`}</span>
+                      </div>
+                      <div className="mt-2 flex flex-col gap-1 text-sm">
+                        <strong>Description:</strong>
+                        <span className="text-muted-foreground whitespace-pre-wrap">
+                          {meta.description || "No description"}
+                        </span>
+                      </div>
+                      {Object.keys(meta.attributes).length > 0 && (
+                        <div className="mt-2">
+                          <strong className="text-sm">Attributes:</strong>
+                          <div className="mt-1 text-sm rounded-md border border-border bg-secondary p-3">
+                            <pre className="whitespace-pre-wrap break-all text-muted-foreground">
+                              {JSON.stringify(meta.attributes, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
 
                 <hr className="my-4 border-border" />
-                <p className="text-sm mb-1">
-                  <strong>Minted Time:</strong> {new Date(Number(selectedNFT.mintedAt) * 1000).toLocaleString()}
-                </p>
                 <p className="text-sm mb-1">
                   <strong>XP Value:</strong> {selectedNFT.xpValue.toString()}
                 </p>
@@ -516,6 +455,7 @@ export default function MyNFTsPage() {
                     </p>
                   )}
 
+                {/* List Form */}
                 <form onSubmit={handleListNFT} className="mt-4 space-y-4">
                   <div>
                     <label className="text-sm font-medium">Sale Price ({currencySymbol})</label>
@@ -546,16 +486,18 @@ export default function MyNFTsPage() {
                       {isListPending || isListTxLoading ? "Processing..." : "List for Sale"}
                     </Button>
                   )}
-
                   <TransactionStatus
                     isLoading={isListTxLoading}
                     isSuccess={isListTxSuccess}
-                    errorMessage={isListTxError ? (listTxReceiptError?.message || listError?.message) : null}
+                    errorMessage={
+                      isListTxError ? (listTxReceiptError?.message || listError?.message) : null
+                    }
                     txHash={listWriteData ?? null}
                     chainId={chainId}
                   />
                 </form>
 
+                {/* Unlist */}
                 {selectedNFT.isOnSale && (
                   <>
                     <Button
@@ -570,7 +512,11 @@ export default function MyNFTsPage() {
                     <TransactionStatus
                       isLoading={isUnlistTxLoading}
                       isSuccess={isUnlistTxSuccess}
-                      errorMessage={isUnlistTxError ? (unlistTxReceiptError?.message || unlistError?.message) : null}
+                      errorMessage={
+                        isUnlistTxError
+                          ? (unlistTxReceiptError?.message || unlistError?.message)
+                          : null
+                      }
                       txHash={unlistWriteData ?? null}
                       chainId={chainId}
                       className="mt-2"
