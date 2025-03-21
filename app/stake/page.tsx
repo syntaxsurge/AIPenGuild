@@ -12,25 +12,7 @@ import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
-
-interface StakeInfo {
-  staker: `0x${string}`
-  startTimestamp: bigint
-  lastClaimed: bigint
-  staked: boolean
-}
-
-interface NFTItem {
-  itemId: bigint
-  creator: string
-  xpValue: bigint
-  resourceUrl: string
-  mintedAt: bigint
-  owner: string
-  isOnSale: boolean
-  salePrice: bigint
-  stakeInfo?: StakeInfo
-}
+import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 
 interface ActionTxState {
   loading: boolean
@@ -60,6 +42,7 @@ export default function StakePage() {
   const [loadingItems, setLoadingItems] = useState(false)
   const [fetched, setFetched] = useState(false)
 
+  // xp rate and other states
   const [xpRate, setXpRate] = useState<bigint>(0n)
   const [hasFetchedXpRate, setHasFetchedXpRate] = useState(false)
 
@@ -101,97 +84,44 @@ export default function StakePage() {
     loadXpRate()
   }, [publicClient, nftStakingPool, hasFetchedXpRate])
 
-  async function fetchAllNFTs(forceReload?: boolean) {
+  async function fetchAllData(forceReload?: boolean) {
     if (!userAddress || !publicClient || !nftMintingPlatform || !nftMarketplaceHub || !nftStakingPool) return
     if (!forceReload && fetched) return
 
     setFetched(true)
     setLoadingItems(true)
     try {
-      const totalItemId = await publicClient.readContract({
-        address: nftMintingPlatform.address as `0x${string}`,
-        abi: nftMintingPlatform.abi,
-        functionName: "getLatestMintedId",
-        args: []
-      }) as bigint
+      const nfts = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
+      setAllItems(nfts)
 
-      if (typeof totalItemId !== "bigint" || totalItemId < 1n) {
-        setLoadingItems(false)
-        return
-      }
-
-      const calls = []
-      for (let i = 1n; i <= totalItemId; i++) {
-        calls.push({
-          address: nftMintingPlatform.address as `0x${string}`,
-          abi: nftMintingPlatform.abi,
-          functionName: "nftItems",
-          args: [i]
-        })
-        calls.push({
-          address: nftMintingPlatform.address as `0x${string}`,
-          abi: nftMintingPlatform.abi,
-          functionName: "ownerOf",
-          args: [i]
-        })
-        calls.push({
-          address: nftMarketplaceHub.address as `0x${string}`,
-          abi: nftMarketplaceHub.abi,
-          functionName: "marketItems",
-          args: [i]
-        })
-        calls.push({
-          address: nftStakingPool.address as `0x${string}`,
-          abi: nftStakingPool.abi,
-          functionName: "stakes",
-          args: [i]
-        })
-      }
-
-      const multicallResults = await publicClient.multicall({
-        contracts: calls,
-        allowFailure: true
+      // Preload metadata for the user items only
+      const userNfts = nfts.filter((item) => {
+        const staked = item.stakeInfo?.staked &&
+          item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
+        const owned = item.owner.toLowerCase() === userAddress.toLowerCase()
+        return staked || owned
       })
-
-      const newItems: NFTItem[] = []
-      let idx = 0
-      for (let i = 1n; i <= totalItemId; i++) {
-        const nftDataCall = multicallResults[idx]
-        const ownerCall = multicallResults[idx + 1]
-        const marketCall = multicallResults[idx + 2]
-        const stakeCall = multicallResults[idx + 3]
-        idx += 4
-
-        if (!nftDataCall?.result || !ownerCall?.result || !marketCall?.result || !stakeCall?.result) {
-          continue
-        }
-
-        const [xpValue, resourceUrl, mintedAt, creator] = nftDataCall.result as [bigint, string, bigint, string]
-        const owner = ownerCall.result as `0x${string}`
-        const [isOnSale, salePrice] = marketCall.result as [boolean, bigint]
-        const [stakerAddr, startTimestamp, lastClaimed, staked] = stakeCall.result as [string, bigint, bigint, boolean]
-
-        newItems.push({
-          itemId: i,
-          creator,
-          xpValue,
-          resourceUrl,
-          mintedAt,
-          owner,
-          isOnSale,
-          salePrice,
-          stakeInfo: {
-            staker: stakerAddr as `0x${string}`,
-            startTimestamp,
-            lastClaimed,
-            staked
+      const newMap = { ...metadataMap }
+      for (const item of userNfts) {
+        const itemIdStr = String(item.itemId)
+        if (!newMap[itemIdStr]) {
+          try {
+            const meta = await fetchNftMetadata(item.resourceUrl)
+            newMap[itemIdStr] = meta
+          } catch {
+            newMap[itemIdStr] = {
+              imageUrl: transformIpfsUriToHttp(item.resourceUrl),
+              name: "",
+              description: "",
+              attributes: {}
+            }
           }
-        })
+        }
       }
+      setMetadataMap(newMap)
 
-      setAllItems(newItems)
     } catch (err) {
-      console.error("Error loading items via multicall:", err)
+      console.error("Error loading items via fetchAllNFTs:", err)
       toast({
         title: "Error",
         description: "Unable to fetch your NFTs. Please try again.",
@@ -202,50 +132,33 @@ export default function StakePage() {
     }
   }
 
-  const userItems = allItems.filter((item) => {
-    if (!userAddress) return false
-    const staked = item.stakeInfo?.staked
-    const stakerIsUser = item.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
-    const ownerIsUser = item.owner.toLowerCase() === userAddress.toLowerCase()
-    return ownerIsUser || (staked && stakerIsUser)
-  })
-
-  async function loadNftMetadataForItems(items: NFTItem[]) {
-    const newMap = { ...metadataMap }
-    let changed = false
-
-    for (const item of items) {
-      const itemIdStr = String(item.itemId)
-      if (!newMap[itemIdStr]) {
-        try {
-          const parsed = await fetchNftMetadata(item.resourceUrl)
-          newMap[itemIdStr] = parsed
-        } catch {
-          newMap[itemIdStr] = {
-            imageUrl: transformIpfsUriToHttp(item.resourceUrl),
-            name: "",
-            description: "",
-            attributes: {}
-          }
-        }
-        changed = true
-      }
-    }
-
-    if (changed) {
-      setMetadataMap(newMap)
-    }
-  }
-
   useEffect(() => {
-    fetchAllNFTs()
+    fetchAllData()
   }, [userAddress, nftStakingPool, nftMarketplaceHub, nftMintingPlatform, publicClient])
 
   useEffect(() => {
-    if (userItems.length) {
-      loadNftMetadataForItems(userItems)
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
     }
-  }, [userItems]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
+
+  function updateTxState(itemId: bigint, action: "stake" | "claim" | "unstake", nextState: Partial<ActionTxState>) {
+    setTxMap((prev) => {
+      const itemIdStr = itemId.toString()
+      const oldItemTxState = prev[itemIdStr] || {}
+      const oldActionState = oldItemTxState[action] || { loading: false, success: false, error: null, txHash: null }
+      const newActionState = { ...oldActionState, ...nextState }
+      return {
+        ...prev,
+        [itemIdStr]: {
+          ...oldItemTxState,
+          [action]: newActionState
+        }
+      }
+    })
+  }
 
   async function ensureApprovalForAll() {
     if (!userAddress || !walletClient || !nftMintingPlatform || !nftStakingPool) return
@@ -311,21 +224,28 @@ export default function StakePage() {
     }
   }
 
-  function updateTxState(itemId: bigint, action: "stake" | "claim" | "unstake", nextState: Partial<ActionTxState>) {
-    setTxMap((prev) => {
-      const itemIdStr = itemId.toString()
-      const oldItemTxState = prev[itemIdStr] || {}
-      const oldActionState = oldItemTxState[action] || { loading: false, success: false, error: null, txHash: null }
-      const newActionState = { ...oldActionState, ...nextState }
-      return {
-        ...prev,
-        [itemIdStr]: {
-          ...oldItemTxState,
-          [action]: newActionState
-        }
-      }
+  function userItems() {
+    if (!userAddress) return []
+    return allItems.filter((item) => {
+      const staked = item.stakeInfo?.staked &&
+        item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
+      const owned = item.owner.toLowerCase() === userAddress.toLowerCase()
+      return staked || owned
     })
   }
+
+  function computeUnclaimedXP(item: NFTItem): bigint {
+    if (!xpRate) return 0n
+    if (!item.stakeInfo?.staked) return 0n
+    if (item.stakeInfo.staker.toLowerCase() !== userAddress?.toLowerCase()) return 0n
+
+    const diff = BigInt(currentTime) - item.stakeInfo.lastClaimed
+    return diff > 0 ? diff * xpRate : 0n
+  }
+
+  const totalUnclaimed = userItems().reduce((acc, item) => acc + computeUnclaimedXP(item), 0n)
+  const stakedCount = userItems().filter((i) => i.stakeInfo?.staked).length
+  const notStakedCount = userItems().length - stakedCount
 
   async function handleStake(item: NFTItem) {
     if (!nftStakingPool || !walletClient || !userAddress || !publicClient) return
@@ -355,7 +275,7 @@ export default function StakePage() {
 
       toast({ title: "Stake Complete", description: "Your NFT is now staked." })
       updateTxState(item.itemId, "stake", { loading: false, success: true })
-      fetchAllNFTs(true)
+      fetchAllData(true)
     } catch (err: any) {
       updateTxState(item.itemId, "stake", { loading: false, success: false, error: err.message })
       toast({
@@ -385,7 +305,7 @@ export default function StakePage() {
 
       toast({ title: "Unstake Complete", description: "Your NFT has been unstaked." })
       updateTxState(item.itemId, "unstake", { loading: false, success: true })
-      fetchAllNFTs(true)
+      fetchAllData(true)
     } catch (err: any) {
       updateTxState(item.itemId, "unstake", { loading: false, success: false, error: err.message })
       toast({
@@ -415,7 +335,7 @@ export default function StakePage() {
 
       toast({ title: "Claim Success", description: "You claimed staking rewards as XP." })
       updateTxState(item.itemId, "claim", { loading: false, success: true })
-      fetchAllNFTs(true)
+      fetchAllData(true)
     } catch (err: any) {
       updateTxState(item.itemId, "claim", { loading: false, success: false, error: err.message })
       toast({
@@ -425,19 +345,6 @@ export default function StakePage() {
       })
     }
   }
-
-  function computeUnclaimedXP(item: NFTItem): bigint {
-    if (!xpRate) return 0n
-    if (!item.stakeInfo?.staked) return 0n
-    if (item.stakeInfo.staker.toLowerCase() !== userAddress?.toLowerCase()) return 0n
-
-    const diff = BigInt(currentTime) - item.stakeInfo.lastClaimed
-    return diff > 0 ? diff * xpRate : 0n
-  }
-
-  const totalUnclaimed = userItems.reduce((acc, item) => acc + computeUnclaimedXP(item), 0n)
-  const stakedCount = userItems.filter((item) => item.stakeInfo?.staked).length
-  const notStakedCount = userItems.length - stakedCount
 
   if (!userAddress) {
     return (
@@ -464,7 +371,7 @@ export default function StakePage() {
         <CardContent className="space-y-3 p-6 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Total NFTs (recognized):</span>
-            <span className="font-semibold">{userItems.length}</span>
+            <span className="font-semibold">{userItems().length}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Staked NFTs:</span>
@@ -499,11 +406,11 @@ export default function StakePage() {
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="text-sm">Loading NFTs...</span>
               </div>
-            ) : userItems.length === 0 ? (
+            ) : userItems().length === 0 ? (
               <p className="text-sm text-muted-foreground">You have no NFTs in your wallet.</p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {userItems.map((nft) => {
+                {userItems().map((nft) => {
                   const itemIdStr = String(nft.itemId)
                   const meta = metadataMap[itemIdStr] || {
                     imageUrl: transformIpfsUriToHttp(nft.resourceUrl),

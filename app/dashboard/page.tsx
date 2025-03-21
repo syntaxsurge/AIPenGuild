@@ -5,11 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { getUserTitle } from "@/lib/experience"
+import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 import { Crown, Folder, Gauge, Loader2, PieChart } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useAccount, usePublicClient } from "wagmi"
 
+/**
+ * We'll also fetch user XP from the userExperiencePoints contract
+ * for the connected user.
+ */
 export default function DashboardPage() {
   const { address } = useAccount()
   const publicClient = usePublicClient()
@@ -23,119 +28,93 @@ export default function DashboardPage() {
   const [xp, setXp] = useState<bigint | null>(null)
   const [loadingXp, setLoadingXp] = useState(false)
 
-  const [totalMinted, setTotalMinted] = useState(0)
-  const [totalSold, setTotalSold] = useState(0)
-  const [totalListed, setTotalListed] = useState(0)
-  const [totalStaked, setTotalStaked] = useState(0)
-
+  const [nfts, setNfts] = useState<NFTItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
+
+  const [totalMinted, setTotalMinted] = useState<number>(0)
+  const [totalSold, setTotalSold] = useState<number>(0)
+  const [totalListed, setTotalListed] = useState<number>(0)
+  const [totalStaked, setTotalStaked] = useState<number>(0)
+
+  const [loaded, setLoaded] = useState(false)
   const loadedRef = useRef(false)
 
   useEffect(() => {
-    if (!address || !publicClient) return
-    if (!userExperiencePoints?.address || !userExperiencePoints?.abi) return
-    if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
-    if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
-    if (!nftStakingPool?.address || !nftStakingPool?.abi) return
+    // Ensure all required values are defined.
+    if (
+      !address ||
+      !publicClient ||
+      !userExperiencePoints ||
+      !userExperiencePoints.address ||
+      !userExperiencePoints.abi ||
+      !nftMintingPlatform ||
+      !nftMintingPlatform.address ||
+      !nftMintingPlatform.abi ||
+      !nftMarketplaceHub ||
+      !nftMarketplaceHub.address ||
+      !nftMarketplaceHub.abi ||
+      !nftStakingPool ||
+      !nftStakingPool.address ||
+      !nftStakingPool.abi
+    ) {
+      return
+    }
 
+    // Prevent re-loading if already loaded.
     if (loadedRef.current) return
     loadedRef.current = true
 
-    async function fetchAllData() {
+    // Create local constants to satisfy TS narrowing.
+    const _address = address
+    const _publicClient = publicClient
+    const _userExperiencePoints = userExperiencePoints
+    const _nftMintingPlatform = nftMintingPlatform
+    const _nftMarketplaceHub = nftMarketplaceHub
+    const _nftStakingPool = nftStakingPool
+
+    async function fetchAll() {
       try {
         setLoadingXp(true)
         setLoadingItems(true)
 
-        // 1) read user XP
-        const userXp = await publicClient?.readContract({
-          address: userExperiencePoints?.address as `0x${string}`,
-          abi: userExperiencePoints?.abi,
+        // 1) Read user XP from the smart contract.
+        const userXp = await _publicClient.readContract({
+          address: _userExperiencePoints.address as `0x${string}`,
+          abi: _userExperiencePoints.abi,
           functionName: "userExperience",
-          args: [address],
+          args: [_address],
         }) as bigint
         setXp(userXp)
 
-        // 2) read total minted from nftMintingPlatform => getLatestMintedId
-        const totalItemId = await publicClient?.readContract({
-          address: nftMintingPlatform?.address as `0x${string}`,
-          abi: nftMintingPlatform?.abi,
-          functionName: "getLatestMintedId",
-          args: []
-        }) as bigint
+        // 2) Load all minted NFTs.
+        const all = await fetchAllNFTs(_publicClient, _nftMintingPlatform, _nftMarketplaceHub, _nftStakingPool)
+        setNfts(all)
 
-        const itemCount = Number(totalItemId)
+        // Filter and count NFTs related to the user.
         let mintedCount = 0
         let soldCount = 0
         let listedCount = 0
         let stakedCount = 0
 
-        for (let i = 1; i <= itemCount; i++) {
-          const bigI = BigInt(i)
-          try {
-            // read ownerOf
-            const owner = await publicClient?.readContract({
-              address: nftMintingPlatform?.address as `0x${string}`,
-              abi: nftMintingPlatform?.abi,
-              functionName: "ownerOf",
-              args: [bigI]
-            }) as `0x${string}`
-
-            // read NFT data
-            const itemData = await publicClient?.readContract({
-              address: nftMintingPlatform?.address as `0x${string}`,
-              abi: nftMintingPlatform?.abi,
-              functionName: "nftItems",
-              args: [bigI]
-            }) as [bigint, string, bigint, string] // xpValue, resourceUrl, mintedAt, creator
-
-            const creator = itemData[3]
-
-            // read marketplace data => marketItems(i)
-            const marketItem = await publicClient?.readContract({
-              address: nftMarketplaceHub?.address as `0x${string}`,
-              abi: nftMarketplaceHub?.abi,
-              functionName: "marketItems",
-              args: [bigI]
-            }) as [boolean, bigint]
-
-            const isOnSale = marketItem[0]
-            // read stake info
-            const stakeData = await publicClient?.readContract({
-              address: nftStakingPool?.address as `0x${string}`,
-              abi: nftStakingPool?.abi,
-              functionName: "stakes",
-              args: [bigI]
-            }) as [string, bigint, bigint, boolean]
-
-            const staker = stakeData[0]
-            const staked = stakeData[3] && staker.toLowerCase() === address?.toLowerCase()
-
-            // minted by user?
-            if (creator.toLowerCase() === address?.toLowerCase()) {
-              mintedCount++
-
-              // if user minted but doesn't own => check if staked
-              if (owner.toLowerCase() !== address.toLowerCase()) {
-                if (staked) {
-                  // staked by user anyway
-                } else {
-                  soldCount++
-                }
-              }
+        for (const item of all) {
+          const isUserCreator = item.creator.toLowerCase() === _address.toLowerCase()
+          if (isUserCreator) {
+            mintedCount++
+            // If the item is not owned by the user, consider it sold.
+            if (item.owner.toLowerCase() !== _address.toLowerCase()) {
+              soldCount++
             }
-
-            // if user owns & isOnSale => user listed it
-            if (owner.toLowerCase() === address?.toLowerCase() && isOnSale) {
-              listedCount++
-            }
-
-            // track staked
-            if (staked) {
-              stakedCount++
-            }
-
-          } catch {
-            // skip
+          }
+          // Count NFTs that the user owns and that are on sale.
+          if (item.owner.toLowerCase() === _address.toLowerCase() && item.isOnSale) {
+            listedCount++
+          }
+          // Count staked NFTs by the user.
+          if (
+            item.stakeInfo?.staked &&
+            item.stakeInfo.staker.toLowerCase() === _address.toLowerCase()
+          ) {
+            stakedCount++
           }
         }
 
@@ -148,15 +127,16 @@ export default function DashboardPage() {
         toast({
           title: "Error",
           description: "Failed to fetch dashboard data. Please try again.",
-          variant: "destructive"
+          variant: "destructive",
         })
       } finally {
         setLoadingXp(false)
         setLoadingItems(false)
+        setLoaded(true)
       }
     }
 
-    fetchAllData()
+    fetchAll()
   }, [
     address,
     publicClient,
@@ -164,7 +144,7 @@ export default function DashboardPage() {
     nftMintingPlatform,
     nftMarketplaceHub,
     nftStakingPool,
-    toast
+    toast,
   ])
 
   const userTitle = getUserTitle(Number(xp ?? 0))
@@ -223,9 +203,7 @@ export default function DashboardPage() {
                 <span>Checking title...</span>
               </div>
             ) : (
-              <span className="text-2xl font-bold">
-                {userTitle}
-              </span>
+              <span className="text-2xl font-bold">{userTitle}</span>
             )}
           </CardContent>
         </Card>
@@ -245,16 +223,16 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-2 text-sm sm:text-base">
                 <p>
-                  <strong>Minted:</strong> {totalMinted}
+                  <strong>Minted by You:</strong> {totalMinted}
                 </p>
                 <p>
-                  <strong>Sold:</strong> {totalSold}
+                  <strong>Sold by You:</strong> {totalSold}
                 </p>
                 <p>
-                  <strong>Listed:</strong> {totalListed}
+                  <strong>Listed by You:</strong> {totalListed}
                 </p>
                 <p>
-                  <strong>Staked:</strong> {totalStaked}
+                  <strong>Staked by You:</strong> {totalStaked}
                 </p>
               </div>
             )}
@@ -272,7 +250,10 @@ export default function DashboardPage() {
               View and manage all the NFTs you own.
             </p>
             <Link href="/my-nfts">
-              <Button variant="default" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button
+                variant="default"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 View Owned NFTs
               </Button>
             </Link>

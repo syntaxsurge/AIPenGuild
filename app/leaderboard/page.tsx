@@ -10,6 +10,11 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePublicClient } from "wagmi"
 
+/**
+ * For Leaderboard, we still do our approach of enumerating owners & stakers to build a unique address set,
+ * then fetch XP from userExperiencePoints for each address. We'll keep it separate from fetchAllNFTs
+ * because we specifically want aggregated address-based data.
+ */
 interface LeaderboardEntry {
   address: string
   xp: bigint
@@ -21,9 +26,7 @@ export default function LeaderboardPage() {
   const nftMintingPlatform = useContract("NFTMintingPlatform")
   const nftStakingPool = useContract("NFTStakingPool")
 
-  // The primary state for storing the fetched data
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  // Display a spinner or table
   const [loading, setLoading] = useState(true)
 
   // Filter states
@@ -33,7 +36,6 @@ export default function LeaderboardPage() {
   const publicClient = usePublicClient()
   const loadedRef = useRef(false)
 
-  // fetch function
   async function loadLeaderboard() {
     if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
     if (!nftStakingPool?.address || !nftStakingPool?.abi) return
@@ -42,7 +44,6 @@ export default function LeaderboardPage() {
 
     setLoading(true)
     try {
-      // read total minted from NFTMintingPlatform
       const totalItems = await publicClient.readContract({
         address: nftMintingPlatform.address as `0x${string}`,
         abi: nftMintingPlatform.abi,
@@ -57,16 +58,15 @@ export default function LeaderboardPage() {
       }
 
       const calls = []
-      // For each token, we want to read ownerOf and also read stake info
       for (let i = 1n; i <= totalItems; i++) {
-        // 1) ownerOf
+        // ownerOf
         calls.push({
           address: nftMintingPlatform.address as `0x${string}`,
           abi: nftMintingPlatform.abi,
           functionName: "ownerOf",
           args: [i]
         })
-        // 2) stakes(i)
+        // stakes(i)
         calls.push({
           address: nftStakingPool.address as `0x${string}`,
           abi: nftStakingPool.abi,
@@ -138,7 +138,6 @@ export default function LeaderboardPage() {
     }
   }, [loadLeaderboard])
 
-  // filter
   const filteredLeaderboard = useMemo(() => {
     const minVal = Math.min(xpRange[0], xpRange[1])
     const maxVal = Math.max(xpRange[0], xpRange[1])

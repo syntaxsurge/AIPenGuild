@@ -10,12 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Input } from "@/components/ui/input"
-import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
-import { transformIpfsUriToHttp } from "@/lib/ipfs"
 import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
+import { transformIpfsUriToHttp } from "@/lib/ipfs"
 import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -27,17 +26,9 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract
 } from "wagmi"
-
-interface MarketplaceItem {
-  itemId: bigint
-  creator: string
-  xpValue: bigint
-  resourceUrl: string
-  mintedAt: bigint
-  isOnSale: boolean
-  salePrice: bigint
-  owner: string
-}
+import { TransactionStatus } from "@/components/ui/transaction-status"
+import { parseEther } from "viem"
+import { fetchAllNFTs, NFTItem } from "@/lib/nft-data"
 
 export default function MarketplacePage() {
   const { toast } = useToast()
@@ -45,7 +36,6 @@ export default function MarketplacePage() {
   const { address: wagmiAddress } = useAccount()
   const chainId = useChainId() || 1287
 
-  // For the buy transaction
   const {
     data: buyWriteData,
     error: buyError,
@@ -60,18 +50,16 @@ export default function MarketplacePage() {
     isSuccess: isBuyTxSuccess,
     isError: isBuyTxError,
     error: buyTxReceiptError
-  } = useWaitForTransactionReceipt({
-    hash: buyWriteData ?? undefined,
-  })
+  } = useWaitForTransactionReceipt({ hash: buyWriteData ?? undefined })
 
   const publicClient = usePublicClient()
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const nftMintingPlatform = useContract("NFTMintingPlatform")
+  const nftStakingPool = useContract("NFTStakingPool")
 
-  // On-page states
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [listedItems, setListedItems] = useState<MarketplaceItem[]>([])
+  const [listedItems, setListedItems] = useState<NFTItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const fetchedRef = useRef(false)
 
@@ -89,10 +77,9 @@ export default function MarketplacePage() {
   const [showBuyTxStatus, setShowBuyTxStatus] = useState(false)
   const [buyTxError, setBuyTxError] = useState<string | null>(null)
 
-  // For storing metadata from JSON
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
 
-  // Watch for buy transaction states -> show/hide transaction status
+  // Watch for buy transaction states
   useEffect(() => {
     const anyActive = isBuyPending || isBuyTxLoading || isBuyTxSuccess || isBuyTxError
     setShowBuyTxStatus(anyActive)
@@ -109,7 +96,7 @@ export default function MarketplacePage() {
         description: "You have purchased the NFT successfully!"
       })
       setBuyingItemId(null)
-      // Reload marketplace after successful purchase
+      // Reload marketplace
       fetchMarketplaceItems(true)
     }
     if (isBuyTxError) {
@@ -122,15 +109,7 @@ export default function MarketplacePage() {
       })
       setBuyingItemId(null)
     }
-  }, [
-    isBuyPending,
-    isBuyTxLoading,
-    isBuyTxSuccess,
-    isBuyTxError,
-    buyTxReceiptError,
-    buyError,
-    toast
-  ])
+  }, [isBuyPending, isBuyTxLoading, isBuyTxSuccess, isBuyTxError, buyTxReceiptError, buyError, toast])
 
   function handleApplyFilters() {
     setSearchTerm(tempSearch)
@@ -141,6 +120,7 @@ export default function MarketplacePage() {
   async function fetchMarketplaceItems(forceRefresh?: boolean) {
     if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
     if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
+    if (!nftStakingPool?.address || !nftStakingPool?.abi) return
     if (!publicClient) return
 
     if (!forceRefresh && fetchedRef.current) return
@@ -148,109 +128,49 @@ export default function MarketplacePage() {
 
     setIsLoading(true)
     try {
-      const totalItemId = await publicClient.readContract({
-        address: nftMintingPlatform.address as `0x${string}`,
-        abi: nftMintingPlatform.abi,
-        functionName: "getLatestMintedId",
-        args: [],
-      })
-      if (typeof totalItemId !== "bigint") {
-        setIsLoading(false)
-        return
-      }
+      const allNfts = await fetchAllNFTs(
+        publicClient,
+        nftMintingPlatform,
+        nftMarketplaceHub,
+        nftStakingPool
+      )
+      // We'll only store items that are minted. The function already gets 1.. total minted
+      // So let's just store them in listedItems but filter for isOnSale.
+      setListedItems(allNfts)
 
-      const newListed: MarketplaceItem[] = []
-      for (let i = 1n; i <= totalItemId; i++) {
-        try {
-          const marketData = await publicClient.readContract({
-            address: nftMarketplaceHub.address as `0x${string}`,
-            abi: nftMarketplaceHub.abi,
-            functionName: "marketItems",
-            args: [i],
-          }) as [boolean, bigint]
-
-          const isOnSale = marketData[0]
-          const salePrice = marketData[1]
-
-          // read the NFT's core data
-          const nftItem = await publicClient.readContract({
-            address: nftMintingPlatform.address as `0x${string}`,
-            abi: nftMintingPlatform.abi,
-            functionName: "nftItems",
-            args: [i],
-          }) as [bigint, string, bigint, string]
-
-          const xpValue = nftItem[0]
-          const resourceUrl = nftItem[1]
-          const mintedAt = nftItem[2]
-          const creator = nftItem[3]
-
-          // read current owner
-          const owner = await publicClient.readContract({
-            address: nftMintingPlatform.address as `0x${string}`,
-            abi: nftMintingPlatform.abi,
-            functionName: "ownerOf",
-            args: [i],
-          }) as `0x${string}`
-
-          newListed.push({
-            itemId: i,
-            creator,
-            xpValue,
-            resourceUrl,
-            mintedAt,
-            isOnSale,
-            salePrice,
-            owner,
-          })
-        } catch {
-          // skip
+      // Load metadata
+      const newMap: Record<string, ParsedNftMetadata> = {}
+      for (const item of allNfts) {
+        if (!newMap[String(item.itemId)]) {
+          try {
+            const parsed = await fetchNftMetadata(item.resourceUrl)
+            newMap[String(item.itemId)] = parsed
+          } catch {
+            newMap[String(item.itemId)] = {
+              imageUrl: transformIpfsUriToHttp(item.resourceUrl),
+              name: "",
+              description: "",
+              attributes: {}
+            }
+          }
         }
       }
-      setListedItems(newListed)
+      setMetadataMap(newMap)
     } catch (err) {
       console.error("Error fetching marketplace items:", err)
+      toast({
+        title: "Error",
+        description: "Unable to load marketplace items. Try again later.",
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
-  async function loadMarketplaceMetadata(items: MarketplaceItem[]) {
-    const newMap: Record<string, ParsedNftMetadata> = { ...metadataMap }
-    let changed = false
-
-    for (const item of items) {
-      const itemIdStr = String(item.itemId)
-      if (!newMap[itemIdStr]) {
-        try {
-          const parsed = await fetchNftMetadata(item.resourceUrl)
-          newMap[itemIdStr] = parsed
-        } catch {
-          newMap[itemIdStr] = {
-            imageUrl: transformIpfsUriToHttp(item.resourceUrl),
-            name: "",
-            description: "",
-            attributes: {}
-          }
-        }
-        changed = true
-      }
-    }
-
-    if (changed) {
-      setMetadataMap(newMap)
-    }
-  }
-
   useEffect(() => {
     fetchMarketplaceItems()
-  }, [nftMarketplaceHub, nftMintingPlatform, publicClient])
-
-  useEffect(() => {
-    if (listedItems.length) {
-      loadMarketplaceMetadata(listedItems)
-    }
-  }, [listedItems]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nftMarketplaceHub, nftMintingPlatform, nftStakingPool, publicClient])
 
   const filteredItems = React.useMemo(() => {
     return listedItems
@@ -261,10 +181,10 @@ export default function MarketplacePage() {
           return false
         }
         if (searchTerm) {
-          const itemIdStr = String(item.itemId)
-          const lowerSearch = searchTerm.toLowerCase()
+          const idStr = String(item.itemId)
           const lowerResource = item.resourceUrl.toLowerCase()
-          if (!itemIdStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
+          const lowerSearch = searchTerm.toLowerCase()
+          if (!idStr.includes(searchTerm) && !lowerResource.includes(lowerSearch)) {
             return false
           }
         }
@@ -272,13 +192,13 @@ export default function MarketplacePage() {
       })
   }, [listedItems, priceRange, searchTerm])
 
-  async function handleBuy(item: MarketplaceItem) {
+  async function handleBuy(item: NFTItem) {
     try {
       if (!wagmiAddress) {
         toast({
           title: "Wallet not connected",
           description: "Please connect your wallet before buying.",
-          variant: "destructive",
+          variant: "destructive"
         })
         return
       }
@@ -286,7 +206,7 @@ export default function MarketplacePage() {
         toast({
           title: "Item not for sale",
           description: "That item is not currently for sale.",
-          variant: "destructive",
+          variant: "destructive"
         })
         return
       }
@@ -294,7 +214,7 @@ export default function MarketplacePage() {
         toast({
           title: "No Contract Found",
           description: "NFTMarketplaceHub contract not found. Check your chain or config.",
-          variant: "destructive",
+          variant: "destructive"
         })
         return
       }
@@ -302,7 +222,7 @@ export default function MarketplacePage() {
         toast({
           title: "Already Owned",
           description: "You already own this NFT. You can't buy your own NFT.",
-          variant: "destructive",
+          variant: "destructive"
         })
         return
       }
@@ -315,7 +235,7 @@ export default function MarketplacePage() {
         type: "function",
         stateMutability: "payable",
         inputs: [{ name: "itemId", type: "uint256" }],
-        outputs: [],
+        outputs: []
       }
 
       await writeBuyContract({
@@ -323,12 +243,12 @@ export default function MarketplacePage() {
         abi: [purchaseABI],
         functionName: "purchaseNFTItem",
         args: [item.itemId],
-        value: item.salePrice,
+        value: item.salePrice
       })
 
       toast({
         title: "Purchase Transaction",
-        description: "Transaction submitted... awaiting confirmation.",
+        description: "Transaction submitted... awaiting confirmation."
       })
     } catch (err: any) {
       setBuyingItemId(null)
@@ -336,7 +256,7 @@ export default function MarketplacePage() {
       toast({
         title: "Purchase Failure",
         description: err.message || "Unable to buy NFT",
-        variant: "destructive",
+        variant: "destructive"
       })
     }
   }
@@ -344,8 +264,9 @@ export default function MarketplacePage() {
   return (
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } md:relative md:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:relative md:translate-x-0`}
       >
         <Card className="h-full border-r border-border rounded-none">
           <CardHeader className="p-4 border-b border-border bg-secondary text-secondary-foreground">
