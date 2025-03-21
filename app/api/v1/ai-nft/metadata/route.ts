@@ -209,7 +209,7 @@ Obey the category, numeric ranges, and no extra keys!
     } else {
       throw new Error('No valid image URL found from replicate model')
     }
-    
+
     // Construct final metadata
     const finalName = attributesJson.name || 'Unnamed NFT'
     const { finalReplicatePrompt, ...restAttrs } = attributesJson

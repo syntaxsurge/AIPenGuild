@@ -10,16 +10,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Input } from "@/components/ui/input"
+import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
-import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { transformIpfsUriToHttp } from "@/lib/ipfs"
+import { fetchNftMetadata, ParsedNftMetadata } from "@/lib/nft-metadata"
 import { Grid2X2, LayoutList, Loader2, Search, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import React, { useEffect, useRef, useState } from "react"
-import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
+import {
+  useAccount,
+  useChainId,
+  usePublicClient,
+  useWaitForTransactionReceipt,
+  useWriteContract
+} from "wagmi"
 
 interface MarketplaceItem {
   itemId: bigint
@@ -36,8 +43,9 @@ export default function MarketplacePage() {
   const { toast } = useToast()
   const currencySymbol = useNativeCurrencySymbol()
   const { address: wagmiAddress } = useAccount()
+  const chainId = useChainId() || 1287
 
-  // For the buy transaction (shared across items)
+  // For the buy transaction
   const {
     data: buyWriteData,
     error: buyError,
@@ -51,12 +59,11 @@ export default function MarketplacePage() {
     isLoading: isBuyTxLoading,
     isSuccess: isBuyTxSuccess,
     isError: isBuyTxError,
-    error: buyTxReceiptError,
+    error: buyTxReceiptError
   } = useWaitForTransactionReceipt({
     hash: buyWriteData ?? undefined,
   })
 
-  // Contract references
   const publicClient = usePublicClient()
   const nftMarketplaceHub = useContract("NFTMarketplaceHub")
   const nftMintingPlatform = useContract("NFTMintingPlatform")
@@ -78,51 +85,59 @@ export default function MarketplacePage() {
   // Which item is being purchased
   const [buyingItemId, setBuyingItemId] = useState<bigint | null>(null)
 
+  // We'll store a local state to show transaction status in the UI
+  const [showBuyTxStatus, setShowBuyTxStatus] = useState(false)
+  const [buyTxError, setBuyTxError] = useState<string | null>(null)
+
   // For storing metadata from JSON
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
 
-  // Transaction watchers
+  // Watch for buy transaction states -> show/hide transaction status
   useEffect(() => {
+    const anyActive = isBuyPending || isBuyTxLoading || isBuyTxSuccess || isBuyTxError
+    setShowBuyTxStatus(anyActive)
+
     if (isBuyTxLoading) {
       toast({
         title: "Transaction Pending",
-        description: "Your purchase transaction is being confirmed...",
+        description: "Your purchase transaction is being confirmed..."
       })
     }
     if (isBuyTxSuccess) {
       toast({
         title: "Transaction Successful!",
-        description: "You have purchased the NFT successfully!",
+        description: "You have purchased the NFT successfully!"
       })
       setBuyingItemId(null)
       // Reload marketplace after successful purchase
       fetchMarketplaceItems(true)
     }
     if (isBuyTxError) {
+      const errMsg = buyTxReceiptError?.message || buyError?.message || "Something went wrong."
+      setBuyTxError(errMsg)
       toast({
         title: "Transaction Failed",
-        description: buyTxReceiptError?.message || buyError?.message || "Something went wrong.",
-        variant: "destructive",
+        description: errMsg,
+        variant: "destructive"
       })
       setBuyingItemId(null)
     }
   }, [
+    isBuyPending,
     isBuyTxLoading,
     isBuyTxSuccess,
     isBuyTxError,
     buyTxReceiptError,
     buyError,
-    toast,
+    toast
   ])
 
-  // Filter application
   function handleApplyFilters() {
     setSearchTerm(tempSearch)
     setPriceRange(tempPriceRange)
     setSidebarOpen(false)
   }
 
-  // Fetch items
   async function fetchMarketplaceItems(forceRefresh?: boolean) {
     if (!nftMarketplaceHub?.address || !nftMarketplaceHub?.abi) return
     if (!nftMintingPlatform?.address || !nftMintingPlatform?.abi) return
@@ -133,7 +148,6 @@ export default function MarketplacePage() {
 
     setIsLoading(true)
     try {
-      // 1) read total minted from NFTMintingPlatform
       const totalItemId = await publicClient.readContract({
         address: nftMintingPlatform.address as `0x${string}`,
         abi: nftMintingPlatform.abi,
@@ -148,7 +162,6 @@ export default function MarketplacePage() {
       const newListed: MarketplaceItem[] = []
       for (let i = 1n; i <= totalItemId; i++) {
         try {
-          // read MarketItem from marketplace
           const marketData = await publicClient.readContract({
             address: nftMarketplaceHub.address as `0x${string}`,
             abi: nftMarketplaceHub.abi,
@@ -159,7 +172,7 @@ export default function MarketplacePage() {
           const isOnSale = marketData[0]
           const salePrice = marketData[1]
 
-          // read the NFT's core data from NFTMintingPlatform
+          // read the NFT's core data
           const nftItem = await publicClient.readContract({
             address: nftMintingPlatform.address as `0x${string}`,
             abi: nftMintingPlatform.abi,
@@ -191,7 +204,7 @@ export default function MarketplacePage() {
             owner,
           })
         } catch {
-          // skip invalid
+          // skip
         }
       }
       setListedItems(newListed)
@@ -202,7 +215,6 @@ export default function MarketplacePage() {
     }
   }
 
-  // Load metadata for newly fetched items
   async function loadMarketplaceMetadata(items: MarketplaceItem[]) {
     const newMap: Record<string, ParsedNftMetadata> = { ...metadataMap }
     let changed = false
@@ -230,19 +242,16 @@ export default function MarketplacePage() {
     }
   }
 
-  // load marketplace items once
   useEffect(() => {
     fetchMarketplaceItems()
   }, [nftMarketplaceHub, nftMintingPlatform, publicClient])
 
-  // whenever listedItems changes, load their metadata
   useEffect(() => {
     if (listedItems.length) {
       loadMarketplaceMetadata(listedItems)
     }
   }, [listedItems]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Final filtered array
   const filteredItems = React.useMemo(() => {
     return listedItems
       .filter((item) => item.isOnSale)
@@ -251,7 +260,6 @@ export default function MarketplacePage() {
         if (numericPrice < priceRange[0] || numericPrice > priceRange[1]) {
           return false
         }
-        // Search
         if (searchTerm) {
           const itemIdStr = String(item.itemId)
           const lowerSearch = searchTerm.toLowerCase()
@@ -264,7 +272,6 @@ export default function MarketplacePage() {
       })
   }, [listedItems, priceRange, searchTerm])
 
-  // Handle "Buy"
   async function handleBuy(item: MarketplaceItem) {
     try {
       if (!wagmiAddress) {
@@ -291,7 +298,6 @@ export default function MarketplacePage() {
         })
         return
       }
-      // check if user is owner
       if (item.owner.toLowerCase() === wagmiAddress.toLowerCase()) {
         toast({
           title: "Already Owned",
@@ -302,6 +308,7 @@ export default function MarketplacePage() {
       }
 
       setBuyingItemId(item.itemId)
+      setBuyTxError(null)
 
       const purchaseABI = {
         name: "purchaseNFTItem",
@@ -325,6 +332,7 @@ export default function MarketplacePage() {
       })
     } catch (err: any) {
       setBuyingItemId(null)
+      setBuyTxError(err.message || "Unable to buy NFT")
       toast({
         title: "Purchase Failure",
         description: err.message || "Unable to buy NFT",
@@ -335,7 +343,6 @@ export default function MarketplacePage() {
 
   return (
     <main className="relative flex min-h-screen bg-white dark:bg-gray-900 text-foreground">
-      {/* Sidebar (Filters) */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-80 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
           } md:relative md:translate-x-0`}
@@ -355,7 +362,6 @@ export default function MarketplacePage() {
             </div>
           </CardHeader>
           <CardContent className="overflow-auto px-4 py-4 space-y-6">
-            {/* Search */}
             <div className="rounded-md p-3 bg-accent/10">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-muted-foreground" />
@@ -367,7 +373,6 @@ export default function MarketplacePage() {
                 />
               </div>
             </div>
-            {/* Price Range */}
             <Accordion type="multiple" className="w-full">
               <AccordionItem value="price">
                 <AccordionTrigger>Price Range</AccordionTrigger>
@@ -419,9 +424,7 @@ export default function MarketplacePage() {
         </Card>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col px-4 py-6 sm:px-6 md:px-8">
-        {/* Header */}
         <header className="mb-4 flex items-center justify-between flex-wrap gap-2">
           <h1 className="text-3xl font-extrabold text-primary">AIPenGuild Marketplace</h1>
           <div className="flex items-center gap-2">
@@ -444,7 +447,6 @@ export default function MarketplacePage() {
           </div>
         </header>
 
-        {/* View Mode Toggle */}
         <div className="mb-6 flex items-center justify-end gap-2">
           <Button
             variant={viewMode === "grid" ? "default" : "ghost"}
@@ -478,7 +480,12 @@ export default function MarketplacePage() {
                 {filteredItems.map((item) => {
                   const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
                   const itemIdStr = String(item.itemId)
-                  const meta = metadataMap[itemIdStr] || { imageUrl: transformIpfsUriToHttp(item.resourceUrl), name: "", description: "", attributes: {} }
+                  const meta = metadataMap[itemIdStr] || {
+                    imageUrl: transformIpfsUriToHttp(item.resourceUrl),
+                    name: "",
+                    description: "",
+                    attributes: {}
+                  }
 
                   return (
                     <div
@@ -539,7 +546,12 @@ export default function MarketplacePage() {
                 {filteredItems.map((item) => {
                   const isOwner = wagmiAddress?.toLowerCase() === item.owner.toLowerCase()
                   const itemIdStr = String(item.itemId)
-                  const meta = metadataMap[itemIdStr] || { imageUrl: transformIpfsUriToHttp(item.resourceUrl), name: "", description: "", attributes: {} }
+                  const meta = metadataMap[itemIdStr] || {
+                    imageUrl: transformIpfsUriToHttp(item.resourceUrl),
+                    name: "",
+                    description: "",
+                    attributes: {}
+                  }
 
                   return (
                     <div
@@ -599,6 +611,16 @@ export default function MarketplacePage() {
             )}
           </>
         )}
+
+        {/* Transaction status display for buy operation */}
+        <TransactionStatus
+          isLoading={isBuyPending || isBuyTxLoading}
+          isSuccess={isBuyTxSuccess}
+          errorMessage={buyTxError || null}
+          txHash={buyWriteData ?? null}
+          chainId={chainId}
+          className={showBuyTxStatus ? '' : 'hidden'}
+        />
       </div>
     </main>
   )

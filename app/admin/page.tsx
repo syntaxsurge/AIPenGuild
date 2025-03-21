@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { TransactionStatus } from "@/components/ui/transaction-status"
+import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useRef, useState } from "react"
 import { parseEther } from "viem"
-import { useAccount, usePublicClient, useWalletClient } from "wagmi"
-import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
+import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 
 interface TxStatus {
   loading: boolean
@@ -26,11 +27,11 @@ export default function AdminPage() {
   const publicClient = usePublicClient()
   const { data: walletClient } = useWalletClient()
   const { toast } = useToast()
+  const chainId = useChainId() || 1287
 
   // Contract config
   const platformRewardPool = useContract("PlatformRewardPool")
 
-  // Is references loaded?
   const isReferencesReady = (
     !isDisconnected &&
     !!publicClient &&
@@ -50,18 +51,16 @@ export default function AdminPage() {
   // Withdraw input
   const [withdrawAmount, setWithdrawAmount] = useState("")
 
-  // Show transaction status
-  const [showTxStatus, setShowTxStatus] = useState(false)
-
-  // Our local withdraw transaction status
+  // Transaction state
   const [withdrawTx, setWithdrawTx] = useState<TxStatus>({
     loading: false,
     success: false,
     error: null
   })
+  // We'll track the transaction hash, so we can show a link in <TransactionStatus />
+  const [withdrawHash, setWithdrawHash] = useState<`0x${string}` | null>(null)
 
   const referencesCheckedRef = useRef(false)
-  // We also want to make sure we only load the balance once
   const balanceLoadedRef = useRef(false)
 
   // 1) Check ownership once references are ready
@@ -124,7 +123,7 @@ export default function AdminPage() {
       }
     }
 
-    // Only load once if we have references, we know we're the owner, and not disconnected
+    // Only load once if references are ready, we know we're the owner, and not disconnected
     if (isReferencesReady && !ownerLoading && isOwner && !balanceLoadedRef.current) {
       balanceLoadedRef.current = true
       loadBalance()
@@ -153,9 +152,8 @@ export default function AdminPage() {
       return
     }
 
-    // We'll show the transaction status
-    setShowTxStatus(true)
     setWithdrawTx({ loading: true, success: false, error: null })
+    setWithdrawHash(null)
 
     const weiAmount = parseEther(withdrawAmount)
     try {
@@ -164,7 +162,6 @@ export default function AdminPage() {
         description: `Withdrawing ${withdrawAmount} ${currencySymbol} from reward pool...`
       })
 
-      // 1) Write the transaction
       const hash = await walletClient.writeContract({
         address: platformRewardPool.address as `0x${string}`,
         abi: platformRewardPool.abi,
@@ -173,7 +170,8 @@ export default function AdminPage() {
         account: wagmiAddress
       })
 
-      // 2) Wait for transaction receipt
+      setWithdrawHash(hash)
+
       await publicClient.waitForTransactionReceipt({ hash })
 
       toast({
@@ -182,7 +180,7 @@ export default function AdminPage() {
       })
       setWithdrawTx({ loading: false, success: true, error: null })
 
-      // 3) Reset input, reload balance
+      // Reset input, reload balance
       setWithdrawAmount("")
       const val = await publicClient.readContract({
         address: platformRewardPool.address as `0x${string}`,
@@ -193,7 +191,6 @@ export default function AdminPage() {
       if (typeof val === "bigint") {
         setPoolBalance(val)
       }
-
     } catch (err: any) {
       setWithdrawTx({ loading: false, success: false, error: err.message })
       toast({
@@ -204,7 +201,6 @@ export default function AdminPage() {
     }
   }
 
-  // If wallet is disconnected
   if (isDisconnected) {
     return (
       <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
@@ -216,7 +212,6 @@ export default function AdminPage() {
     )
   }
 
-  // If references are not ready => show a simple loading
   if (!isReferencesReady) {
     return (
       <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
@@ -230,7 +225,6 @@ export default function AdminPage() {
     )
   }
 
-  // If still checking ownership
   if (ownerLoading) {
     return (
       <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
@@ -242,12 +236,10 @@ export default function AdminPage() {
     )
   }
 
-  // If user is not owner, we won't see this because we redirect. But let's guard anyway
   if (!isOwner) {
     return null
   }
 
-  // Otherwise, we show the admin panel
   return (
     <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
       <div className="max-w-5xl w-full">
@@ -288,24 +280,15 @@ export default function AdminPage() {
                 >
                   {withdrawTx.loading ? "Withdrawing..." : "Withdraw"}
                 </Button>
-
-                {showTxStatus && (
-                  <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                    <p className="font-bold">Transaction Status:</p>
-                    {withdrawTx.loading && <p className="font-bold text-muted-foreground">Pending confirmation...</p>}
-                    {withdrawTx.success && (
-                      <p className="font-bold text-green-600">
-                        Transaction Confirmed! Withdrawal successful.
-                      </p>
-                    )}
-                    {withdrawTx.error && (
-                      <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
-                        Transaction Failed: {withdrawTx.error}
-                      </p>
-                    )}
-                  </div>
-                )}
               </form>
+
+              <TransactionStatus
+                isLoading={withdrawTx.loading}
+                isSuccess={withdrawTx.success}
+                errorMessage={withdrawTx.error}
+                txHash={withdrawHash}
+                chainId={chainId}
+              />
             </div>
           </CardContent>
         </Card>

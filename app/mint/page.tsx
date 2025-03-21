@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { TransactionStatus } from "@/components/ui/transaction-status"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
-import { getTxUrl } from "@/lib/explorer"
 import { uploadFileToIpfs, uploadJsonToIpfs } from "@/lib/ipfs"
 import { Brain, Loader2, Upload, Wand } from "lucide-react"
 import Image from "next/image"
@@ -32,15 +32,11 @@ export default function MintNFTPage() {
 
   const currencySymbol = useNativeCurrencySymbol()
 
-  // Wagmi's useBalance for native currency checks
   const { data: userBalanceData } = useBalance({
     address: wagmiAddress
   })
 
-  // The NFTCreatorCollection contract from our config
   const creatorCollection = useContract("NFTCreatorCollection")
-
-  // We'll fetch the XP module address dynamically via useContract
   const xpModule = useContract("UserExperiencePoints")
 
   const [prompt, setPrompt] = useState("")
@@ -58,6 +54,18 @@ export default function MintNFTPage() {
   const [mintStage, setMintStage] = useState<MintStage>('idle')
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] || null
+    setUploadedFile(file)
+    setAiNft(null)
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+    } else {
+      setPreviewUrl(null)
+    }
+  }
+
   async function handleGenerateAttributesAndImage() {
     if (!prompt.trim()) {
       setShowPromptError(true)
@@ -68,7 +76,6 @@ export default function MintNFTPage() {
     setGenerateImageError("")
     setGeneratingImage(true)
     try {
-      // This route calls an AI model to produce JSON with attributes + final image
       const resp = await fetch("/api/v1/ai-nft/metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,22 +103,6 @@ export default function MintNFTPage() {
     }
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null
-    setUploadedFile(file)
-    setAiNft(null)
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
-    } else {
-      setPreviewUrl(null)
-    }
-  }
-
-  /**
-   * Confirm the user either has enough XP (if payWithXP=true) or enough native balance if payWithXP=false.
-   * Then upload an image + JSON to IPFS, and pass the final metadataURL to the contract.
-   */
   async function handleMint() {
     try {
       if (!wagmiAddress) {
@@ -134,7 +125,6 @@ export default function MintNFTPage() {
       setMintError("")
       setMintStage('checkingPrereqs')
 
-      // 1) If paying with XP => ensure user has at least 100 XP
       if (payWithXP) {
         if (!publicClient) {
           throw new Error("No public client found. Please connect your wallet.")
@@ -149,7 +139,6 @@ export default function MintNFTPage() {
           throw new Error(`Insufficient XP. You have ${xpVal.toString()} XP, need 100.`)
         }
       } else {
-        // paying with 0.1 native
         if (userBalanceData?.value) {
           if (userBalanceData.value < parseEther("0.1")) {
             throw new Error(`Insufficient balance. You only have ${userBalanceData.formatted} ${userBalanceData.symbol}`)
@@ -157,16 +146,12 @@ export default function MintNFTPage() {
         }
       }
 
-      // 2) upload image + metadata to IPFS
       setMintStage('uploadingImage')
-
       let finalMetadataUrl = ""
       if (useAIImage) {
         if (!aiNft?.image) {
           throw new Error("No AI metadata found. Please generate an image first.")
         }
-        // We'll re-upload the AI image so it can be pinned in your own IPFS folder.
-        // Then create a metadata JSON with that pinned image link
         const imageData = await fetch(aiNft.image)
         if (!imageData.ok) throw new Error("Failed to fetch AI image for re-upload")
         const blob = await imageData.blob()
@@ -185,7 +170,6 @@ export default function MintNFTPage() {
         }
         const imageIpfsUrl = await uploadFileToIpfs(uploadedFile)
         const randomAttrs = {
-          // Some random attributes
           power: Math.floor(Math.random() * 100) + 1,
           durability: Math.floor(Math.random() * 100) + 1,
           rarity: "Random"
@@ -198,7 +182,6 @@ export default function MintNFTPage() {
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       }
 
-      // 3) send transaction to mint, passing finalMetadataUrl as the resourceUrl
       setMintStage('sendingTx')
       const mintValue = payWithXP ? undefined : parseEther("0.1")
 
@@ -469,28 +452,19 @@ export default function MintNFTPage() {
                 <strong>Error:</strong> {mintError}
               </div>
             )}
-            {txHash && (
-              <div className="rounded-md border border-border p-4 mt-2 text-sm">
-                <p className="font-bold">Transaction Hash:</p>
-                <a
-                  href={getTxUrl(chainId, txHash)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline text-primary"
-                >
-                  {txHash}
-                </a>
-                {mintStage === 'waitingForTx' && (
-                  <p className="mt-1 text-sm text-muted-foreground">Waiting for confirmation...</p>
-                )}
-                {mintStage === 'success' && (
-                  <p className="mt-1 text-sm text-green-600 font-bold">Confirmed!</p>
-                )}
-                {mintStage === 'failed' && (
-                  <p className="mt-1 text-sm text-red-500 font-bold">Transaction reverted / failed.</p>
-                )}
-              </div>
-            )}
+
+            <TransactionStatus
+              isLoading={
+                mintStage === 'checkingPrereqs' ||
+                mintStage === 'uploadingImage' ||
+                mintStage === 'sendingTx' ||
+                mintStage === 'waitingForTx'
+              }
+              isSuccess={mintStage === 'success'}
+              errorMessage={mintStage === 'failed' ? mintError : undefined}
+              txHash={txHash}
+              chainId={chainId}
+            />
           </CardContent>
         </Card>
       </div>
