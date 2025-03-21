@@ -77,7 +77,7 @@ export default function StakePage() {
     }
   }, [])
 
-  // 1) read xpPerSecond from NFTStakingPool
+  // load xpPerSecond from NFTStakingPool (only once)
   useEffect(() => {
     async function loadXpRate() {
       if (hasFetchedXpRate) return
@@ -100,7 +100,7 @@ export default function StakePage() {
     loadXpRate()
   }, [publicClient, nftStakingPool, hasFetchedXpRate])
 
-  // 2) fetch items from NFTMintingPlatform + marketplace + staking
+  // fetch items from NFTMintingPlatform + marketplace + staking
   async function fetchAllNFTs(forceReload?: boolean) {
     if (!userAddress || !publicClient || !nftMintingPlatform || !nftMarketplaceHub || !nftStakingPool) return
     if (!forceReload && fetched) return
@@ -208,9 +208,20 @@ export default function StakePage() {
     }
   }
 
+  // derive userItems
+  const userItems = allItems.filter((item) => {
+    if (!userAddress) return false
+    const staked = item.stakeInfo?.staked
+    const stakerIsUser = item.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
+    const ownerIsUser = item.owner.toLowerCase() === userAddress.toLowerCase()
+    return ownerIsUser || (staked && stakerIsUser)
+  })
+
   // load metadata for newly fetched items
   async function loadNftMetadataForItems(items: NFTItem[]) {
     const newMap = { ...metadataMap }
+    let changed = false
+
     for (const item of items) {
       const itemIdStr = String(item.itemId)
       if (!newMap[itemIdStr]) {
@@ -225,25 +236,20 @@ export default function StakePage() {
             attributes: {}
           }
         }
+        changed = true
       }
     }
-    setMetadataMap(newMap)
+
+    if (changed) {
+      setMetadataMap(newMap)
+    }
   }
 
   useEffect(() => {
     fetchAllNFTs()
   }, [userAddress, nftStakingPool, nftMarketplaceHub, nftMintingPlatform, publicClient])
 
-  // once we have allItems, filter out only user items
-  const userItems = allItems.filter((item) => {
-    if (!userAddress) return false
-    const staked = item.stakeInfo?.staked
-    const stakerIsUser = item.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
-    const ownerIsUser = item.owner.toLowerCase() === userAddress.toLowerCase()
-    return ownerIsUser || (staked && stakerIsUser)
-  })
-
-  // load metadata for user items
+  // load metadata for user items, only if userItems is non-empty
   useEffect(() => {
     if (userItems.length) {
       loadNftMetadataForItems(userItems)

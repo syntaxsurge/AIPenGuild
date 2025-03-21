@@ -205,6 +205,7 @@ export default function MarketplacePage() {
   // Load metadata for newly fetched items
   async function loadMarketplaceMetadata(items: MarketplaceItem[]) {
     const newMap: Record<string, ParsedNftMetadata> = { ...metadataMap }
+    let changed = false
 
     for (const item of items) {
       const itemIdStr = String(item.itemId)
@@ -213,7 +214,6 @@ export default function MarketplacePage() {
           const parsed = await fetchNftMetadata(item.resourceUrl)
           newMap[itemIdStr] = parsed
         } catch {
-          // ignore fetch errors
           newMap[itemIdStr] = {
             imageUrl: transformIpfsUriToHttp(item.resourceUrl),
             name: "",
@@ -221,21 +221,26 @@ export default function MarketplacePage() {
             attributes: {}
           }
         }
+        changed = true
       }
     }
-    setMetadataMap(newMap)
+
+    if (changed) {
+      setMetadataMap(newMap)
+    }
   }
 
-  // Re-run metadata loading whenever listedItems changes
+  // load marketplace items once
+  useEffect(() => {
+    fetchMarketplaceItems()
+  }, [nftMarketplaceHub, nftMintingPlatform, publicClient])
+
+  // whenever listedItems changes, load their metadata
   useEffect(() => {
     if (listedItems.length) {
       loadMarketplaceMetadata(listedItems)
     }
   }, [listedItems]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    fetchMarketplaceItems()
-  }, [nftMarketplaceHub, nftMintingPlatform, publicClient])
 
   // Final filtered array
   const filteredItems = React.useMemo(() => {
