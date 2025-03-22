@@ -37,7 +37,7 @@ export default function WorkflowOverviewSection() {
             </p>
             <div className='relative h-40 w-full overflow-hidden rounded-md bg-secondary'>
               <Image
-                src='/images/overview-generate.png'
+                src='/images/screenshots/generate-nft.png'
                 alt='Generate'
                 fill
                 sizes='(max-width: 768px) 100vw,
@@ -62,7 +62,7 @@ export default function WorkflowOverviewSection() {
             </p>
             <div className='relative h-40 w-full overflow-hidden rounded-md bg-secondary'>
               <Image
-                src='/images/overview-mint.png'
+                src='/images/screenshots/mint-nft.png'
                 alt='Minting'
                 fill
                 sizes='(max-width: 768px) 100vw,
@@ -87,7 +87,7 @@ export default function WorkflowOverviewSection() {
             </p>
             <div className='relative h-40 w-full overflow-hidden rounded-md bg-secondary'>
               <Image
-                src='/images/overview-stake.png'
+                src='/images/screenshots/stake-nft.png'
                 alt='Stake or Trade'
                 fill
                 sizes='(max-width: 768px) 100vw,
