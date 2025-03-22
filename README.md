@@ -136,9 +136,10 @@ The front-end calls Next.js APIs (`/api/v1/ai-nft/metadata` for attribute genera
 
 1.  **Clone the Repo:**
     
-        git clone https://github.com/syntaxsurge/AIPenGuild.git
-        cd AIPenGuild
-        
+    ```bash
+    git clone https://github.com/syntaxsurge/AIPenGuild.git
+    cd AIPenGuild
+    ```
     
 2.  **Install Dependencies & Set Up Contracts:**
     *   Go to `contracts` folder. Read its `README.md` for detailed instructions on installing dependencies, compiling, and deploying the smart contracts (e.g., `npm install`, `npm run compile`, etc.).
@@ -149,7 +150,9 @@ The front-end calls Next.js APIs (`/api/v1/ai-nft/metadata` for attribute genera
     *   Optionally set `NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE` to `true` if you want to manually upload images instead of AI generation.
 4.  **Run Front-End Locally:**
     
-        npm run dev
+    ```bash
+    npm run dev
+    ```
     
     *   Connect your wallet (e.g., via MetaMask or Polkadot.js extension) to the correct chain (Moonbase Alpha, Westend AssetHub, etc.).
 5.  **Test Mint Flow:**
