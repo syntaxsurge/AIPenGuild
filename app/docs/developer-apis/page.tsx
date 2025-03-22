@@ -1,100 +1,166 @@
+import Image from "next/image"
+
 export const metadata = {
   title: "AIPenGuild Docs | Developer APIs"
 }
 
 export default function DeveloperApisPage() {
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-extrabold text-primary">Developer APIs</h1>
-      <p className="text-sm text-muted-foreground">
-        AIPenGuild exposes REST endpoints for easy retrieval of NFT data, user
-        XP, staking info, etc. Integrate these into your dApp or game to power
-        real-time experiences with on-chain data.
+    <section className="space-y-8">
+      <h1 className="text-4xl font-extrabold text-primary">Developer APIs</h1>
+      <p className="text-lg text-foreground leading-relaxed">
+        AIPenGuild offers straightforward REST endpoints for retrieving NFT data,
+        user XP, staking information, minted item details, and more. These endpoints
+        allow your dApp or game to communicate seamlessly with the on-chain data stored
+        by AIPenGuild’s contracts. Let’s dive in!
       </p>
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-foreground">Available Endpoints</h2>
-        <p className="text-sm text-muted-foreground">
-          All endpoints are served under <code>/api/v1</code> in this Next.js
-          project. Typically, you&apos;ll specify <em>chainId</em> for
-          queries that rely on a particular chain (e.g., 1287 for Moonbase).
+      <div className="flex flex-col items-center gap-4 md:flex-row">
+        {/* Image left */}
+        <div className="md:w-1/2 flex justify-center">
+          <Image
+            src="/images/docs/developer-apis-1.png"
+            alt="Developer APIs Example"
+            width={400}
+            height={250}
+            className="rounded-md border border-border shadow-sm"
+          />
+        </div>
+        {/* Text right */}
+        <div className="md:w-1/2 space-y-3">
+          <h2 className="text-2xl font-bold text-primary">Key Endpoints</h2>
+          <p className="text-base text-foreground leading-relaxed">
+            All endpoints are available under <code className="bg-accent/10 px-1 rounded">/api/v1</code>.
+            For chain-specific queries, append <code className="bg-accent/10 px-1 rounded">?chainId=1287</code>,
+            <code className="bg-accent/10 px-1 rounded">?chainId=420420421</code>, etc.
+          </p>
+        </div>
+      </div>
+
+      <div className="border border-border rounded-md p-4 shadow-sm space-y-4">
+        <h3 className="text-2xl font-bold text-primary">AI NFT Generation</h3>
+        <p className="text-base text-foreground leading-relaxed">
+          Use our endpoints to generate AI-based attributes, and then store them on-chain.
         </p>
-        <ul className="ml-4 list-disc text-sm text-muted-foreground space-y-2">
-          <li>
-            <code>/api/v1/ai-nft</code> – Basic AI NFT generation (image, attributes).
-          </li>
-          <li>
-            <code>/api/v1/ai-nft/metadata</code> – LLM-based attribute
-            generation, then AI image creation.
-            <br />
-            <em>POST</em> body:
-            <pre className="bg-secondary p-2 rounded text-xs mt-1">
-{`{
-  "prompt": "Surreal cityscape with neon vibes",
-  "category": "GameItem"
-}`}
-            </pre>
-            Returns the refined attributes and the replicate-based image URL.
-          </li>
-          <li>
-            <code>/api/v1/gaming/nft/[tokenId]</code> – Get metadata, XP, stake info,
-            sale status, etc.
-            <br />
-            Example usage:
-            <pre className="bg-secondary p-2 rounded text-xs mt-1">
-{`GET /api/v1/gaming/nft/12?chainId=1287`}
-            </pre>
-          </li>
-          <li>
-            <code>/api/v1/gaming/user/[address]/nfts</code> – All NFTs owned or
-            staked by user.
-            <br />
-            Example usage:
-            <pre className="bg-secondary p-2 rounded text-xs mt-1">
-{`GET /api/v1/gaming/user/0x1234.../nfts?chainId=1287`}
-            </pre>
-          </li>
-          <li>
-            <code>/api/v1/gaming/user/[address]/xp</code> – Returns numeric XP
-            for a user.
-          </li>
-          <li>
-            <code>/api/v1/gaming/titles</code> – Returns the XP-based Titles
-            array (e.g., min, max, label).
-          </li>
-        </ul>
+
+        <div className="space-y-2">
+          <p className="text-base text-foreground">
+            <strong>POST /api/v1/ai-nft</strong><br />
+            Basic AI image generation using a text prompt. Returns a generated image URL.
+          </p>
+          <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
+{`curl -X POST \\
+  -H "Content-Type: application/json" \\
+  -d '{"prompt": "Surreal cityscape with neon vibes"}' \\
+  https://example.com/api/v1/ai-nft
+`}
+          </pre>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-base text-foreground">
+            <strong>POST /api/v1/ai-nft/metadata</strong><br />
+            Generates LLM-based attributes + an AI image. Perfect for structured NFT creation.
+          </p>
+          <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
+{`curl -X POST \\
+  -H "Content-Type: application/json" \\
+  -d '{
+        "prompt": "Majestic warrior with fiery sword",
+        "category": "Character"
+      }' \\
+  https://example.com/api/v1/ai-nft/metadata
+`}
+          </pre>
+          <p className="text-base text-foreground">
+            Returns JSON with <em>finalReplicatePrompt</em>, refined attributes, and a direct AI image URL.
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-foreground">Example Workflow</h2>
-        <ol className="ml-4 list-decimal text-sm text-muted-foreground space-y-1">
-          <li>
-            <strong>Generate NFT Data &amp; Image</strong>:
-            <code>POST /api/v1/ai-nft/metadata</code> to get JSON with final
-            attributes and image.
-          </li>
-          <li>
-            <strong>Upload to IPFS (optional, if needed for custom flows)</strong>:
-            if you want to store more data in IPFS yourself, you can do so.
-          </li>
-          <li>
-            <strong>Mint NFT on-chain</strong> using your wallet or
-            <code>mintFromCollection</code> in <em>NFTCreatorCollection</em>.
-          </li>
-          <li>
-            <strong>Fetch details</strong> from
-            <code>/api/v1/gaming/nft/[tokenId]</code> to confirm on-chain status,
-            XP, stake info, etc.
-          </li>
-        </ol>
+      <div className="border border-border rounded-md p-4 shadow-sm space-y-4">
+        <h3 className="text-2xl font-bold text-primary">Gaming &amp; NFT Data</h3>
+        <p className="text-base text-foreground leading-relaxed">
+          Fetch comprehensive info for any minted NFT, user holdings, or XP levels.
+        </p>
+
+        <div className="space-y-2">
+          <p className="text-base text-foreground">
+            <strong>GET /api/v1/gaming/nft/[tokenId]</strong><br />
+            Retrieve on-chain + IPFS metadata for a single NFT, including XP, staking, etc.
+          </p>
+          <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
+{`curl -X GET \\
+  https://example.com/api/v1/gaming/nft/42?chainId=1287
+`}
+          </pre>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-base text-foreground">
+            <strong>GET /api/v1/gaming/user/[address]/nfts</strong><br />
+            List all NFTs owned or staked by a specific user address.
+          </p>
+          <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
+{`curl -X GET \\
+  https://example.com/api/v1/gaming/user/0x1234abcd.../nfts?chainId=1287
+`}
+          </pre>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-base text-foreground">
+            <strong>GET /api/v1/gaming/user/[address]/xp</strong><br />
+            Fetch numeric XP for a user. Useful for leaderboards or user progression.
+          </p>
+          <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
+{`curl -X GET \\
+  https://example.com/api/v1/gaming/user/0x1234abcd.../xp?chainId=1287
+`}
+          </pre>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-base text-foreground">
+            <strong>GET /api/v1/gaming/titles</strong><br />
+            Returns an array of XP tier ranges and labels (e.g., "Newcomer" = 0–99, etc.).
+          </p>
+          <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
+{`curl -X GET https://example.com/api/v1/gaming/titles
+`}
+          </pre>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-foreground">Error Handling</h2>
-        <p className="text-sm text-muted-foreground">
-          All endpoints return <code>success: boolean</code> and <code>error</code>
-          messages on failure. Use these to handle fallback or user notifications in
-          your application.
+      {/* Additional images or demonstration */}
+      <div className="flex flex-col md:flex-row gap-6 items-center my-8">
+        <div className="md:w-1/2 space-y-3">
+          <h2 className="text-2xl font-bold text-primary">Seamless Integration</h2>
+          <p className="text-base text-foreground leading-relaxed">
+            By calling these endpoints, you can easily integrate minted NFTs,
+            attribute data, user XP, and marketplace status into your own UI or game logic.
+            Build a rich, dynamic experience by leveraging AIPenGuild’s robust API.
+          </p>
+        </div>
+        <div className="md:w-1/2 flex justify-center">
+          <Image
+            src="/images/docs/dev-apis-integration.png"
+            alt="Integration Diagram"
+            width={450}
+            height={280}
+            className="rounded-md border border-border shadow-sm"
+          />
+        </div>
+      </div>
+
+      {/* Conclusion */}
+      <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+        <h3 className="text-xl font-bold mb-2 text-primary">Summary</h3>
+        <p className="text-base text-foreground leading-relaxed">
+          The AIPenGuild API is designed to be flexible yet powerful. Whether you’re
+          building a new game on Polkadot or hooking into existing EVM chains, these
+          endpoints open the door to a synergy of AI-driven NFT content, staking,
+          and real-time user progression.
         </p>
       </div>
     </section>

@@ -1,131 +1,113 @@
+import Image from "next/image"
+
 export const metadata = {
   title: "AIPenGuild Docs | FAQ"
 }
 
 export default function FAQDocsPage() {
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-extrabold text-primary">FAQ</h1>
-      <p className="text-sm text-muted-foreground">
-        Below are common questions about using AIPenGuild. For advanced inquiries or
-        developer-focused info, see the <strong>Developer APIs</strong> section.
+    <section className="space-y-8">
+      <h1 className="text-4xl font-extrabold text-primary">Frequently Asked Questions</h1>
+      <p className="text-lg text-foreground leading-relaxed">
+        Below are some of the most common questions about AIPenGuild.
+        If you don’t see your question here, please check our <strong>Overview</strong> or <strong>User Guide</strong> sections, or ask the community.
       </p>
 
-      <div className="space-y-4">
-        {/* 1. Leaderboard */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            1. What is the Leaderboard?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            The Leaderboard ranks users by their total Experience (XP). Every time
-            you mint a new NFT, random XP is assigned to that item. When you own
-            the NFT, you gain that XP. The Leaderboard updates in real-time, so
-            keep minting or staking to climb the ranks.
-          </p>
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Left Column FAQ List */}
+        <div className="flex flex-col gap-6">
+          {/* Q1 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">1. What is the Leaderboard?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              The Leaderboard is a real-time ranking of users based on their total XP. Each
+              NFT you own contributes XP. Higher XP translates to a higher rank, unlocking
+              special titles in the process.
+            </p>
+          </div>
+
+          {/* Q2 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">2. What are Titles?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              Titles are milestones displayed on your profile or on the Leaderboard.
+              For instance, after earning a certain amount of XP, you might become an
+              <em> “Adept”</em> or <em>“Expert.”</em> These provide a fun badge of honor.
+            </p>
+          </div>
+
+          {/* Q3 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">3. How is XP distributed?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              Each minted NFT includes a random XP between 1 and 100. Owning that NFT
+              automatically adds its XP to your total. If you sell or transfer the NFT,
+              that XP transfers to the new owner.
+            </p>
+          </div>
+
+          {/* Q4 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">4. What is the Dashboard for?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              The Dashboard is your personal control center: track your total XP, see how many
+              NFTs you’ve minted or staked, and review your marketplace listings. It’s perfect
+              for staying on top of all your AIPenGuild activity.
+            </p>
+          </div>
         </div>
 
-        {/* 2. Titles */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            2. What are Titles?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Titles are fun designations displayed on your profile or
-            in the Leaderboard once you pass certain XP milestones.
-            For example, surpass 5000 XP to become &quot;Enthusiast&quot;.
-            Refer to the <strong>User Guide</strong> for a full XP table.
-          </p>
-        </div>
+        {/* Right Column FAQ List + Images */}
+        <div className="flex flex-col gap-6">
+          {/* Q5 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">5. Admin Panel Purpose?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              The Admin Panel is for the contract owner to withdraw funds from the
+              <em>PlatformRewardPool</em>. Regular users typically won’t have access,
+              ensuring the platform’s treasury remains secure.
+            </p>
+          </div>
 
-        {/* 3. XP distribution */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            3. How is XP distributed?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Each newly minted NFT randomly receives 1–100 XP. This value is stored
-            in the NFT. When you obtain the NFT, your total XP is incremented by
-            that amount. If you sell or transfer the NFT, you lose that XP.
-          </p>
-        </div>
+          {/* Q6 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">6. Is NFT Staking supported?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              Yes. By staking your NFTs in the <em>NFTStakingPool</em>, you earn ongoing XP
+              based on <code>xpPerSecond</code>. This encourages long-term engagement and
+              participation.
+            </p>
+          </div>
 
-        {/* 4. Dashboard usage */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            4. What is the Dashboard used for?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            The &quot;Dashboard&quot; is a personal overview showing total XP,
-            minted NFT stats, staked items, and more. Check it regularly to monitor
-            your XP progress and see how your minted or sold NFTs are performing.
-          </p>
-        </div>
+          {/* Q7 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">7. How do I use AIPenGuild effectively?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              Start by connecting your wallet, mint an AI NFT, stake it for XP or sell it
+              on the marketplace, and keep track of your progress on the Dashboard or
+              Leaderboard. For deeper integration or custom usage, see the Developer APIs.
+            </p>
+          </div>
 
-        {/* 5. Admin panel */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            5. What can I do in the Admin Panel?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            The Admin Panel is reserved for the platform owner, primarily to withdraw
-            funds from the <em>PlatformRewardPool</em>. If you try to access it without
-            ownership, you&apos;ll be redirected.
-          </p>
-        </div>
+          {/* Q8 */}
+          <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+            <h2 className="text-xl font-bold text-primary mb-2">8. Developer APIs?</h2>
+            <p className="text-base text-foreground leading-relaxed">
+              Absolutely. We provide user-friendly REST endpoints for fetching NFT attributes,
+              user XP, stake statuses, sale information, and more. Check out the
+              <strong> Developer APIs</strong> section to see sample requests and cURL commands.
+            </p>
+          </div>
 
-        {/* 6. NFT staking */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            6. Is NFT Staking included in AIPenGuild?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Yes. Our <em>NFTStakingPool</em> allows you to stake your NFTs to accumulate
-            additional XP over time. This feature is accessible in the &quot;Stake&quot;
-            section of the site.
-          </p>
-        </div>
-
-        {/* 7. Earned XP in staking */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            7. How many XP do I earn when I stake my NFT?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            The exact amount depends on <code>xpPerSecond</code> in the
-            <em>NFTStakingPool</em>. Each second, you add that many XP. The
-            longer it stays staked, the more XP you accumulate.
-          </p>
-        </div>
-
-        {/* 8. Step-by-step usage */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            8. Step-by-step: How do I use AIPenGuild?
-          </h2>
-          <ol className="ml-5 list-decimal space-y-1 text-sm text-muted-foreground">
-            <li>Connect your wallet to the supported chain (Moonbase Alpha or Westend).</li>
-            <li>Mint a new AI NFT with the &quot;Mint&quot; page. Provide a text prompt, confirm the transaction, etc.</li>
-            <li>Optional: Stake your NFT in the &quot;Stake&quot; page to accumulate XP or list it for sale in the &quot;Marketplace&quot;.</li>
-            <li>Track your XP on the &quot;Dashboard&quot; or &quot;Leaderboard&quot; to see your ranking and Title.</li>
-            <li>Visit the &quot;Admin&quot; panel (owner only) to manage the reward pool if needed.</li>
-          </ol>
-        </div>
-
-        {/* 9. External dev APIs */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            9. Does AIPenGuild provide external developer APIs?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Absolutely. Check <strong>Developer APIs</strong> for detailed
-            endpoints like
-            <code className="bg-secondary/10 mx-1 px-1 rounded-sm text-xs">/api/v1/gaming/nft/[tokenId]</code>
-            or
-            <code className="bg-secondary/10 mx-1 px-1 rounded-sm text-xs">/api/v1/gaming/user/[address]/nfts</code>.
-            These JSON endpoints let your dApp fetch NFT attributes, XP, stake info,
-            or sale status in real time.
-          </p>
+          <div className="flex justify-center mt-4">
+            <Image
+              src="/images/docs/faq-visual.png"
+              alt="FAQ Illustration"
+              width={300}
+              height={200}
+              className="rounded-md border border-border shadow-sm"
+            />
+          </div>
         </div>
       </div>
     </section>

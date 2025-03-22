@@ -1,92 +1,84 @@
-export const metadata = {
-  title: "AIPenGuild Docs | Overview"
-}
+import Image from "next/image"
 
 export default function DocsOverviewPage() {
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-extrabold text-primary">Overview</h1>
-      <p className="text-sm text-muted-foreground">
-        Welcome to the official AIPenGuild Documentation! Here, you&apos;ll find
-        everything you need to explore, integrate, and build on top of
-        our AI-driven NFT platform. Whether you&apos;re a gamer looking to
-        stake NFTs or a developer integrating AIPenGuild APIs into your own
-        dApp, we&apos;ve got you covered.
-      </p>
+    <section className="space-y-8">
+      <div className="flex flex-col-reverse items-center gap-8 md:flex-row">
+        {/* Text Column */}
+        <div className="md:w-1/2">
+          <h1 className="text-4xl font-extrabold text-primary mb-4">Welcome to the AIPenGuild Documentation</h1>
+          <p className="text-lg text-foreground leading-relaxed mb-4">
+            Experience the power of AI-driven NFT creation and learn how to integrate these
+            robust assets into your dApp or game. Whether you are a user trying to mint your
+            first AI NFT or a developer exploring cross-chain potential, this is your launchpad.
+          </p>
+          <p className="text-lg text-foreground leading-relaxed mb-4">
+            In this documentation, we’ll guide you through connecting your wallet, minting AI NFTs,
+            staking them for XP, and exploring our dedicated marketplace. If you're a developer,
+            you’ll discover the best practices for harnessing our REST APIs to fetch NFT data,
+            user XP, and more—integrating it seamlessly into your own ecosystem.
+          </p>
+        </div>
 
-      <div className="space-y-2">
-        <h2 className="text-lg font-bold text-foreground">What is AIPenGuild?</h2>
-        <p className="text-sm text-muted-foreground">
-          AIPenGuild is a comprehensive AI-based NFT ecosystem offering:
-        </p>
-        <ul className="list-disc list-inside ml-4 text-sm text-muted-foreground space-y-1">
-          <li>AI-powered NFT generation (via LLM-based attributes and image creation).</li>
-          <li>NFT Staking for XP rewards.</li>
-          <li>Marketplace with 10% fee to the <em>PlatformRewardPool</em>.</li>
-          <li>Gamified XP mechanics for user progression.</li>
+        {/* Image Column */}
+        <div className="md:w-1/2 flex justify-center">
+          <Image
+            src="/images/docs/overview-banner.png"
+            alt="AIPenGuild Overview Banner"
+            width={500}
+            height={350}
+            className="rounded-md object-cover border border-border shadow-sm"
+          />
+        </div>
+      </div>
+
+      {/* Embedded Video Example */}
+      <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
+        <div className="md:w-1/2 space-y-4">
+          <h2 className="text-3xl font-bold text-primary">Intro Video</h2>
+          <p className="text-lg text-foreground leading-relaxed">
+            Check out this short overview of AIPenGuild in action. See how NFT creation,
+            staking, and the marketplace come together to form a cohesive, AI-driven ecosystem.
+          </p>
+        </div>
+        <div className="md:w-1/2 relative h-64 w-full mt-4 md:mt-0">
+          <iframe
+            className="absolute top-0 left-0 h-full w-full rounded-md border border-border"
+            src="https://www.youtube.com/embed/MH4DsjtsO8c"
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      </div>
+
+      <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
+        <h3 className="text-2xl font-bold mb-3">Highlights:</h3>
+        <ul className="list-disc list-inside space-y-2 text-lg text-foreground">
+          <li>AI-driven NFT generation with integrated IPFS metadata</li>
+          <li>Gamified XP system allowing user progress across ecosystems</li>
+          <li>Marketplace with auto XP transfer &amp; flexible listing</li>
+          <li>NFT Staking Pool for continuous XP accrual</li>
         </ul>
       </div>
 
-      <div className="space-y-2">
-        <h2 className="text-lg font-bold text-foreground">Why Build on AIPenGuild?</h2>
-        <p className="text-sm text-muted-foreground">
-          By leveraging AIPenGuild&apos;s robust smart contracts and easily
-          accessible APIs, you can:
+      <div className="space-y-3">
+        <h2 className="text-3xl font-bold text-primary">Sections Covered</h2>
+        <p className="text-lg text-foreground leading-relaxed">
+          We recommend checking out the following docs pages in order:
         </p>
-        <ul className="list-disc list-inside ml-4 text-sm text-muted-foreground space-y-1">
-          <li>Integrate unique NFTs with on-chain stats into your own game or dApp.</li>
-          <li>Offer users advanced staking mechanics and XP-based progression with minimal setup.</li>
-          <li>Take advantage of cross-chain capabilities on Polkadot-based chains (Moonbase Alpha, Westend, etc.).</li>
+        <ul className="list-decimal list-inside ml-4 text-lg text-foreground space-y-1">
+          <li>
+            <strong>User Guide</strong> – Learn how to connect, mint, stake, and manage NFTs with an easy interface.
+          </li>
+          <li>
+            <strong>Developer APIs</strong> – Integrate NFT data, staking stats, and XP queries into your own dApp.
+          </li>
+          <li>
+            <strong>FAQ</strong> – Find answers to common questions about the XP system, listing, bridging, and more.
+          </li>
         </ul>
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="text-lg font-bold text-foreground">Documentation Structure</h2>
-        <p className="text-sm text-muted-foreground">
-          Use the sidebar to navigate. Key sections include:
-        </p>
-        <ul className="list-disc list-inside ml-4 text-sm text-muted-foreground space-y-1">
-          <li><strong>User Guide</strong> – Learn how to connect your wallet, mint AI NFTs, stake for XP, and more.</li>
-          <li><strong>Developer APIs</strong> – Discover REST endpoints to fetch NFT data, user XP, staking info, and more.</li>
-          <li><strong>FAQ</strong> – Frequently asked questions about AIPenGuild usage.</li>
-        </ul>
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="text-lg font-bold text-foreground">Media & Resources</h2>
-        <p className="text-sm text-muted-foreground">
-          <strong>Pitch Deck:</strong> &nbsp;
-          <a
-            href="https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-primary"
-          >
-            Canva Pitch Deck
-          </a>
-        </p>
-        <p className="text-sm text-muted-foreground">
-          <strong>Video Demo:</strong> &nbsp;
-          <a
-            href="https://www.youtube.com/watch?v=MH4DsjtsO8c"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-primary"
-          >
-            YouTube Demo
-          </a>
-        </p>
-        <p className="text-sm text-muted-foreground">
-          <strong>GitHub Repo:</strong> &nbsp;
-          <a
-            href="https://github.com/syntaxsurge/AIPenGuild"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-primary"
-          >
-            syntaxsurge/AIPenGuild
-          </a>
-        </p>
       </div>
     </section>
   )
