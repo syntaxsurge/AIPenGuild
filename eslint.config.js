@@ -55,8 +55,34 @@ export default [
             'import/order': [
                 'error',
                 {
-                    groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object', 'type'],
-                    alphabetize: { order: 'asc' },
+                    'groups': ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
+                    'pathGroups': [
+                        {
+                            pattern: 'next/**',
+                            group: 'external',
+                            position: 'before',
+                        },
+                        {
+                            pattern: 'react',
+                            group: 'external',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/components/**',
+                            group: 'internal',
+                            position: 'after',
+                        },
+                        {
+                            pattern: '@/lib/**',
+                            group: 'internal',
+                            position: 'after',
+                        }
+                    ],
+                    'pathGroupsExcludedImportTypes': ['builtin'],
+                    'alphabetize': {
+                        'order': 'asc',
+                        'caseInsensitive': true
+                    },
                     'newlines-between': 'always'
                 },
             ],
