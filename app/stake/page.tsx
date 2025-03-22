@@ -1,6 +1,7 @@
 'use client'
 
 import { Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWalletClient } from 'wagmi'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -437,11 +438,53 @@ export default function StakePage() {
               </p>
             ) : (
               <div className='space-y-4'>
+                {/* Display the NFT image & some metadata */}
                 {(() => {
+                  const itemIdStr = String(selectedNFT.itemId)
+                  const meta = metadataMap[itemIdStr] || {
+                    imageUrl: transformIpfsUriToHttp(selectedNFT.resourceUrl),
+                    name: '',
+                    description: '',
+                    attributes: {},
+                  }
+                  return (
+                    <div className='space-y-2'>
+                      <div className='relative h-64 w-full overflow-hidden rounded-md border border-border bg-secondary'>
+                        <Image
+                          src={meta.imageUrl}
+                          alt={`NFT #${itemIdStr}`}
+                          fill
+                          sizes='(max-width: 768px) 100vw,
+                                 (max-width: 1200px) 50vw,
+                                 33vw'
+                          className='object-contain'
+                        />
+                      </div>
+                      <p className='text-sm'>
+                        <strong>Name:</strong> {meta.name ? meta.name : `NFT #${itemIdStr}`}
+                      </p>
+                      <p className='text-sm'>
+                        <strong>Minted At:</strong>{' '}
+                        {new Date(Number(selectedNFT.mintedAt) * 1000).toLocaleString()}
+                      </p>
+                      <p className='text-sm'>
+                        <strong>XP Value:</strong> {selectedNFT.xpValue.toString()}
+                      </p>
+                      {meta.description ? (
+                        <p className='text-sm'>
+                          <strong>Description:</strong> {meta.description}
+                        </p>
+                      ) : null}
+                    </div>
+                  )
+                })()}
+
+                {(() => {
+                  // Staking logic
                   const unclaimedXP = computeUnclaimedXP(selectedNFT)
                   const isStaked =
                     selectedNFT.stakeInfo?.staked &&
-                    selectedNFT.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
+                    selectedNFT.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
 
                   if (isStaked) {
                     return (
