@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AnimateOnScrollInitializer />
           <PageTopLoader />
           <Header />
-          <main className="flex flex-col gap-2 pt-[120px] min-h-screen">
+          <main className="flex flex-col gap-2 pt-[80px] min-h-screen">
             {children}
           </main>
         </Providers>
