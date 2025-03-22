@@ -13,7 +13,6 @@ import { useTransactionState } from '@/hooks/use-transaction-state'
 import { transformIpfsUriToHttp } from '@/lib/ipfs'
 import { fetchAllNFTs, NFTItem } from '@/lib/nft-data'
 import { fetchNftMetadata, ParsedNftMetadata } from '@/lib/nft-metadata'
-import { cn } from '@/lib/utils'
 
 export default function StakePage() {
   const { address: userAddress } = useAccount()
