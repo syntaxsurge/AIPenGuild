@@ -65,7 +65,7 @@ export default function DeveloperApisPage() {
           <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
             {`curl -X POST \\
   -H "Content-Type: application/json" \\
-  -d '{"prompt": "Surreal cityscape with neon vibes"}' \\
+  -d '{"prompt": "Vibrant cyberpunk samurai with neon aesthetic"}' \\
   https://example.com/api/v1/ai-nft
 `}
           </pre>

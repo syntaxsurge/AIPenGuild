@@ -295,7 +295,7 @@ export default function MintNFTPage() {
                   Enter an AI Prompt
                 </label>
                 <Input
-                  placeholder="e.g. Surreal cityscape with neon vibes"
+                  placeholder="e.g. Vibrant cyberpunk samurai with neon aesthetic"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
