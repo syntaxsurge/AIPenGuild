@@ -23,18 +23,18 @@ interface NFTCardProps {
  */
 export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   const itemIdStr = String(item.itemId)
-  // Fallback if no metadata or image
+  // If no metadata or image, fallback to the resourceUrl
   const imageUrl = metadata?.imageUrl || item.resourceUrl
-  const nftName = `#${itemIdStr} - ${metadata?.name}`
+  // Show #<id> plus the metadata name if available
+  const nftName = metadata?.name ? `#${itemIdStr} - ${metadata.name}` : `#${itemIdStr}`
 
   // Check if staked
-  const isStaked = !!(
-    item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === item.owner.toLowerCase()
-  )
+  // We only need to see if item.stakeInfo?.staked is true
+  const isStaked = !!item.stakeInfo?.staked
+  // Check if listed for sale
   const isListed = item.isOnSale
 
-  // Prepare label(s)
-  // We'll store them in an array for possible multiple badges
+  // Prepare status labels
   const labels: { text: string; style: string }[] = []
   if (isStaked) {
     labels.push({
@@ -65,19 +65,18 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
         selected ? 'border-primary' : 'border-border',
       )}
     >
-      {/* Image block */}
+      {/* NFT Image Block */}
       <div className='relative h-36 w-full overflow-hidden rounded-md bg-secondary'>
-        {/* Status badges in top-left */}
+        {/* Display each status badge in top-left */}
         {labels.length > 0 && (
           <div className='absolute left-2 top-2 z-10 flex flex-col gap-1'>
-            {labels.map((label) => (
-              <div key={label.text} className={label.style}>
+            {labels.map((label, idx) => (
+              <div key={idx} className={label.style}>
                 {label.text}
               </div>
             ))}
           </div>
         )}
-        {/* NFT Image */}
         <Image
           src={imageUrl}
           alt={`NFT #${itemIdStr}`}
@@ -89,7 +88,7 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
         />
       </div>
 
-      {/* Name + ID */}
+      {/* NFT Name + ID */}
       <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>{nftName}</p>
     </div>
   )
