@@ -26,11 +26,12 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   // If no metadata or image, fallback to the resourceUrl
   const imageUrl = metadata?.imageUrl || item.resourceUrl
   // Show #<id> plus the metadata name if available
-  const nftName = metadata?.name ? `#${itemIdStr} - ${metadata.name}` : `#${itemIdStr}`
+  const nftName = metadata?.name
+    ? `#${itemIdStr} - ${metadata.name}`
+    : `#${itemIdStr}`
 
   // Check if staked
-  // We only need to see if item.stakeInfo?.staked is true
-  const isStaked = !!item.stakeInfo?.staked
+  const isStaked = !!(item.stakeInfo?.staked)
   // Check if listed for sale
   const isListed = item.isOnSale
 
@@ -40,7 +41,8 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
     labels.push({
       text: 'STAKED',
       style:
-        'bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md',
+        // Use accent color with proper foreground for improved readability
+        'bg-accent text-accent-foreground px-2 py-1 text-xs font-semibold rounded-md shadow-md',
     })
   }
   if (isListed) {
@@ -89,7 +91,9 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
       </div>
 
       {/* NFT Name + ID */}
-      <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>{nftName}</p>
+      <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>
+        {nftName}
+      </p>
     </div>
   )
 }
