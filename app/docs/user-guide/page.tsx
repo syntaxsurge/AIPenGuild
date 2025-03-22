@@ -1,10 +1,26 @@
-import Image from "next/image"
+"use client"
 
-export const metadata = {
-  title: "AIPenGuild Docs | User Guide"
-}
+import ImageLightbox from "@/components/ui/ImageLightbox"
+import Image from "next/image"
+import { useState } from "react"
 
 export default function UserGuidePage() {
+  const [open, setOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  // The user-guide page references these 4 screenshots:
+  const images = [
+    "/images/screenshots/user-guide-connect.png",
+    "/images/screenshots/mint-nft.png",
+    "/images/screenshots/stake-nft.png",
+    "/images/screenshots/marketplace-overview.png"
+  ]
+
+  function handleImageClick(index: number) {
+    setLightboxIndex(index)
+    setOpen(true)
+  }
+
   return (
     <section className="space-y-8">
       <h1 className="text-4xl font-extrabold text-primary">User Guide</h1>
@@ -25,11 +41,12 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/screenshots/user-guide-connect.png"
+            src={images[0]}
             alt="Connect Wallet Screenshot"
             width={400}
             height={250}
-            className="rounded-md border border-border shadow-sm"
+            className="rounded-md border border-border shadow-sm cursor-pointer"
+            onClick={() => handleImageClick(0)}
           />
         </div>
       </div>
@@ -46,11 +63,12 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/screenshots/mint-nft.png"
-            alt="Mint AI NFT Screenshot"
+            src={images[1]}
+            alt="Mint NFT Screenshot"
             width={400}
             height={250}
-            className="rounded-md border border-border shadow-sm"
+            className="rounded-md border border-border shadow-sm cursor-pointer"
+            onClick={() => handleImageClick(1)}
           />
         </div>
       </div>
@@ -67,11 +85,12 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/screenshots/stake-nft.png"
+            src={images[2]}
             alt="NFT Staking Screenshot"
             width={400}
             height={250}
-            className="rounded-md border border-border shadow-sm"
+            className="rounded-md border border-border shadow-sm cursor-pointer"
+            onClick={() => handleImageClick(2)}
           />
         </div>
       </div>
@@ -88,32 +107,12 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/screenshots/marketplace-overview.png"
+            src={images[3]}
             alt="Marketplace Screenshot"
             width={400}
             height={250}
-            className="rounded-md border border-border shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* 5. Track XP & Titles */}
-      <div className="flex flex-col gap-6 md:flex-row">
-        <div className="md:w-1/2 space-y-3">
-          <h2 className="text-2xl font-bold text-primary">5. Track Your XP & Titles</h2>
-          <p className="text-base text-foreground leading-relaxed">
-            Head to the <strong>Dashboard</strong> or <strong>Leaderboard</strong> to see how
-            your XP compares with other users. Earn higher Titles by accumulating more XP—e.g.,
-            <em>“Enthusiast”</em>, <em>“Master”</em>, or <em>“Celestial”</em> for advanced users.
-          </p>
-        </div>
-        <div className="md:w-1/2 flex justify-center">
-          <Image
-            src="/images/screenshots/leaderboard-overview.png"
-            alt="Leaderboard Screenshot"
-            width={400}
-            height={250}
-            className="rounded-md border border-border shadow-sm"
+            className="rounded-md border border-border shadow-sm cursor-pointer"
+            onClick={() => handleImageClick(3)}
           />
         </div>
       </div>
@@ -126,6 +125,13 @@ export default function UserGuidePage() {
           section to see how to integrate NFT data directly into your own application.
         </p>
       </div>
+
+      <ImageLightbox
+        images={images}
+        open={open}
+        startIndex={lightboxIndex}
+        onClose={() => setOpen(false)}
+      />
     </section>
   )
 }

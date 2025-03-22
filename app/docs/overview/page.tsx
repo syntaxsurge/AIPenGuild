@@ -1,6 +1,58 @@
-import Image from "next/image"
+"use client"
 
-export default function DocsOverviewPage() {
+import ImageLightbox from "@/components/ui/ImageLightbox"
+import Image from "next/image"
+import { useState } from "react"
+
+export default function DocsRootPage() {
+  // The original code used a redirect to /docs/overview,
+  // but let's see the real file from the user.
+  // Actually "app/docs/page.tsx" does a redirect to /docs/overview.
+  // This file is "overview/page.tsx" itself. We'll add the lightbox
+  // and keep existing content.
+
+  // We'll rewrite the entire "overview/page.tsx" from user's code:
+  // The user code is shown in the snippet: "File: /Users/jade/.../app/docs/overview/page.tsx"
+  // We'll do a rewrite with the same content, plus the new client + lightbox approach.
+
+  // Actually let's keep the user code. We'll do a "use client", import useState, etc.
+  // There's 1 image "homepage-overview.png" we can handle in the code.
+  // We'll see if there's an additional image with the embed.
+  // There's also "api-terminal-example.png"? That's in developer-apis.
+  // So we only do a single image array.
+  // We'll finalize:
+
+  return <RedirectToOverview />
+}
+
+function RedirectToOverview() {
+  // Because the user shared code for "app/docs/overview/page.tsx" that
+  // references "homepage-overview.png" plus a YouTube embed. We'll keep it.
+
+  return <OverviewWithLightbox />
+}
+
+export function OverviewWithLightbox() {
+  const [open, setOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  // There's 1 image in the code: "/images/screenshots/homepage-overview.png"?
+  // Actually the snippet "overview" references "/images/screenshots/homepage-overview.png"
+  // or just "homepage-overview.png"? The user's code says "src="/images/screenshots/homepage-overview.png"??
+  // Let's confirm. The original code snippet:
+  //   <Image src="/images/screenshots/homepage-overview.png" alt="Homepage Overview" ... />
+  // We'll keep that.
+  // We'll do an array of 1 item.
+
+  const images = [
+    "/images/screenshots/homepage-overview.png"
+  ]
+
+  function handleClick() {
+    setLightboxIndex(0)
+    setOpen(true)
+  }
+
   return (
     <section className="space-y-8">
       <div className="flex flex-col-reverse items-center gap-8 md:flex-row">
@@ -23,11 +75,12 @@ export default function DocsOverviewPage() {
         {/* Image Column */}
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/screenshots/homepage-overview.png"
+            src={images[0]}
             alt="Homepage Overview"
             width={500}
             height={350}
-            className="rounded-md object-cover border border-border shadow-sm"
+            className="rounded-md object-cover border border-border shadow-sm cursor-pointer"
+            onClick={handleClick}
           />
         </div>
       </div>
@@ -80,6 +133,13 @@ export default function DocsOverviewPage() {
           </li>
         </ul>
       </div>
+
+      <ImageLightbox
+        images={images}
+        open={open}
+        startIndex={lightboxIndex}
+        onClose={() => setOpen(false)}
+      />
     </section>
   )
 }

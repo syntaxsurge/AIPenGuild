@@ -1,10 +1,23 @@
-import Image from "next/image"
+"use client"
 
-export const metadata = {
-  title: "AIPenGuild Docs | FAQ"
-}
+import ImageLightbox from "@/components/ui/ImageLightbox"
+import Image from "next/image"
+import { useState } from "react"
 
 export default function FAQDocsPage() {
+  const [open, setOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  // Only one image used here, so images array is length 1
+  const images = [
+    "/images/faq-visual.png"
+  ]
+
+  function handleImageClick() {
+    setLightboxIndex(0)
+    setOpen(true)
+  }
+
   return (
     <section className="space-y-8">
       <h1 className="text-4xl font-extrabold text-primary">Frequently Asked Questions</h1>
@@ -101,15 +114,23 @@ export default function FAQDocsPage() {
 
           <div className="flex justify-center mt-4">
             <Image
-              src="/images/faq-visual.png"
+              src={images[0]}
               alt="FAQ Illustration"
               width={300}
               height={200}
-              className="rounded-md border border-border shadow-sm"
+              className="rounded-md border border-border shadow-sm cursor-pointer"
+              onClick={handleImageClick}
             />
           </div>
         </div>
       </div>
+
+      <ImageLightbox
+        images={images}
+        open={open}
+        onClose={() => setOpen(false)}
+        startIndex={lightboxIndex}
+      />
     </section>
   )
 }

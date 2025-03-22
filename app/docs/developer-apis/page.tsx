@@ -1,10 +1,23 @@
-import Image from "next/image"
+"use client"
 
-export const metadata = {
-  title: "AIPenGuild Docs | Developer APIs"
-}
+import ImageLightbox from "@/components/ui/ImageLightbox"
+import Image from "next/image"
+import { useState } from "react"
 
 export default function DeveloperApisPage() {
+  const [open, setOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  const images = [
+    "/images/AIPenGuild-API-Architecture.png",
+    "/images/screenshots/api-terminal-example.png"
+  ]
+
+  function handleImageClick(idx: number) {
+    setLightboxIndex(idx)
+    setOpen(true)
+  }
+
   return (
     <section className="space-y-8">
       <h1 className="text-4xl font-extrabold text-primary">Developer APIs</h1>
@@ -19,11 +32,12 @@ export default function DeveloperApisPage() {
         {/* Image left */}
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/AIPenGuild-API-Architecture.png"
+            src={images[0]}
             alt="AIPenGuild API Architecture"
             width={400}
             height={250}
-            className="rounded-md border border-border shadow-sm"
+            className="rounded-md border border-border shadow-sm cursor-pointer"
+            onClick={() => handleImageClick(0)}
           />
         </div>
         {/* Text right */}
@@ -49,7 +63,7 @@ export default function DeveloperApisPage() {
             Basic AI image generation using a text prompt. Returns a generated image URL.
           </p>
           <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
-{`curl -X POST \\
+            {`curl -X POST \\
   -H "Content-Type: application/json" \\
   -d '{"prompt": "Surreal cityscape with neon vibes"}' \\
   https://example.com/api/v1/ai-nft
@@ -63,7 +77,7 @@ export default function DeveloperApisPage() {
             Generates LLM-based attributes + an AI image. Perfect for structured NFT creation.
           </p>
           <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
-{`curl -X POST \\
+            {`curl -X POST \\
   -H "Content-Type: application/json" \\
   -d '{
         "prompt": "Majestic warrior with fiery sword",
@@ -90,7 +104,7 @@ export default function DeveloperApisPage() {
             Retrieve on-chain + IPFS metadata for a single NFT, including XP, staking, etc.
           </p>
           <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
-{`curl -X GET \\
+            {`curl -X GET \\
   https://example.com/api/v1/gaming/nft/42?chainId=1287
 `}
           </pre>
@@ -102,7 +116,7 @@ export default function DeveloperApisPage() {
             List all NFTs owned or staked by a specific user address.
           </p>
           <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
-{`curl -X GET \\
+            {`curl -X GET \\
   https://example.com/api/v1/gaming/user/0x1234abcd.../nfts?chainId=1287
 `}
           </pre>
@@ -114,7 +128,7 @@ export default function DeveloperApisPage() {
             Fetch numeric XP for a user. Useful for leaderboards or user progression.
           </p>
           <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
-{`curl -X GET \\
+            {`curl -X GET \\
   https://example.com/api/v1/gaming/user/0x1234abcd.../xp?chainId=1287
 `}
           </pre>
@@ -126,13 +140,12 @@ export default function DeveloperApisPage() {
             Returns an array of XP tier ranges and labels (e.g., "Newcomer" = 0–99, etc.).
           </p>
           <pre className="bg-secondary p-3 rounded-md text-sm text-secondary-foreground whitespace-pre-wrap">
-{`curl -X GET https://example.com/api/v1/gaming/titles
+            {`curl -X GET https://example.com/api/v1/gaming/titles
 `}
           </pre>
         </div>
       </div>
 
-      {/* Additional images or demonstration */}
       <div className="flex flex-col md:flex-row gap-6 items-center my-8">
         <div className="md:w-1/2 space-y-3">
           <h2 className="text-2xl font-bold text-primary">Seamless Integration</h2>
@@ -144,16 +157,16 @@ export default function DeveloperApisPage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/screenshots/api-terminal-example.png"
+            src={images[1]}
             alt="Developer APIs Example"
             width={450}
             height={280}
-            className="rounded-md border border-border shadow-sm"
+            className="rounded-md border border-border shadow-sm cursor-pointer"
+            onClick={() => handleImageClick(1)}
           />
         </div>
       </div>
 
-      {/* Conclusion */}
       <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
         <h3 className="text-xl font-bold mb-2 text-primary">Summary</h3>
         <p className="text-base text-foreground leading-relaxed">
@@ -163,6 +176,14 @@ export default function DeveloperApisPage() {
           and real-time user progression.
         </p>
       </div>
+
+      {/* Lightbox */}
+      <ImageLightbox
+        images={images}
+        open={open}
+        onClose={() => setOpen(false)}
+        startIndex={lightboxIndex}
+      />
     </section>
   )
 }
