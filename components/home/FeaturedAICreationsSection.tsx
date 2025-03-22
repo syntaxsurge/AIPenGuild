@@ -33,7 +33,7 @@ export default function FeaturedAICreationsSection() {
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          {["images/marketplace/nft-1.png", "images/marketplace/nft-2.png", "images/marketplace/nft-3.png"].map(
+          {["images/hero/character.png", "images/hero/game-item.png", "images/hero/powerup.png"].map(
             (src, idx) => (
               <div
                 key={idx}
