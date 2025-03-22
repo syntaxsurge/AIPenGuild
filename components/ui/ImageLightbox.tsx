@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X, ZoomIn, ZoomOut } from "lucide-react";

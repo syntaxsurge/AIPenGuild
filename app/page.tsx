@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import HeroSection from "@/components/home/HeroSection"
 import IntroductionSection from "@/components/home/IntroductionSection"

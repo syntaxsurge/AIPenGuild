@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { motion } from "framer-motion"
 import { Code2, Coins, Wallet, Wand2 } from "lucide-react"

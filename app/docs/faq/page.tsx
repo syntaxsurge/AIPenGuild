@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import ImageLightbox from "@/components/ui/ImageLightbox"
 import Image from "next/image"

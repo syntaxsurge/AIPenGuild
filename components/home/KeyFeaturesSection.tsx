@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { XP_TITLES } from "@/lib/experience"
 import { motion } from "framer-motion"
