@@ -1,9 +1,9 @@
 'use client'
 
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X, ZoomIn, ZoomOut } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion"
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X, ZoomIn, ZoomOut } from "lucide-react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 /**
  * Props for the ImageLightbox component
@@ -13,33 +13,33 @@ import { createPortal } from "react-dom";
  * @param startIndex: optional initial index to show
  */
 interface ImageLightboxProps {
-  images: string[];
-  open: boolean;
-  onClose: () => void;
-  startIndex?: number;
+  images: string[]
+  open: boolean
+  onClose: () => void
+  startIndex?: number
 }
 
 /**
- * We create a helper for Portal. This ensures the lightbox
+ * A helper for Portal. This ensures the lightbox
  * is mounted at the top of <body>, avoiding stacking context issues.
  */
 function LightboxPortal({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   if (!mounted || typeof document === "undefined") {
-    return null;
+    return null
   }
 
-  return createPortal(children, document.body);
+  return createPortal(children, document.body)
 }
 
 /**
  * A minimal "lightbox" or modal component for displaying a set of images
- * with zoom, next/prev navigation, and a button to enter browser-native fullscreen.
+ * with a "fit to screen" approach for large images, plus wheel-based zoom.
  */
 export default function ImageLightbox({
   images,
@@ -48,81 +48,83 @@ export default function ImageLightbox({
   startIndex = 0
 }: ImageLightboxProps) {
   // The current index of the displayed image
-  const [currentIndex, setCurrentIndex] = useState(startIndex);
+  const [currentIndex, setCurrentIndex] = useState(startIndex)
 
-  // Zoom scale (1.0 = normal). We'll handle pinch/wheel for zoom.
-  const [scale, setScale] = useState(1);
+  // fitScale is the scale needed to fit the entire image on the screen
+  // zoomDelta is how much we zoom in/out relative to that baseline.
+  const [fitScale, setFitScale] = useState(1)
+  const [zoomDelta, setZoomDelta] = useState(1)
 
-  // We'll store a ref to the lightbox overlay container for fullscreen requests
-  const containerRef = useRef<HTMLDivElement>(null);
+  // We'll store a reference to the container for fullscreen toggling
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  // Keep track if we are currently in fullscreen (derived from 'fullscreenchange' events).
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Keep track of native fullscreen usage
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Reset index when the lightbox opens
+  // Reset index & scale on open
   useEffect(() => {
     if (open) {
-      let validIndex = 0;
-      if (startIndex >= 0 && startIndex < images.length) {
-        validIndex = startIndex;
-      }
-      setCurrentIndex(validIndex);
-      setScale(1);
+      const validIndex = Math.min(Math.max(0, startIndex), images.length - 1)
+      setCurrentIndex(validIndex)
+      setFitScale(1)
+      setZoomDelta(1)
     }
-  }, [open, startIndex, images.length]);
+  }, [open, startIndex, images.length])
 
+  // Next & previous navigation
   const handleNext = useCallback(() => {
-    setScale(1);
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  }, [images.length]);
+    setFitScale(1)
+    setZoomDelta(1)
+    setCurrentIndex((prev) => (prev + 1) % images.length)
+  }, [images.length])
 
   const handlePrev = useCallback(() => {
-    setScale(1);
-    setCurrentIndex((prev) => {
-      if (prev === 0) return images.length - 1;
-      return prev - 1;
-    });
-  }, [images.length]);
+    setFitScale(1)
+    setZoomDelta(1)
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+  }, [images.length])
 
+  // On wheel, we adjust zoomDelta (the user-defined factor above fitScale).
   const handleWheel = (e: React.WheelEvent) => {
-    // Scroll up = zoom in, scroll down = zoom out
     if (e.deltaY < 0) {
-      setScale((s) => Math.min(s + 0.1, 5));
+      // wheel up => zoom in
+      setZoomDelta((z) => Math.min(z + 0.1, 5))
     } else {
-      setScale((s) => Math.max(s - 0.1, 0.5));
+      // wheel down => zoom out
+      setZoomDelta((z) => Math.max(z - 0.1, 0.2))
     }
-  };
+  }
 
   const handleZoomIn = () => {
-    setScale((s) => Math.min(s + 0.2, 5));
-  };
+    setZoomDelta((z) => Math.min(z + 0.2, 5))
+  }
 
   const handleZoomOut = () => {
-    setScale((s) => Math.max(s - 0.2, 0.5));
-  };
+    setZoomDelta((z) => Math.max(z - 0.2, 0.2))
+  }
 
   // Listen for native fullscreen changes
   useEffect(() => {
     function onFsChange() {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(!!document.fullscreenElement)
     }
-    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("fullscreenchange", onFsChange)
     return () => {
-      document.removeEventListener("fullscreenchange", onFsChange);
-    };
-  }, []);
+      document.removeEventListener("fullscreenchange", onFsChange)
+    }
+  }, [])
 
   async function toggleFullscreen() {
     try {
       if (!document.fullscreenElement) {
         if (containerRef.current) {
-          await containerRef.current.requestFullscreen();
+          await containerRef.current.requestFullscreen()
         }
       } else {
-        await document.exitFullscreen();
+        await document.exitFullscreen()
       }
     } catch (err) {
-      console.error("Error toggling fullscreen:", err);
+      console.error("Error toggling fullscreen:", err)
     }
   }
 
@@ -130,24 +132,49 @@ export default function ImageLightbox({
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        onClose()
       } else if (e.key === "ArrowRight") {
-        handleNext();
+        handleNext()
       } else if (e.key === "ArrowLeft") {
-        handlePrev();
+        handlePrev()
       }
     }
     if (open) {
-      document.addEventListener("keydown", onKeyDown);
+      document.addEventListener("keydown", onKeyDown)
     }
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose, handleNext, handlePrev]);
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  }, [open, onClose, handleNext, handlePrev])
 
-  if (!open) return null;
+  if (!open) return null
 
-  // Wrap the entire lightbox in LightboxPortal so it mounts on <body>
+  /**
+   * We'll compute an onLoad callback so we can measure the image's natural dimension
+   * and compute how to fit it on the screen by default. We'll store that in fitScale,
+   * then the user can further zoom with zoomDelta.
+   */
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget
+    const screenW = window.innerWidth
+    const screenH = window.innerHeight
+
+    // We want to fit the entire image in the screen dimension, so compute ratio
+    const fitW = screenW / naturalWidth
+    const fitH = screenH / naturalHeight
+    const candidateScale = Math.min(fitW, fitH)
+
+    // If candidateScale >= 1, the image is smaller than screen, so scale is 1 (no upscaling).
+    // Otherwise we use candidateScale.
+    const finalFitScale = candidateScale >= 1 ? 1 : candidateScale
+
+    setFitScale(finalFitScale)
+    setZoomDelta(1)
+  }
+
+  // The effective scale is fitScale * zoomDelta
+  const effectiveScale = fitScale * zoomDelta
+
   return (
     <LightboxPortal>
       <AnimatePresence>
@@ -211,25 +238,22 @@ export default function ImageLightbox({
             <ChevronRight className="h-5 w-5" />
           </button>
 
-          {/* Image Container */}
+          {/* Scrollable container to allow panning if zoomed in */}
           <div
-            className="relative flex cursor-grab items-center justify-center overflow-hidden"
+            className="relative flex h-full w-full cursor-grab items-center justify-center overflow-auto"
             onWheel={handleWheel}
-            style={{
-              width: isFullscreen ? "100%" : "90vw",
-              height: isFullscreen ? "100%" : "90vh"
-            }}
           >
             <motion.img
               key={currentIndex}
               src={images[currentIndex]}
               alt="Lightbox Preview"
-              className="object-contain object-center"
+              onLoad={handleImageLoad}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="pointer-events-none max-w-none"
               style={{
-                transform: `scale(${scale})`,
+                transform: `scale(${effectiveScale})`,
                 transformOrigin: "center center"
               }}
             />
@@ -237,5 +261,5 @@ export default function ImageLightbox({
         </motion.div>
       </AnimatePresence>
     </LightboxPortal>
-  );
+  )
 }
