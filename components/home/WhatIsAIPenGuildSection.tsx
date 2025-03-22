@@ -4,7 +4,10 @@ import { motion } from "framer-motion"
 
 export default function WhatIsAIPenGuildSection() {
   return (
-    <section className='bg-white dark:bg-gray-900 px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
+    <section
+      id='what-is-aipenguild'
+      className='bg-white dark:bg-gray-900 px-4 py-12 sm:py-16 md:py-20 lg:py-24'
+    >
       <div className='mx-auto max-w-6xl'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
