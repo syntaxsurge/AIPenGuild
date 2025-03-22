@@ -41,7 +41,7 @@ export default function GettingStartedSection() {
               >
                 Moonbase Alpha Faucet
               </a>
-              to cover gas fees. Then you&apos;re all set to explore AIPenGuild.
+              &nbsp;to cover gas fees. Then you&apos;re all set to explore AIPenGuild.
             </p>
             <Link href='/dashboard' className='text-sm font-medium text-primary hover:underline'>
               Go to Dashboard
