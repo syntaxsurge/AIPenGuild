@@ -216,18 +216,6 @@ We tackled these by implementing thorough checks in our Next.js backend, fallbac
 
 *   **GitHub Repository:** [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
 *   **Live Demo:** [YouTube Demo](https://www.youtube.com/watch?v=MH4DsjtsO8c)
-
-<iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/MH4DsjtsO8c"
-  title="AIPenGuild Demo"
-  frameborder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
->
-</iframe>
-
 *   **Presentation Slides:**  
     [Canva Pitch Deck](https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit)
 *   **Documentation:** After following the steps in this repository (including contract compilation and deployment as explained in the `contracts` folder), run the Next.js development server with `npm run dev`, then open [http://localhost:3000/docs](http://localhost:3000/docs) to view the complete documentation.
