@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X, ZoomIn, ZoomOut } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Props for the ImageLightbox component
@@ -16,6 +17,24 @@ interface ImageLightboxProps {
   open: boolean;
   onClose: () => void;
   startIndex?: number;
+}
+
+/**
+ * We create a helper for Portal. This ensures the lightbox
+ * is mounted at the top of <body>, avoiding stacking context issues.
+ */
+function LightboxPortal({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(children, document.body);
 }
 
 /**
@@ -40,10 +59,9 @@ export default function ImageLightbox({
   // Keep track if we are currently in fullscreen (derived from 'fullscreenchange' events).
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // When the lightbox first opens, reset the index to startIndex (or 0 if out of range)
+  // Reset index when the lightbox opens
   useEffect(() => {
     if (open) {
-      // Lightbox is opening
       let validIndex = 0;
       if (startIndex >= 0 && startIndex < images.length) {
         validIndex = startIndex;
@@ -129,92 +147,95 @@ export default function ImageLightbox({
 
   if (!open) return null;
 
+  // Wrap the entire lightbox in LightboxPortal so it mounts on <body>
   return (
-    <AnimatePresence>
-      <motion.div
-        key="lightboxBackdrop"
-        ref={containerRef}
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        {/* Top-right Controls */}
-        <div className="absolute top-4 right-4 z-[9999] flex items-center gap-3">
-          <button
-            onClick={toggleFullscreen}
-            className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-            aria-label="Toggle fullscreen"
-          >
-            {isFullscreen ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
-          </button>
-          <button
-            onClick={handleZoomIn}
-            className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-            aria-label="Zoom in"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-            aria-label="Zoom out"
-          >
-            <ZoomOut className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onClose}
-            className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-            aria-label="Close lightbox"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <LightboxPortal>
+      <AnimatePresence>
+        <motion.div
+          key="lightboxBackdrop"
+          ref={containerRef}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Top-right Controls */}
+          <div className="absolute top-4 right-4 z-[9999] flex items-center gap-3">
+            <button
+              onClick={toggleFullscreen}
+              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+              aria-label="Toggle fullscreen"
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </button>
+            <button
+              onClick={handleZoomIn}
+              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+            <button
+              onClick={handleZoomOut}
+              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+              aria-label="Close lightbox"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-        {/* Navigation Arrows */}
-        <button
-          onClick={handlePrev}
-          className="absolute left-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
-          aria-label="Previous image"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button
-          onClick={handleNext}
-          className="absolute right-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
-          aria-label="Next image"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
+          {/* Navigation Arrows */}
+          <button
+            onClick={handlePrev}
+            className="absolute left-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={handleNext}
+            className="absolute right-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
+            aria-label="Next image"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
 
-        {/* Image Container */}
-        <div
-          className="relative flex cursor-grab items-center justify-center overflow-hidden"
-          onWheel={handleWheel}
-          style={{
-            width: isFullscreen ? "100%" : "90vw",
-            height: isFullscreen ? "100%" : "90vh"
-          }}
-        >
-          <motion.img
-            key={currentIndex}
-            src={images[currentIndex]}
-            alt="Lightbox Preview"
-            className="object-contain object-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          {/* Image Container */}
+          <div
+            className="relative flex cursor-grab items-center justify-center overflow-hidden"
+            onWheel={handleWheel}
             style={{
-              transform: `scale(${scale})`,
-              transformOrigin: "center center"
+              width: isFullscreen ? "100%" : "90vw",
+              height: isFullscreen ? "100%" : "90vh"
             }}
-          />
-        </div>
-      </motion.div>
-    </AnimatePresence>
+          >
+            <motion.img
+              key={currentIndex}
+              src={images[currentIndex]}
+              alt="Lightbox Preview"
+              className="object-contain object-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                transform: `scale(${scale})`,
+                transformOrigin: "center center"
+              }}
+            />
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </LightboxPortal>
   );
 }
