@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Button, ButtonProps } from './button'
+import { Button, ButtonProps } from './Button'
 import { Loader2 } from 'lucide-react'
 
 interface TransactionButtonProps extends ButtonProps {

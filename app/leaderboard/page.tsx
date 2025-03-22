@@ -1,8 +1,8 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DualRangeSlider } from "@/components/ui/dual-range-slider"
-import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import { DualRangeSlider } from "@/components/ui/DualRangeSlider"
+import { Input } from "@/components/ui/Input"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { getUserTitle } from "@/lib/experience"

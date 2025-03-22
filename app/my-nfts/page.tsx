@@ -1,9 +1,9 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { TransactionButton } from "@/components/ui/transaction-button"
-import { TransactionStatus } from "@/components/ui/transaction-status"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import { Input } from "@/components/ui/Input"
+import { TransactionButton } from "@/components/ui/TransactionButton"
+import { TransactionStatus } from "@/components/ui/TransactionStatus"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"

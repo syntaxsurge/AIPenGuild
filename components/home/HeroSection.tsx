@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { InteractiveHoverButton } from "@/components/ui/interactive-button"
+import { InteractiveHoverButton } from "@/components/ui/InteractiveButton"
 import { cn } from "@/lib/utils"
 
 export default function HeroSection() {

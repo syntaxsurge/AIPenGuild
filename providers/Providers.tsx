@@ -1,5 +1,5 @@
-import { GlobalThemeProvider } from "@/providers/global-theme-provider";
-import { RainbowKitWalletProvider } from "@/providers/rainbowkit-wallet-provider";
+import { GlobalThemeProvider } from "@/providers/GlobalThemeProvider";
+import { RainbowKitWalletProvider } from "@/providers/RainbowKitWalletProvider";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (

@@ -1,8 +1,8 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TransactionButton } from "@/components/ui/transaction-button"
-import { TransactionStatus } from "@/components/ui/transaction-status"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import { TransactionButton } from "@/components/ui/TransactionButton"
+import { TransactionStatus } from "@/components/ui/TransactionStatus"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { useTransactionState } from "@/hooks/use-transaction-state"

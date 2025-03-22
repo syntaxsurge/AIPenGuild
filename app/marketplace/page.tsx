@@ -5,13 +5,13 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger
-} from "@/components/ui/accordion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DualRangeSlider } from "@/components/ui/dual-range-slider"
-import { Input } from "@/components/ui/input"
-import { TransactionButton } from "@/components/ui/transaction-button"
-import { TransactionStatus } from "@/components/ui/transaction-status"
+} from "@/components/ui/Accordion"
+import { Button } from "@/components/ui/Button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import { DualRangeSlider } from "@/components/ui/DualRangeSlider"
+import { Input } from "@/components/ui/Input"
+import { TransactionButton } from "@/components/ui/TransactionButton"
+import { TransactionStatus } from "@/components/ui/TransactionStatus"
 import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"

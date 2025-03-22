@@ -1,4 +1,4 @@
-import { LinkButton } from "@/components/ui/link-button"
+import { LinkButton } from "@/components/ui/LinkButton"
 
 export default function NotFoundError() {
   return (

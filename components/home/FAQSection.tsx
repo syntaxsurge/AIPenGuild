@@ -6,7 +6,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger
-} from "@/components/ui/accordion"
+} from "@/components/ui/Accordion"
 import { XP_TITLES } from "@/lib/experience"
 
 export default function FAQSection() {
