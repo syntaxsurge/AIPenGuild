@@ -1,6 +1,7 @@
 'use client'
 
 import ImageLightbox from "@/components/ui/ImageLightbox"
+import XPTitlesModal from "@/components/ui/XPTitlesModal"
 import Image from "next/image"
 import { useState } from "react"
 
@@ -46,6 +47,9 @@ export default function FAQDocsPage() {
               For instance, after earning a certain amount of XP, you might become an
               <em> “Adept”</em> or <em>“Expert.”</em> These provide a fun badge of honor.
             </p>
+            <div className="mt-2">
+              <XPTitlesModal buttonLabel="View XP Title Table" />
+            </div>
           </div>
 
           {/* Q3 */}

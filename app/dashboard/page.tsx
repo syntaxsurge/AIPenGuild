@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import XPTitlesModal from "@/components/ui/XPTitlesModal"
 import { useContract } from "@/hooks/use-smart-contract"
 import { useToast } from "@/hooks/use-toast-notifications"
 import { getUserTitle } from "@/lib/experience"
@@ -208,6 +209,10 @@ export default function DashboardPage() {
             ) : (
               <span className="text-2xl font-bold">{userTitle}</span>
             )}
+
+            <div className="mt-4 flex justify-center">
+              <XPTitlesModal buttonLabel="View XP Titles" />
+            </div>
           </CardContent>
         </Card>
 

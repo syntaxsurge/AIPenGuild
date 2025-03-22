@@ -1,13 +1,13 @@
 'use client'
 
-import { motion } from "framer-motion"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger
 } from "@/components/ui/Accordion"
-import { XP_TITLES } from "@/lib/experience"
+import { motion } from "framer-motion"
+import XPTitlesModal from "../ui/XPTitlesModal"
 
 export default function FAQSection() {
   return (
@@ -54,32 +54,14 @@ export default function FAQSection() {
                     Titles are fun designations displayed on your profile
                     or in the Leaderboard once you pass certain XP milestones. For example,
                     if your XP surpasses a certain threshold, you might see
-                    <em>&quot;Enthusiast&quot;</em> next to your name. Below is an example
-                    table of the title tiers currently recognized on the platform:
+                    <em>&quot;Enthusiast&quot;</em> next to your name.
                   </p>
-                  <div className='overflow-x-auto'>
-                    <table className='w-full text-left text-sm md:text-base border border-border'>
-                      <thead className='bg-secondary text-secondary-foreground'>
-                        <tr>
-                          <th className='px-4 py-2'>Title</th>
-                          <th className='px-4 py-2'>XP Range</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {XP_TITLES.map((tier) => (
-                          <tr key={tier.label} className='even:bg-accent/5'>
-                            <td className='px-4 py-2'>{tier.label}</td>
-                            <td className='px-4 py-2'>
-                              {tier.max === Infinity
-                                ? `${tier.min}+`
-                                : `${tier.min} - ${tier.max}`}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <p>
+                    Want to see the full XP Title table? Click below:
+                  </p>
+                  <div>
+                    <XPTitlesModal buttonLabel="View Full XP Title Table" />
                   </div>
-                  <p>Tiers may be updated in future versions but currently remain as above.</p>
                 </AccordionContent>
               </AccordionItem>
 
