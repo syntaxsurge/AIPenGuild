@@ -1,123 +1,200 @@
-# AI Pen Guild
+AIPenGuild: AI-Driven NFTs with Marketplace, Staking, and Gamified XP Experience for Real-World Cross-Game & Cross-Chain Usage
+==============================================================================================================================
 
-AI Pen Guild is a pioneering AI-driven NFT marketplace that empowers creators and collectors to mint, trade, and experience next-generation digital art.
+AIPenGuild is a comprehensive AI-based NFT ecosystem providing custom Marketplace trading, NFT Staking for XP rewards, and real-world game interoperability—where attributes (strength, rarity, agility) are shared seamlessly across multiple blockchain games, ensuring a single NFT can preserve its gameplay stats, staking benefits, and marketplace value everywhere.
 
-## Team Members
+* * *
 
-- **Jade Laurence Empleo**  
-  Solo Developer (Fullstack Developer, Blockchain Developer, UI/UX Designer)  
-  **Contact Information:**  
-  - Email: syntaxsurge@gmail.com
-  - Discord: syntaxsurge
-  - Telegram: syntaxsurge
+Team Members
+------------
 
-## Development Guidelines
+*   **Jade Laurence Empleo**  
+    Solo Developer (Fullstack Developer, Blockchain Developer, UI/UX Designer)  
+    **Contact Information:**
+    *   Email: syntaxsurge@gmail.com
+    *   Discord: syntaxsurge
+    *   Telegram: syntaxsurge
 
-- **Fork the UI Template:**  
-  [https://github.com/openguild-labs/dotui](https://github.com/openguild-labs/dotui)
-- **Follow the Polkadot Brand Hub:**  
-  [https://polkadot.com/community/brand-hub](https://polkadot.com/community/brand-hub)
+* * *
 
-## Project Description
+1\. Project Description
+-----------------------
 
-### What Does Your Project Do?
+**What does your project do?**
 
-AI Pen Guild is an innovative NFT marketplace that leverages advanced AI technologies to generate unique digital art and NFTs. The platform allows creators to mint AI-driven NFTs with randomized attributes and enables collectors to trade these digital assets in a seamless, user-friendly environment. It integrates blockchain technology with cutting-edge AI APIs to ensure authenticity and creativity in every NFT minted.
+AIPenGuild is a fully-integrated platform for generating AI-driven NFTs with structured, game-oriented attributes (like _strength, agility, durability, boostType_) and storing them on IPFS. This approach allows **external game developers** to easily parse NFT stats for characters, items, or power-ups, ensuring the same NFT can be used across multiple games or chains. The system includes:
 
-### Inspiration
+*   A custom **Marketplace** with 10% fees to `PlatformRewardPool`
+*   **NFT Staking** to earn additional XP over time
+*   Gamified **XP Mechanics** (storing random XP in minted NFTs)
+*   Structured JSON attributes for cross-chain and cross-game interoperability
 
-Inspired by the limitless creative potential of artificial intelligence and the transformative power of blockchain technology, AI Pen Guild was envisioned as a platform where art and technology converge to redefine digital ownership.
+Essentially, AIPenGuild offers a universal standard for AI-generated NFT metadata, enabling real-world gaming integrations in a cross-chain, decentralized environment.
 
-## Technical Stack
+* * *
 
-- **Languages and Frameworks:**  
-  React, Next.js, TypeScript, Solidity, Tailwind CSS
-- **Blockchain/Protocol:**  
-  Integrates with Polkadot and Ethereum testnets to demonstrate cross-chain NFT functionality.
-- **Tools and APIs:**  
-  Hardhat, Viem, Wagmi, Replicate API, RainbowKit, and Next Themes
+2\. Inspiration
+---------------
 
-## Features
+The project was inspired by the growing need for **interoperable NFTs** in gaming, where a single asset can hold valuable attributes across multiple games. We wanted to merge _AI-based content generation_ (unique visuals and stats) with an on-chain metadata standard that truly ensures ownership and progression to follow players from one ecosystem to another. Combining _LLM-based attribute generation_, _NFT staking for XP_, and easy IPFS integration was too compelling to ignore.
 
-- **AI-Driven NFT Minting:**  
-  Generate unique NFT artwork and metadata using AI-based services.
-- **Seamless Marketplace:**  
-  List, buy, and sell NFTs on an intuitive and modern marketplace interface.
-- **Integrated Reward System:**  
-  Earn experience points (XP) and platform tokens through active participation and trading, incentivizing community engagement.
+* * *
 
-## How It Works
+3\. Technical Stack
+-------------------
 
-### Architecture
+**Languages & Frameworks:**
 
-The platform features a modern front-end built with Next.js and Tailwind CSS, interfacing with smart contracts deployed on Polkadot and Ethereum testnets. AI service from Replicate generate NFT images, while blockchain interactions are handled via Viem and Wagmi. Additionally, a reward mechanism assigns XP to users based on their activity and NFT transactions.
+*   TypeScript
+*   Next.js (React-based)
+*   Node.js
 
-### Demo Instructions
+**Smart Contract Tooling & Libraries:**
 
-1. **Clone the Repository:**
+*   Hardhat for contract compilation and deployment
+*   OpenZeppelin Contracts (ERC721, AccessControl, etc.)
+*   Polkadot Ecosystem (Moonbase Alpha / Westend AssetHub) with bridging to EVM-style usage
+*   Ethers & `viem` for on-chain reads/writes
 
-   ```bash
-   git clone https://github.com/syntaxsurge/AIPenGuild.git
-   cd AIPenGuild
-   ```
+**Blockchain/Protocol:**
 
-2. **Compile and Deploy the Smart Contracts:**
-  Navigate to the contracts folder and read the dedicated README for instructions on how to install dependencies, compile, and deploy the contracts to a test network (e.g., Moonbase Alpha). You should do this before running the Next.js application if you want the site to function with live on-chain data.
-  
-    ```bash
-    cd contracts
-    npm install
-    npm run compile
-    npm run deploy:moonbase:log
-    npm run update:addresses
-    cd ..
-    ```
+*   Polkadot.js (Substrate-based chains) and EVM-compatible flows (Moonbase Alpha, Westend AssetHub test networks)
+*   Fully integratable with other EVM-based networks if desired
 
-3. **Install Front-End Dependencies (in the project root):**
+**Tools, Libraries, & APIs:**
 
-    ```bash
-    npm install
-    ```
+*   OpenAI for LLM-based attribute generation
+*   Replicate for AI image generation (black-forest-labs/flux-dev model as example)
+*   IPFS (via Unique Network public endpoints) for decentralized file and JSON storage
+*   Wagmi + RainbowKit for web3 wallet connections
+*   Tailwind CSS for styling
+*   Framer Motion & AOS for animations
+*   Prettier & ESLint for code formatting and linting
 
-4. **Start the Development Server:**
+* * *
 
-    ```bash
-    npm run dev
-    ```
+4\. Features
+------------
 
-5. **Connect Your Wallet:**
-  Use the integrated wallet connection to access the NFT functionalities (e.g., Metamask configured for Moonbase Alpha).
+*   **AI-Powered Attribute Generation**: Generate structured NFT stats (strength, agility, etc.) via LLM.
+*   **NFT Staking**: Stake your NFTs to earn XP passively, tracked on-chain in `NFTStakingPool`.
+*   **Marketplace with Automatic XP Transfers**: When an NFT is sold, 10% fee goes to `PlatformRewardPool`, and 90% to the seller, while XP data is reassigned to the new owner automatically.
+*   **Gamified XP**: Each NFT is assigned random XP (1–100) upon minting, credited to the owner. This XP can be used to pay minting fees or for other in-game utility.
+*   **Cross-Chain Potential**: Polkadot-based approach + EVM bridging ensures these NFTs can be recognized across multiple blockchains.
 
-6.	**Mint and Trade NFTs:**
-  Navigate to the minting page to generate AI-driven NFTs or upload your own images, then list them on the marketplace for trade. Have fun exploring the AI-driven NFT ecosystem!
+* * *
 
-## Challenges
+5\. How It Works
+----------------
 
-I faced several challenges, including:
-- Coordinating AI Image Generation with On-Chain NFT Creation.
-- Ensuring a seamless cross-chain user experience.
-- Designing a secure and scalable system.
+### 5.1 Architecture
 
-Overcoming these challenges required deep dives into both blockchain and AI technologies, as well as extensive testing and optimization.
+At a high level, AIPenGuild combines a front-end (Next.js) with smart contracts that manage NFT minting, staking, XP tracking, and a marketplace:
 
-## Future Development
+*   **NFTCreatorCollection.sol**: Defines how NFTs can be minted (paying with native tokens or XP).
+*   **NFTMintingPlatform.sol**: Actually mints NFTs, assigns random XP, references IPFS metadata.
+*   **UserExperiencePoints.sol**: Tracks each user’s total XP, adjusts when they gain/lose or stake NFTs.
+*   **NFTStakingPool.sol**: Users can lock NFTs here to earn more XP over time.
+*   **NFTMarketplaceHub.sol**: Lists, buys, sells NFTs with a 10% fee to `PlatformRewardPool`.
+*   **PlatformRewardPool.sol**: Basic treasury contract that accumulates the 10% fee from sales.
 
-Planned enhancements include:
-- Multi-network expansion & advanced AI integrations.
-- Decentralized governance with community-driven updates.
-- Enhanced gamification & XP-based unlockables.
-- Expansion of reward pool for cross-chain grants.
+The front-end calls Next.js APIs (`/api/v1/ai-nft/metadata` for attribute generation, etc.), orchestrating LLM-based attributes, AI image creation, and IPFS uploads, then finalizes the on-chain mint.
 
-## Submission Details
+### 5.2 Detailed Workflow
 
-- **GitHub Repository:**
-  [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
-- **Live Demo:**
-[![Watch the video](./public/images/live-demo.png)](https://www.youtube.com/watch?v=MH4DsjtsO8c)
-  [https://www.youtube.com/watch?v=MH4DsjtsO8c](https://www.youtube.com/watch?v=MH4DsjtsO8c)
-- **Presentation Slides:**  
-  [https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit?utm_content=DAGhvgXMfyQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton](https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit?utm_content=DAGhvgXMfyQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+1.  **User Chooses Category & Prompt**: (“Character,” “GameItem,” or “Powerup,” plus a creative text prompt).
+2.  **Attribute Generation (LLM)**: Next.js calls `/api/v1/ai-nft/metadata`, enforces strict JSON output with the correct numeric ranges.
+3.  **AI Image Creation**: Using `finalReplicatePrompt`, the service obtains an AI-generated image from Replicate, merges it into the final JSON.
+4.  **IPFS & Mint**: Upload both the image and JSON to IPFS. Call `mintFromCollection` in `NFTCreatorCollection` to finalize the NFT on-chain, paying either 0.1 native token or 100 XP.
+5.  **External Games**: Any external game can query the NFT’s IPFS metadata and parse attributes like _strength_, _power_, or _duration_. No manual guesswork required—just read the standardized JSON from IPFS.
+6.  **Marketplace & Staking**:
+    *   Marketplace: Lists or unlists NFTs in `NFTMarketplaceHub`, collects 10% fees on a sale, and reassigns XP ownership.
+    *   Staking: `NFTStakingPool` lets users stake an NFT to accumulate XP over time at `xpPerSecond`.
 
-## Acknowledgments
+* * *
 
-Special thanks to the Polkadot Community for their design guidelines, OpenGuild Labs for the open-source template, and all the open-source projects and mentors who provided invaluable guidance throughout this project.
+6\. Demo Instructions
+---------------------
+
+1.  **Clone the Repo:**
+    
+        git clone https://github.com/syntaxsurge/AIPenGuild.git
+        cd AIPenGuild
+        
+    
+2.  **Install Dependencies & Set Up Contracts:**
+    *   Go to `contracts` folder. Read its `README.md` for detailed instructions on installing dependencies, compiling, and deploying the smart contracts (e.g., `npm install`, `npm run compile`, etc.).
+    *   After deployment (on Moonbase Alpha or Westend), update the addresses in `addresses.ts` accordingly.
+3.  **Create and Populate Your .env File:**
+    *   Copy the `.env.example` and rename it to `.env`.
+    *   Fill in `REPLICATE_API_TOKEN` (for AI images) and `OPENAI_API_KEY` (for LLM-based attributes).
+    *   Optionally set `NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE` to `true` if you want to manually upload images instead of AI generation.
+4.  **Run Front-End Locally:**
+    
+        npm run dev
+    
+    *   Connect your wallet (e.g., via MetaMask or Polkadot.js extension) to the correct chain (Moonbase Alpha, Westend AssetHub, etc.).
+5.  **Test Mint Flow:**
+    *   Navigate to `/mint`. Choose _Character_ or _GameItem_, type an AI prompt, and click “Generate Image & Attributes.”
+    *   Click “Mint NFT” (pay with either 100 XP or 0.1 native tokens). Wait for the transaction to confirm. The minted NFT references IPFS metadata.
+6.  **Marketplace & Staking:**
+    *   **Marketplace:** Visit `/marketplace` to list or unlist items for sale, buy items from others, and see XP ownership transfers automatically.
+    *   **Stake:** Visit `/stake` to stake your NFT and earn passive XP. Claim your XP or unstake to retrieve the NFT.
+7.  **External Developers & Public APIs:**
+    
+    *   You can query NFT data directly via `/api/v1/gaming/nft/[tokenId]?chainId=<...>` to get JSON with metadata, XP, stake info, etc.
+    *   Fetch a user’s NFTs via `/api/v1/gaming/user/[address]/nfts?chainId=<...>`.
+    *   Retrieve XP titles or ranges via `/api/v1/gaming/titles`.
+    *   Read user XP via `/api/v1/gaming/user/[address]/xp?chainId=<...>`.
+    
+    All these endpoints return JSON data to easily integrate your custom game logic. For more details, see the code in `app/api/v1/gaming`.
+    
+
+* * *
+
+7\. Challenges
+--------------
+
+**What challenges did you face?**
+
+*   **Strict JSON from LLM:** We engineered system prompts carefully to ensure a valid JSON structure with numeric ranges.
+*   **IPFS Reliability:** Relying on IPFS can be slow or intermittent, so we used fallback gateways and robust error handling.
+*   **Cross-Chain Complexity:** Designing metadata that remains universal across multiple Polkadot/EVM networks required a chain-agnostic approach to URIs and XP logic.
+
+We tackled these by implementing thorough checks in our Next.js backend, fallback IPFS gateway logic, typed ABIs for consistent on-chain calls, and chain-agnostic metadata references.
+
+* * *
+
+8\. Future Development
+----------------------
+
+**What’s next for the project?**
+
+*   **More AI Models & Customization**: Integrate multiple AI image generation models (Stable Diffusion, DALL·E) for greater variety.
+*   **Additional NFT Categories**: Beyond _Characters_, _GameItems_, and _Powerups_, expand to land plots, vehicles, etc.
+*   **Cross-Chain Bridges**: Official bridging solutions so NFTs minted here can be recognized or minted on other networks out-of-the-box.
+*   **DAO Governance**: Let the community control fees or reward distribution from `PlatformRewardPool`, or define new staking rates.
+
+* * *
+
+9\. Submission Details
+----------------------
+
+*   **GitHub Repository:** [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
+*   **Live Demo:** [YouTube Demo](https://www.youtube.com/watch?v=MH4DsjtsO8c)
+*   **Presentation Slides:**  
+    [Canva Pitch Deck](https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit)
+
+* * *
+
+10\. License
+------------
+
+This project is licensed under the **MIT License**. See the `LICENSE` file in this repository for more details.
+
+* * *
+
+11\. Acknowledgments
+--------------------
+
+We’d like to thank open-source contributors, mentors, and the developers of frameworks like _Next.js_, _Wagmi_, _RainbowKit_, _OpenAI_, _Replicate_, and the Polkadot/Moonbeam community for their documentation and support—enabling this cross-chain vision.
