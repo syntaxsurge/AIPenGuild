@@ -25,8 +25,7 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   const itemIdStr = String(item.itemId)
   // Fallback if no metadata or image
   const imageUrl = metadata?.imageUrl || item.resourceUrl
-  // Fallback name or “NFT #<id>”
-  const nftName = metadata?.name || `NFT #${itemIdStr}`
+  const nftName = `#${itemIdStr} - ${metadata?.name}`
 
   // Check if staked
   const isStaked = !!(
