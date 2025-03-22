@@ -1,6 +1,20 @@
 AIPenGuild
 ==========
 
+## Table of Contents
+- [Team Members](#team-members)
+- [1. Project Description](#1-project-description)
+- [2. Inspiration](#2-inspiration)
+- [3. Technical Stack](#3-technical-stack)
+- [4. Features](#4-features)
+- [5. How It Works](#5-how-it-works)
+- [6. Demo Instructions](#6-demo-instructions)
+- [7. Challenges](#7-challenges)
+- [8. Future Development](#8-future-development)
+- [9. Submission Details](#9-submission-details)
+- [10. License](#10-license)
+- [11. Acknowledgments](#11-acknowledgments)
+
 AIPenGuild is a comprehensive AI-based NFT ecosystem providing custom Marketplace trading, NFT Staking for XP rewards, and real-world game interoperability—where attributes (strength, rarity, agility) are shared seamlessly across multiple blockchain games, ensuring a single NFT can preserve its gameplay stats, staking benefits, and marketplace value everywhere.
 
 * * *
