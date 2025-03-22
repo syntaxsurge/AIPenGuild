@@ -16,11 +16,12 @@ AIPenGuild is a comprehensive AI-based NFT ecosystem providing custom Marketplac
     - [5.1 Architecture](#51-architecture)
     - [5.2 Detailed Workflow](#52-detailed-workflow)
   - [6. Demo Instructions](#6-demo-instructions)
-  - [7. Challenges](#7-challenges)
-  - [8. Future Development](#8-future-development)
-  - [9. Submission Details](#9-submission-details)
-  - [10. License](#10-license)
-  - [11. Acknowledgments](#11-acknowledgments)
+  - [7. Code Formatting \& Optimization](#7-code-formatting--optimization)
+  - [8. Challenges](#8-challenges)
+  - [9. Future Development](#9-future-development)
+  - [10. Submission Details](#10-submission-details)
+  - [11. License](#11-license)
+  - [12. Acknowledgments](#12-acknowledgments)
 
 * * *
 
@@ -182,11 +183,29 @@ The front-end calls Next.js APIs (`/api/v1/ai-nft/metadata` for attribute genera
     *   Read user XP via `/api/v1/gaming/user/[address]/xp?chainId=<...>`.
     
     All these endpoints return JSON data to easily integrate your custom game logic. For more details, see the code in `app/api/v1/gaming`.
-    
+
 
 * * *
 
-7\. Challenges
+7\. Code Formatting & Optimization
+-----------------------------------
+
+To ensure code consistency and automatic formatting, please run the following ESLint command after making changes to the project:
+
+```bash
+npx eslint . --ext .ts,.tsx,.js,.jsx --fix --debug
+```
+
+This command will:
+
+- Automatically format your code according to the project's ESLint and Prettier configuration.
+- Optimize import statements, fix indentation, remove unused variables, and ensure general code consistency.
+- Provide detailed debugging information if any formatting or linting issue arises.
+
+
+* * *
+
+8\. Challenges
 --------------
 
 **What challenges did you face?**
@@ -199,7 +218,7 @@ We tackled these by implementing thorough checks in our Next.js backend, fallbac
 
 * * *
 
-8\. Future Development
+9\. Future Development
 ----------------------
 
 **What’s next for the project?**
@@ -211,7 +230,7 @@ We tackled these by implementing thorough checks in our Next.js backend, fallbac
 
 * * *
 
-9\. Submission Details
+10\. Submission Details
 ----------------------
 
 *   **GitHub Repository:** [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
@@ -221,14 +240,14 @@ We tackled these by implementing thorough checks in our Next.js backend, fallbac
 
 * * *
 
-10\. License
+11\. License
 ------------
 
 This project is licensed under the **MIT License**. See the `LICENSE` file in this repository for more details.
 
 * * *
 
-11\. Acknowledgments
+12\. Acknowledgments
 --------------------
 
 We’d like to thank open-source contributors, mentors, and the developers of frameworks like _Next.js_, _Wagmi_, _RainbowKit_, _OpenAI_, _Replicate_, and the Polkadot/Moonbeam community for their documentation and support—enabling this cross-chain vision.
