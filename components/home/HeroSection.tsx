@@ -11,7 +11,7 @@ export default function HeroSection() {
       id="hero"
       className="relative w-full bg-background px-4"
     >
-      <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-12 md:flex-row md:gap-8">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 md:flex-row md:gap-8">
         {/* Left: Text + CTA */}
         <motion.div
           className="flex-1"
