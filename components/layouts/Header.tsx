@@ -122,6 +122,11 @@ function Header() {
               </div>
             </div>
 
+            {/* DOCS link */}
+            <Link href="/docs" className="hover:underline">
+              DOCS
+            </Link>
+
             {/* Admin link (only if connected and you're the owner) */}
             {!isDisconnected && (
               <Link href="/admin" className="hover:underline">
