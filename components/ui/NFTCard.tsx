@@ -1,7 +1,7 @@
 import Image from 'next/image'
-import { cn } from '@/lib/utils'
-import { ParsedNftMetadata } from '@/lib/nft-metadata'
 import { NFTItem } from '@/lib/nft-data'
+import { ParsedNftMetadata } from '@/lib/nft-metadata'
+import { cn } from '@/lib/utils'
 
 /**
  * Props for the NFTCard component.
@@ -20,12 +20,7 @@ interface NFTCardProps {
 /**
  * NFTCard displays a single NFT, including its image, name/ID, and status badges like STAKED or LISTED.
  */
-export function NFTCard({
-  item,
-  metadata,
-  selected,
-  onClick,
-}: NFTCardProps) {
+export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   const itemIdStr = String(item.itemId)
   // Fallback if no metadata or image
   const imageUrl = metadata?.imageUrl || item.resourceUrl
@@ -34,8 +29,7 @@ export function NFTCard({
 
   // Check if staked
   const isStaked = !!(
-    item.stakeInfo?.staked &&
-    item.stakeInfo.staker.toLowerCase() === item.owner.toLowerCase()
+    item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === item.owner.toLowerCase()
   )
   const isListed = item.isOnSale
 
@@ -96,9 +90,7 @@ export function NFTCard({
       </div>
 
       {/* Name + ID */}
-      <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>
-        {nftName}
-      </p>
+      <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>{nftName}</p>
     </div>
   )
 }
