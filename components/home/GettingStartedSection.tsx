@@ -52,14 +52,14 @@ export default function GettingStartedSection() {
             style={{ zIndex: 1, transform: "translateY(-50%)" }}
           />
 
-          <Step
-            icon={<Wallet className="h-8 w-8 text-white" />}
-            title="Connect Your Wallet"
-            description="Set up for Moonbase Alpha or Westend, then link your wallet with AIPenGuild for AI-based NFT creation."
-            linkHref="/dashboard"
-            linkText="Go to Dashboard"
-            delay={0}
-          />
+          {
+            icon: <Wallet className="h-8 w-8 text-white" />,
+            title: "Connect Your Wallet",
+            description: "Set up for Moonbase Alpha or Westend, then link your wallet with AIPenGuild for AI-based NFT creation. Be sure to grab free DEV tokens from the official Moonbeam Faucet if needed: https://faucet.moonbeam.network/",
+            linkHref: "/dashboard",
+            linkText: "Go to Dashboard",
+            delay: 0
+          },
           <Step
             icon={<Wand2 className="h-8 w-8 text-white" />}
             title="Mint AI NFT"

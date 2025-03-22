@@ -36,6 +36,17 @@ export default function UserGuidePage() {
             We support EVM-compatible wallets and Polkadot.js-based solutions. Switch your wallet
             to the correct test network (Moonbase Alpha or Westend). Ensure you have enough
             test tokens (DEV or WND) for gas.
+            <br />
+            <strong>Request DEV Tokens:</strong> Grab free DEV tokens from the official{" "}
+            <a
+              href="https://faucet.moonbeam.network/"
+              className="underline hover:opacity-90"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Moonbeam Faucet
+            </a>
+            .
           </p>
         </div>
         <div className="md:w-1/2 flex justify-center">
