@@ -1,5 +1,5 @@
-AIPenGuild: AI-Driven NFTs with Marketplace, Staking, and Gamified XP Experience for Real-World Cross-Game & Cross-Chain Usage
-==============================================================================================================================
+AIPenGuild
+==========
 
 AIPenGuild is a comprehensive AI-based NFT ecosystem providing custom Marketplace trading, NFT Staking for XP rewards, and real-world game interoperability—where attributes (strength, rarity, agility) are shared seamlessly across multiple blockchain games, ensuring a single NFT can preserve its gameplay stats, staking benefits, and marketplace value everywhere.
 
