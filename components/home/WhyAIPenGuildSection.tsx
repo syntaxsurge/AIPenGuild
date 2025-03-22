@@ -34,7 +34,7 @@ export default function WhyAIPenGuildSection() {
           </div>
           <div className="relative h-48 w-full overflow-hidden rounded-md sm:h-64">
             <Image
-              src="/images/why-aipenguild.png"
+              src="/images/why-aipenguild.gif"
               alt="Why AIPenGuild"
               fill
               sizes="(max-width: 768px) 100vw,
