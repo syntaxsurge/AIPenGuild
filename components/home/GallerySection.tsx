@@ -1,22 +1,37 @@
 "use client";
 
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useState } from "react";
 
-// Screenshots arranged logically to reflect user journey and platform exploration
+/**
+ * We'll keep the original screenshots but now with click-to-open Lightbox.
+ */
 const screenshots = [
-  { src: "homepage-overview.png", alt: "Homepage Overview" }, // Entry point
-  { src: "dashboard-overview.png", alt: "Dashboard Overview" }, // User Dashboard
-  { src: "generate-nft.png", alt: "Generate NFT" }, // NFT Creation process
-  { src: "mint-nft.png", alt: "Mint NFT" }, // NFT Minting process
-  { src: "stake-nft.png", alt: "Stake NFT" }, // NFT Staking functionality
-  { src: "list-nft.png", alt: "List NFT" }, // Listing NFTs for sale
-  { src: "marketplace-overview.png", alt: "Marketplace Overview" }, // Marketplace exploration
-  { src: "leaderboard-overview.png", alt: "Leaderboard Overview" }, // User ranking and competition
-  { src: "admin-withdraw.png", alt: "Admin Withdraw" }, // Admin operations
+  { src: "homepage-overview.png", alt: "Homepage Overview" },
+  { src: "dashboard-overview.png", alt: "Dashboard Overview" },
+  { src: "generate-nft.png", alt: "Generate NFT" },
+  { src: "mint-nft.png", alt: "Mint NFT" },
+  { src: "stake-nft.png", alt: "Stake NFT" },
+  { src: "list-nft.png", alt: "List NFT" },
+  { src: "marketplace-overview.png", alt: "Marketplace Overview" },
+  { src: "leaderboard-overview.png", alt: "Leaderboard Overview" },
+  { src: "admin-withdraw.png", alt: "Admin Withdraw" },
 ];
 
 export default function GallerySection() {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Convert screenshots to just an array of src for the lightbox.
+  const images = screenshots.map((s) => `/images/screenshots/${s.src}`);
+
+  const handleImageClick = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
   return (
     <section
       id="gallery"
@@ -41,10 +56,11 @@ export default function GallerySection() {
           {screenshots.map(({ src, alt }, idx) => (
             <motion.div
               key={idx}
-              className="relative h-44 w-full overflow-hidden rounded-md bg-secondary transition hover:shadow-lg"
+              className="relative h-44 w-full overflow-hidden rounded-md bg-secondary transition hover:shadow-lg cursor-pointer"
               whileHover={{ scale: 1.02 }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
+              onClick={() => handleImageClick(idx)}
             >
               <Image
                 src={`/images/screenshots/${src}`}
@@ -59,6 +75,14 @@ export default function GallerySection() {
           ))}
         </div>
       </div>
+
+      {/* Our new Lightbox */}
+      <ImageLightbox
+        images={images}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        startIndex={lightboxIndex}
+      />
     </section>
   );
 }
