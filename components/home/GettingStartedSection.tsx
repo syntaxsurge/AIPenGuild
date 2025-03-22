@@ -55,7 +55,7 @@ export default function GettingStartedSection() {
           <Step
             icon={<Wallet className="h-8 w-8 text-white" />}
             title="Connect Your Wallet"
-            description="Set up for Moonbase Alpha or Westend, then link your wallet with AIPenGuild for AI-based NFT creation.  Be sure to grab free DEV tokens from the official Moonbeam Faucet if needed: https://faucet.moonbeam.network/"
+            description="Set up for Moonbase Alpha or Westend, then link your wallet with AIPenGuild for AI-based NFT creation."
             linkHref="/dashboard"
             linkText="Go to Dashboard"
             delay={0}
