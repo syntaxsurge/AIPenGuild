@@ -23,9 +23,9 @@ interface NFTCardProps {
  */
 export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   const itemIdStr = String(item.itemId)
-  // If no metadata or image, fallback to the resourceUrl
+  // Fallback if no metadata or image
   const imageUrl = metadata?.imageUrl || item.resourceUrl
-  // Show #<id> plus the metadata name if available
+  // Construct a display name
   const nftName = metadata?.name
     ? `#${itemIdStr} - ${metadata.name}`
     : `#${itemIdStr}`
@@ -37,19 +37,22 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
 
   // Prepare status labels
   const labels: { text: string; style: string }[] = []
+
   if (isStaked) {
+    // Use a pleasing gradient background for STAKED
     labels.push({
       text: 'STAKED',
       style:
-        // Use accent color with proper foreground for improved readability
-        'bg-accent text-accent-foreground px-2 py-1 text-xs font-semibold rounded-md shadow-md',
+        'bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md border border-white',
     })
   }
+
   if (isListed) {
+    // Keep the existing gradient, add a border for consistency
     labels.push({
       text: 'LISTED',
       style:
-        'bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md',
+        'bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md border border-white',
     })
   }
 
@@ -69,7 +72,6 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
     >
       {/* NFT Image Block */}
       <div className='relative h-36 w-full overflow-hidden rounded-md bg-secondary'>
-        {/* Display each status badge in top-left */}
         {labels.length > 0 && (
           <div className='absolute left-2 top-2 z-10 flex flex-col gap-1'>
             {labels.map((label, idx) => (
