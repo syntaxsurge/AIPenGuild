@@ -1,11 +1,15 @@
 import { GoogleAnalytics } from '@next/third-parties/google'
-import { AnimateOnScrollInitializer } from '@/components/AnimateOnScrollInitializer'
-import PageTopLoader from '@/components/PageTopLoader'
-import Header from '@/components/layouts/Header'
-import Providers from '@/providers/Providers'
-import '@rainbow-me/rainbowkit/styles.css'
-import type { Metadata } from 'next'
 import { Inter, Unbounded } from 'next/font/google'
+
+import { Metadata } from 'next'
+
+import { AnimateOnScrollInitializer } from '@/components/AnimateOnScrollInitializer'
+import Header from '@/components/layouts/Header'
+import PageTopLoader from '@/components/PageTopLoader'
+import Providers from '@/providers/Providers'
+
+import '@rainbow-me/rainbowkit/styles.css'
+
 import './globals.css'
 
 /**

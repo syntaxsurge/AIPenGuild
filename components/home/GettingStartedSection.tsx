@@ -1,8 +1,9 @@
 'use client'
 
+import Link from 'next/link'
+
 import { motion } from 'framer-motion'
 import { Code2, Coins, Wallet, Wand2 } from 'lucide-react'
-import Link from 'next/link'
 
 /**
  * A modern, horizontal timeline approach for "Getting Started",

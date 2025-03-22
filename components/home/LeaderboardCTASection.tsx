@@ -1,8 +1,9 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
+
+import { motion } from 'framer-motion'
 
 /**
  * Modified "Check the Latest Ranking" section to have a unique,

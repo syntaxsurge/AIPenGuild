@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+
 import { getContractConfig, getPublicClientForChainId, parseChainIdParam } from '@/lib/chain-utils'
 
 /**

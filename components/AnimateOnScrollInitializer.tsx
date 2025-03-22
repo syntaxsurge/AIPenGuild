@@ -1,7 +1,8 @@
 'use client'
 
-import Aos from 'aos'
 import { useEffect } from 'react'
+
+import Aos from 'aos'
 
 export function AnimateOnScrollInitializer() {
   useEffect(() => {

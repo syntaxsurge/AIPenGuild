@@ -1,9 +1,11 @@
 'use client'
 
-import { Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
+
+import { Loader2 } from 'lucide-react'
 import { useAccount, useChainId, usePublicClient, useWalletClient } from 'wagmi'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { NFTCard } from '@/components/ui/NFTCard'
 import { TransactionButton } from '@/components/ui/TransactionButton'

@@ -1,5 +1,6 @@
 import { Chain, createPublicClient, defineChain, http } from 'viem'
 import { moonbaseAlpha } from 'viem/chains'
+
 import { ABIS } from '@/contracts/abis'
 import { CONTRACT_ADDRESSES } from '@/contracts/addresses'
 import { ContractConfig, CoreContractName } from '@/contracts/types'

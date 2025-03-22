@@ -1,14 +1,17 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import Link from 'next/link'
-import XPTitlesModal from '../ui/XPTitlesModal'
+
+import { motion } from 'framer-motion'
+
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/Accordion'
+
+import XPTitlesModal from '../ui/XPTitlesModal'
 
 export default function FAQSection() {
   return (

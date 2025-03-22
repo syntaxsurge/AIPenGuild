@@ -1,10 +1,12 @@
 'use client'
 
-import { IconChevronDown, IconMenu2 } from '@tabler/icons-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
+
+import { IconChevronDown, IconMenu2 } from '@tabler/icons-react'
 import { useAccount } from 'wagmi'
+
 import { ThemeToggleButton } from '@/components/ThemeToggleButton'
 import WalletConnectButton from '@/components/WalletConnectButton'
 

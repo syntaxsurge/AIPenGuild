@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
+
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
-import { useState } from 'react'
-import { Button } from './Button'
+
 import { XP_TITLES } from '@/lib/experience'
+
+import { Button } from './Button'
 
 /**
  * XPTitlesModal - A reusable component that renders a button to open

@@ -1,4 +1,5 @@
 import { UsePublicClientReturnType } from 'wagmi'
+
 import { ContractConfig } from '@/contracts/types'
 
 export interface NFTItem {

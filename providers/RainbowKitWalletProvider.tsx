@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+
 import {
   RainbowKitProvider,
   darkTheme,
@@ -8,9 +10,9 @@ import {
 } from '@rainbow-me/rainbowkit'
 import { ledgerWallet, trustWallet } from '@rainbow-me/rainbowkit/wallets'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React from 'react'
 import { moonbaseAlpha } from 'viem/chains'
 import { WagmiProvider } from 'wagmi'
+
 import { customMoonbeamChain, westendAssetHubChain } from '@/lib/chain-utils'
 
 /**

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Award, BrainCircuit, Code2, Coins, GitMerge, ShoppingBag } from 'lucide-react'
+
 import { XP_TITLES } from '@/lib/experience'
 
 /**

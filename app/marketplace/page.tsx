@@ -1,10 +1,12 @@
 'use client'
 
-import { Grid2X2, LayoutList, Loader2, Search, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
+
+import { Grid2X2, LayoutList, Loader2, Search, X } from 'lucide-react'
 import { useAccount, useChainId, usePublicClient, useWalletClient } from 'wagmi'
+
 import {
   Accordion,
   AccordionContent,

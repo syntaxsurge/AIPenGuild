@@ -1,10 +1,12 @@
 'use client'
 
-import { Brain, Loader2, Upload, Wand } from 'lucide-react'
 import Image from 'next/image'
 import React, { useState } from 'react'
+
+import { Brain, Loader2, Upload, Wand } from 'lucide-react'
 import { parseEther } from 'viem'
 import { useAccount, useBalance, useChainId, usePublicClient, useWalletClient } from 'wagmi'
+
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'

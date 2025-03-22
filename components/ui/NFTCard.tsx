@@ -1,4 +1,5 @@
 import Image from 'next/image'
+
 import { NFTItem } from '@/lib/nft-data'
 import { ParsedNftMetadata } from '@/lib/nft-metadata'
 import { cn } from '@/lib/utils'

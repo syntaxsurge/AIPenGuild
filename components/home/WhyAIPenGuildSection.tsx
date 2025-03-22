@@ -1,7 +1,9 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import Image from 'next/image'
+
+import { motion } from 'framer-motion'
+
 import { cn } from '@/lib/utils'
 
 export default function WhyAIPenGuildSection() {

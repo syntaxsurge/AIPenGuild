@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+
 import ImageLightbox from '@/components/ui/ImageLightbox'
 
 export default function OverviewWithLightbox() {

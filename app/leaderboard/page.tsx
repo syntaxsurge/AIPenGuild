@@ -1,8 +1,10 @@
 'use client'
 
-import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+import { Loader2 } from 'lucide-react'
 import { usePublicClient } from 'wagmi'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { DualRangeSlider } from '@/components/ui/DualRangeSlider'
 import { Input } from '@/components/ui/Input'

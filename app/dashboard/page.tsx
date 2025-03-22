@@ -1,9 +1,11 @@
 'use client'
 
-import { Crown, Folder, Gauge, Loader2, PieChart } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+
+import { Crown, Folder, Gauge, Loader2, PieChart } from 'lucide-react'
 import { useAccount, usePublicClient } from 'wagmi'
+
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import XPTitlesModal from '@/components/ui/XPTitlesModal'

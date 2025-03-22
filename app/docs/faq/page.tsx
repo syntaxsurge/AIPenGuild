@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+
 import ImageLightbox from '@/components/ui/ImageLightbox'
 import XPTitlesModal from '@/components/ui/XPTitlesModal'
 

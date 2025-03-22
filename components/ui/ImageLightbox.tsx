@@ -1,5 +1,7 @@
 'use client'
 
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ChevronLeft,
@@ -11,7 +13,6 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 /**

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+
 import OpenAI from 'openai'
 import Replicate from 'replicate'
+
 import { NFT_CATEGORIES, NFTCategory } from '@/lib/metadata-constants'
 
 /**
