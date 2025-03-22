@@ -65,7 +65,7 @@ export default function OverviewWithLightbox() {
         <div className="md:w-1/2 relative h-64 w-full mt-4 md:mt-0">
           <iframe
             className="absolute top-0 left-0 h-full w-full rounded-md border border-border"
-            src="https://www.youtube.com/embed/MH4DsjtsO8c"
+            src="https://www.youtube.com/embed/gvjl6qbt35s"
             title="YouTube video player"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

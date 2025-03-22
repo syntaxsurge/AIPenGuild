@@ -50,7 +50,7 @@ export default function IntroductionSection() {
               GitHub Repository
             </Link>
             <Link
-              href="https://www.youtube.com/watch?v=MH4DsjtsO8c"
+              href="https://www.youtube.com/watch?v=gvjl6qbt35s"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
@@ -69,7 +69,7 @@ export default function IntroductionSection() {
         >
           <iframe
             className="absolute left-0 top-0 h-full w-full"
-            src="https://www.youtube.com/embed/MH4DsjtsO8c"
+            src="https://www.youtube.com/embed/gvjl6qbt35s"
             title="YouTube video player"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
