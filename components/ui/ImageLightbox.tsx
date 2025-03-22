@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X, ZoomIn, ZoomOut } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Props for the ImageLightbox component
@@ -20,7 +20,8 @@ interface ImageLightboxProps {
 
 /**
  * A minimal "lightbox" or modal component for displaying a set of images
- * with zoom, next/prev navigation, and optional "fullscreen-like" overlay.
+ * with zoom, next/prev navigation, and optional "fullscreen" button that uses
+ * the native browser Fullscreen API (requestFullscreen).
  */
 export default function ImageLightbox({
   images,
@@ -28,11 +29,20 @@ export default function ImageLightbox({
   onClose,
   startIndex = 0
 }: ImageLightboxProps) {
+  // Which image index is currently displayed
   const [currentIndex, setCurrentIndex] = useState(startIndex);
+
+  // Zoom scale (1.0 = normal). We'll handle pinch/wheel for zoom.
   const [scale, setScale] = useState(1);
+
+  // We'll store a ref to the lightbox overlay container for fullscreen requests
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Keep track if we are currently in fullscreen
+  // (We derive this by listening to 'fullscreenchange' events.)
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Ensure currentIndex doesn't exceed image array length
+  // Ensure currentIndex doesn't exceed the images array length
   useEffect(() => {
     if (startIndex < 0 || startIndex >= images.length) {
       setCurrentIndex(0);
@@ -71,20 +81,45 @@ export default function ImageLightbox({
     setScale((s) => Math.max(s - 0.2, 0.5));
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen((prev) => !prev);
-  };
+  // Listen for native fullscreen changes
+  useEffect(() => {
+    function onFsChange() {
+      // If there's a fullscreen element, we are in fullscreen; otherwise, not
+      setIsFullscreen(!!document.fullscreenElement);
+    }
 
-  // Close on Esc key
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+    };
+  }, []);
+
+  async function toggleFullscreen() {
+    try {
+      if (!document.fullscreenElement) {
+        // Enter fullscreen on the lightbox container
+        if (containerRef.current) {
+          await containerRef.current.requestFullscreen();
+        }
+      } else {
+        // Exit fullscreen
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error("Error toggling fullscreen:", err);
+    }
+  }
+
+  // Close on Esc key (though pressing ESC also typically exits fullscreen)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
+        // If they're in real fullscreen, the browser will typically exit it,
+        // but let's also ensure we close the entire lightbox if the user hits escape
         onClose();
-      }
-      if (e.key === "ArrowRight") {
+      } else if (e.key === "ArrowRight") {
         handleNext();
-      }
-      if (e.key === "ArrowLeft") {
+      } else if (e.key === "ArrowLeft") {
         handlePrev();
       }
     }
@@ -102,72 +137,82 @@ export default function ImageLightbox({
     <AnimatePresence>
       <motion.div
         key="lightboxBackdrop"
+        ref={containerRef}
         className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Controls */}
-        <div className="absolute top-4 right-4 flex items-center gap-3">
+        {/* Top-right Controls */}
+        <div className="absolute top-4 right-4 flex items-center gap-3 z-[9999]">
           <button
             onClick={toggleFullscreen}
             className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+            aria-label="Toggle fullscreen"
           >
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>
           <button
             onClick={handleZoomIn}
             className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+            aria-label="Zoom in"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
           <button
             onClick={handleZoomOut}
             className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+            aria-label="Zoom out"
           >
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
             onClick={onClose}
             className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+            aria-label="Close lightbox"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
+
         {/* Navigation Arrows */}
         <button
           onClick={handlePrev}
-          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
+          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 z-[9999]"
+          aria-label="Previous image"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
         <button
           onClick={handleNext}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 z-[9999]"
+          aria-label="Next image"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
 
         {/* Image Container */}
         <div
-          className="relative overflow-hidden"
-          style={{
-            width: isFullscreen ? "100vw" : "90vw",
-            height: isFullscreen ? "100vh" : "90vh"
-          }}
+          className="relative overflow-hidden cursor-grab"
           onWheel={handleWheel}
+          style={{
+            // default to 90% viewport unless in fullscreen
+            width: isFullscreen ? "100%" : "90vw",
+            height: isFullscreen ? "100%" : "90vh",
+          }}
         >
           <motion.img
             key={currentIndex}
             src={images[currentIndex]}
-            alt="Preview"
+            alt="Lightbox Preview"
             className="max-h-full max-w-full object-contain"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
-              scale: scale,
-              transformOrigin: "center center"
+              // apply the zoom scale transform
+              transform: `scale(${scale})`,
+              transformOrigin: "center center",
             }}
           />
         </div>
