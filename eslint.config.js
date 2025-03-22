@@ -3,6 +3,7 @@ import typescriptParser from '@typescript-eslint/parser';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import eslintPluginImport from 'eslint-plugin-import';
 import eslintPluginPrettier from 'eslint-plugin-prettier';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
     {
@@ -40,10 +41,16 @@ export default [
         },
         plugins: {
             '@typescript-eslint': typescriptEslint,
+            'unused-imports': unusedImports,
             import: eslintPluginImport,
             prettier: eslintPluginPrettier,
         },
         rules: {
+            'unused-imports/no-unused-imports': 'error',
+            'unused-imports/no-unused-vars': [
+                'warn',
+                { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
+            ],
             'import/no-duplicates': 'error',
             'import/order': [
                 'error',
