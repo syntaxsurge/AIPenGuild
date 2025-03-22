@@ -58,22 +58,12 @@ export default [
                     'groups': ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
                     'pathGroups': [
                         {
-                            pattern: 'next/**',
+                            pattern: '{react,next/**,@next/**}',
                             group: 'external',
                             position: 'before',
                         },
                         {
-                            pattern: 'react',
-                            group: 'external',
-                            position: 'before',
-                        },
-                        {
-                            pattern: '@/components/**',
-                            group: 'internal',
-                            position: 'after',
-                        },
-                        {
-                            pattern: '@/lib/**',
+                            pattern: '{@/components/**,@/lib/**,@/**}',
                             group: 'internal',
                             position: 'after',
                         }
@@ -81,9 +71,9 @@ export default [
                     'pathGroupsExcludedImportTypes': ['builtin'],
                     'alphabetize': {
                         'order': 'asc',
-                        'caseInsensitive': true
+                        'caseInsensitive': true,
                     },
-                    'newlines-between': 'always'
+                    'newlines-between': 'always',
                 },
             ],
             '@typescript-eslint/no-explicit-any': 'off',
