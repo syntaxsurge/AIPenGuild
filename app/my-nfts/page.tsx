@@ -346,7 +346,24 @@ export default function MyNFTsPage() {
                   const isStaked =
                     nft.stakeInfo?.staked &&
                     nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
-                  const label = isStaked ? '(STAKED)' : nft.isOnSale ? '(LISTED)' : ''
+
+                  // Collect statuses
+                  const statuses: { text: string; style: string }[] = []
+                  if (isStaked) {
+                    statuses.push({
+                      text: 'STAKED',
+                      style:
+                        'bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md',
+                    })
+                  }
+                  if (nft.isOnSale) {
+                    statuses.push({
+                      text: 'LISTED',
+                      style:
+                        'bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md',
+                    })
+                  }
+
                   const selected = selectedNFT?.itemId === nft.itemId
 
                   return (
@@ -358,6 +375,16 @@ export default function MyNFTsPage() {
                       }`}
                     >
                       <div className='relative h-36 w-full overflow-hidden rounded-md bg-secondary'>
+                        {/* Status badges at top-left */}
+                        {statuses.length > 0 && (
+                          <div className='absolute left-2 top-2 z-10 flex flex-col gap-1'>
+                            {statuses.map((s, idx) => (
+                              <div key={idx} className={s.style}>
+                                {s.text}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {meta.imageUrl && (
                           <Image
                             src={meta.imageUrl}
@@ -371,7 +398,8 @@ export default function MyNFTsPage() {
                         )}
                       </div>
                       <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>
-                        NFT #{itemIdStr} {label}
+                        {/* NFT #id - name */}
+                        NFT #{itemIdStr} - {meta.name || ''}
                       </p>
                     </div>
                   )
@@ -407,16 +435,47 @@ export default function MyNFTsPage() {
                     }
                     if (!meta.imageUrl) return null
 
+                    // We'll see if it's staked or listed
+                    const isStaked =
+                      selectedNFT.stakeInfo?.staked &&
+                      selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+                    const statuses: { text: string; style: string }[] = []
+                    if (isStaked) {
+                      statuses.push({
+                        text: 'STAKED',
+                        style:
+                          'bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md',
+                      })
+                    }
+                    if (selectedNFT.isOnSale) {
+                      statuses.push({
+                        text: 'LISTED',
+                        style:
+                          'bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md',
+                      })
+                    }
+
                     return (
-                      <Image
-                        src={meta.imageUrl}
-                        alt={`NFT #${String(selectedNFT.itemId)}`}
-                        fill
-                        sizes='(max-width: 768px) 100vw,
-                               (max-width: 1200px) 50vw,
-                               33vw'
-                        className='object-contain'
-                      />
+                      <div className='relative h-full w-full'>
+                        {statuses.length > 0 && (
+                          <div className='absolute left-2 top-2 z-10 flex flex-col gap-1'>
+                            {statuses.map((s, idx) => (
+                              <div key={idx} className={s.style}>
+                                {s.text}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <Image
+                          src={meta.imageUrl}
+                          alt={`NFT #${String(selectedNFT.itemId)}`}
+                          fill
+                          sizes='(max-width: 768px) 100vw,
+                                 (max-width: 1200px) 50vw,
+                                 33vw'
+                          className='object-contain'
+                        />
+                      </div>
                     )
                   })()}
                 </div>
