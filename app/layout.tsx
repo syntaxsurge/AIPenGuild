@@ -5,21 +5,24 @@ import Providers from "@/providers"
 import { GoogleAnalytics } from "@next/third-parties/google"
 import "@rainbow-me/rainbowkit/styles.css"
 import type { Metadata } from "next"
-import localFont from "next/font/local"
+import { Inter, Unbounded } from "next/font/google"
 import "./globals.css"
 
-const brandFont = localFont({
-  src: [
-    { path: "../public/fonts/IBMPlexMono-Bold.ttf", weight: "700" },
-    { path: "../public/fonts/IBMPlexMono-ExtraLight.ttf", weight: "200" },
-    { path: "../public/fonts/IBMPlexMono-Light.ttf", weight: "300" },
-    { path: "../public/fonts/IBMPlexMono-Medium.ttf", weight: "500" },
-    { path: "../public/fonts/IBMPlexMono-Regular.ttf", weight: "400" },
-    { path: "../public/fonts/IBMPlexMono-SemiBold.ttf", weight: "600" },
-    { path: "../public/fonts/IBMPlexMono-Thin.ttf", weight: "100" }
-  ],
-  display: "swap",
-  variable: "--font-ibm-plex-mono"
+/**
+ * Load two fonts:
+ * - Unbounded (for headings) to reflect Polkadot brand style.
+ * - Inter (for body text) as a clean, readable base.
+ */
+const unbounded = Unbounded({
+  subsets: ["latin"],
+  variable: "--font-unbounded",
+  display: "swap"
+})
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap"
 })
 
 export const metadata: Metadata = {
@@ -32,8 +35,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${brandFont.className} ${brandFont.variable} custom-selection antialiased`}>
+    // Attach font variables to the <html> element
+    <html lang="en" className={`${unbounded.variable} ${inter.variable}`} suppressHydrationWarning>
+      <body className={`bg-background text-foreground custom-selection antialiased ${inter.className}`}>
         <Providers>
           <AnimateOnScrollInitializer />
           <PageTopLoader />
