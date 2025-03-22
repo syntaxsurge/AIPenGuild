@@ -8,12 +8,16 @@ export default function OverviewWithLightbox() {
   const [open, setOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
+  // We'll maintain an array of images for the lightbox.
+  // The first is the homepage screenshot, the second is the overall architecture.
   const images = [
-    "/images/screenshots/homepage-overview.png"
+    "/images/screenshots/homepage-overview.png",
+    "/images/AIPenGuild-Overall-Architecture.png"
   ]
 
-  function handleClick() {
-    setLightboxIndex(0)
+  // handleClick function for each image by index
+  function handleClick(index: number) {
+    setLightboxIndex(index)
     setOpen(true)
   }
 
@@ -44,7 +48,7 @@ export default function OverviewWithLightbox() {
             width={500}
             height={350}
             className="rounded-md object-cover border border-border shadow-sm cursor-pointer"
-            onClick={handleClick}
+            onClick={() => handleClick(0)}
           />
         </div>
       </div>
@@ -70,8 +74,26 @@ export default function OverviewWithLightbox() {
         </div>
       </div>
 
+      {/* New Section: Overall Architecture */}
+      <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground space-y-4">
+        <h2 className="text-2xl font-bold text-primary">AIPenGuild Overall Architecture</h2>
+        <p className="text-base text-foreground leading-relaxed">
+          Below is a visualization of how the entire system fits together: from AI-based NFT creation and IPFS storage, to staking, marketplace features, XP tracking, and cross-chain interoperability. This diagram provides a broader look at AIPenGuild's core contracts and their interactions.
+        </p>
+        <div className="flex justify-center">
+          <Image
+            src={images[1]}
+            alt="AIPenGuild Overall Architecture"
+            width={600}
+            height={350}
+            className="rounded-md border border-border shadow-sm cursor-pointer"
+            onClick={() => handleClick(1)}
+          />
+        </div>
+      </div>
+
       <div className="border border-border rounded-md p-4 shadow-sm bg-secondary text-secondary-foreground">
-        <h3 className="text-2xl font-bold mb-3">Highlights:</h3>
+        <h3 className="text-2xl font-bold mb-3 text-primary">Highlights:</h3>
         <ul className="list-disc list-inside space-y-2 text-lg text-foreground">
           <li>AI-driven NFT generation with integrated IPFS metadata</li>
           <li>Gamified XP system allowing user progress across ecosystems</li>
@@ -98,6 +120,7 @@ export default function OverviewWithLightbox() {
         </ul>
       </div>
 
+      {/* Lightbox */}
       <ImageLightbox
         images={images}
         open={open}
