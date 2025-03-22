@@ -28,7 +28,7 @@ export default function ImageLightbox({
   onClose,
   startIndex = 0
 }: ImageLightboxProps) {
-  // Which image index is currently displayed
+  // The current index of the displayed image
   const [currentIndex, setCurrentIndex] = useState(startIndex);
 
   // Zoom scale (1.0 = normal). We'll handle pinch/wheel for zoom.
@@ -40,15 +40,18 @@ export default function ImageLightbox({
   // Keep track if we are currently in fullscreen (derived from 'fullscreenchange' events).
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Ensure currentIndex doesn't exceed images array length
+  // When the lightbox first opens, reset the index to startIndex (or 0 if out of range)
   useEffect(() => {
-    if (startIndex < 0 || startIndex >= images.length) {
-      setCurrentIndex(0);
-    } else {
-      setCurrentIndex(startIndex);
+    if (open) {
+      // Lightbox is opening
+      let validIndex = 0;
+      if (startIndex >= 0 && startIndex < images.length) {
+        validIndex = startIndex;
+      }
+      setCurrentIndex(validIndex);
+      setScale(1);
     }
-    setScale(1);
-  }, [startIndex, images.length]);
+  }, [open, startIndex, images.length]);
 
   const handleNext = useCallback(() => {
     setScale(1);
@@ -188,9 +191,9 @@ export default function ImageLightbox({
           <ChevronRight className="h-5 w-5" />
         </button>
 
-        {/* Image Container - flex to center the image */}
+        {/* Image Container */}
         <div
-          className="relative flex items-center justify-center cursor-grab overflow-hidden"
+          className="relative flex cursor-grab items-center justify-center overflow-hidden"
           onWheel={handleWheel}
           style={{
             width: isFullscreen ? "100%" : "90vw",
