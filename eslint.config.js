@@ -55,9 +55,9 @@ export default [
             'import/order': [
                 'error',
                 {
-                    alphabetize: {
-                        order: 'asc',
-                    },
+                    groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object', 'type'],
+                    alphabetize: { order: 'asc' },
+                    'newlines-between': 'always'
                 },
             ],
             '@typescript-eslint/no-explicit-any': 'off',
