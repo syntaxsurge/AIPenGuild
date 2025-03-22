@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/Button'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { IconChevronDown } from '@tabler/icons-react'
+import { Button } from '@/components/ui/Button'
 
 export default function WalletConnectButton() {
   return (

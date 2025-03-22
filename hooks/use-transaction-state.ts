@@ -39,7 +39,7 @@ export function useTransactionState() {
    * Optionally update the txHash if you get it later than 'start'.
    */
   function success(txHash?: `0x${string}`) {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isProcessing: false,
       isSuccess: true,
@@ -52,7 +52,7 @@ export function useTransactionState() {
    * Call this if the transaction fails for any reason.
    */
   function fail(errorMessage: string) {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isProcessing: false,
       isSuccess: false,

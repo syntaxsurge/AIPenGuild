@@ -1,4 +1,4 @@
-import NotFoundPage from './errors/404/page';
+import NotFoundPage from './errors/404/page'
 
 /**
  * Next.js will automatically use this component
@@ -6,5 +6,5 @@ import NotFoundPage from './errors/404/page';
  * visiting a route that doesn't exist).
  */
 export default function NotFound() {
-  return <NotFoundPage />;
+  return <NotFoundPage />
 }

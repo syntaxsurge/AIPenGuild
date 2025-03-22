@@ -1,5 +1,5 @@
-import { ContractConfig } from '@/contracts/types'
 import { UsePublicClientReturnType } from 'wagmi'
+import { ContractConfig } from '@/contracts/types'
 
 export interface NFTItem {
   itemId: bigint
@@ -48,12 +48,12 @@ export async function fetchAllNFTs(
   }
 
   // 1) Read total minted
-  const totalMinted = await publicClient.readContract({
+  const totalMinted = (await publicClient.readContract({
     address: nftMintingPlatform.address as `0x${string}`,
     abi: nftMintingPlatform.abi,
     functionName: 'getLatestMintedId',
     args: []
-  }) as bigint
+  })) as bigint
 
   if (!totalMinted || totalMinted < 1n) {
     return []

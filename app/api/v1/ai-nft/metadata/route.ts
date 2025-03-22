@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import Replicate from 'replicate'
-import {
-  NFT_CATEGORIES,
-  NFTCategory
-} from '@/lib/metadata-constants'
+import { NFT_CATEGORIES, NFTCategory } from '@/lib/metadata-constants'
 
 /**
  * All attribute sets or structure definitions were originally in this file, now we only keep
@@ -58,7 +55,7 @@ const replicate = new Replicate({
 
 export async function POST(request: Request) {
   try {
-    const { prompt, category } = await request.json() as { prompt?: string, category?: string }
+    const { prompt, category } = (await request.json()) as { prompt?: string; category?: string }
 
     if (!prompt || !category) {
       return NextResponse.json({ success: false, error: 'Missing prompt or category' }, { status: 400 })
@@ -94,10 +91,12 @@ Rarity distribution rule (roughly):
   - 5%  => "Legendary"
 
 Also numeric attributes:
-${Object.keys(systemRanges).map(key => {
-      const r = systemRanges[key]
-      return `Key "${key}" must be an integer from ${r.min} to ${r.max}.`
-    }).join('\n')}
+${Object.keys(systemRanges)
+  .map((key) => {
+    const r = systemRanges[key]
+    return `Key "${key}" must be an integer from ${r.min} to ${r.max}.`
+  })
+  .join('\n')}
 
 Return only JSON. No code fences, no extra keys.
 `

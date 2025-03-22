@@ -1,5 +1,5 @@
-import { XP_TITLES } from '@/lib/experience'
 import { NextResponse } from 'next/server'
+import { XP_TITLES } from '@/lib/experience'
 
 /**
  * GET /api/v1/gaming/titles

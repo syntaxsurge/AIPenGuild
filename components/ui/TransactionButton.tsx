@@ -1,6 +1,6 @@
+import { Loader2 } from 'lucide-react'
 import * as React from 'react'
 import { Button, ButtonProps } from './Button'
-import { Loader2 } from 'lucide-react'
 
 interface TransactionButtonProps extends ButtonProps {
   /** Whether the transaction is currently loading/processing */
@@ -23,13 +23,10 @@ export function TransactionButton({
   ...buttonProps
 }: TransactionButtonProps) {
   return (
-    <Button
-      disabled={disabled || isLoading}
-      {...buttonProps}
-    >
+    <Button disabled={disabled || isLoading} {...buttonProps}>
       {isLoading ? (
         <>
-          <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          <Loader2 className='mr-1 h-4 w-4 animate-spin' />
           {loadingText}
         </>
       ) : (

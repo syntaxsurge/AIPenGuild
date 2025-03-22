@@ -1,27 +1,27 @@
 'use client'
 
-import { IconMoonFilled, IconSun } from "@tabler/icons-react";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { IconMoonFilled, IconSun } from '@tabler/icons-react'
+import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 
 export function ThemeToggleButton() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const otherTheme = resolvedTheme === "dark" ? "light" : "dark";
-  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme()
+  const otherTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   return (
     <button
-      type="button"
-      className="flex h-6 w-6 items-center justify-center rounded-md transition"
-      aria-label={mounted ? `Switch to ${otherTheme} theme` : "Toggle theme"}
+      type='button'
+      className='flex h-6 w-6 items-center justify-center rounded-md transition'
+      aria-label={mounted ? `Switch to ${otherTheme} theme` : 'Toggle theme'}
       onClick={() => setTheme(otherTheme)}
     >
-      <IconSun className="hidden size-8 dark:block lg:size-4" />
-      <IconMoonFilled className="size-8 dark:hidden lg:size-4" />
+      <IconSun className='hidden size-8 dark:block lg:size-4' />
+      <IconMoonFilled className='size-8 dark:hidden lg:size-4' />
     </button>
-  );
+  )
 }

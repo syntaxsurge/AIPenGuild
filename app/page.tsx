@@ -1,17 +1,17 @@
 'use client'
 
-import HeroSection from "@/components/home/HeroSection"
-import IntroductionSection from "@/components/home/IntroductionSection"
-import WhatIsAIPenGuildSection from "@/components/home/WhatIsAIPenGuildSection"
-import KeyFeaturesSection from "@/components/home/KeyFeaturesSection"
-import FeaturedAICreationsSection from "@/components/home/FeaturedAICreationsSection"
-import WorkflowOverviewSection from "@/components/home/WorkflowOverviewSection"
-import GettingStartedSection from "@/components/home/GettingStartedSection"
-import WhyAIPenGuildSection from "@/components/home/WhyAIPenGuildSection"
-import FAQSection from "@/components/home/FAQSection"
-import GallerySection from "@/components/home/GallerySection"
-import LeaderboardCTASection from "@/components/home/LeaderboardCTASection"
-import CallToActionSection from "@/components/home/CallToActionSection"
+import CallToActionSection from '@/components/home/CallToActionSection'
+import FAQSection from '@/components/home/FAQSection'
+import FeaturedAICreationsSection from '@/components/home/FeaturedAICreationsSection'
+import GallerySection from '@/components/home/GallerySection'
+import GettingStartedSection from '@/components/home/GettingStartedSection'
+import HeroSection from '@/components/home/HeroSection'
+import IntroductionSection from '@/components/home/IntroductionSection'
+import KeyFeaturesSection from '@/components/home/KeyFeaturesSection'
+import LeaderboardCTASection from '@/components/home/LeaderboardCTASection'
+import WhatIsAIPenGuildSection from '@/components/home/WhatIsAIPenGuildSection'
+import WhyAIPenGuildSection from '@/components/home/WhyAIPenGuildSection'
+import WorkflowOverviewSection from '@/components/home/WorkflowOverviewSection'
 
 export default function Home() {
   return (

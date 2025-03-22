@@ -1,8 +1,8 @@
+import { NextResponse } from 'next/server'
 import { getContractConfig, getPublicClientForChainId, parseChainIdParam } from '@/lib/chain-utils'
 import { transformIpfsUriToHttp } from '@/lib/ipfs'
 import { fetchAllNFTs } from '@/lib/nft-data'
 import { fetchNftMetadata } from '@/lib/nft-metadata'
-import { NextResponse } from 'next/server'
 
 /**
  * GET /api/v1/gaming/user/[address]/nfts?chainId=...
@@ -13,10 +13,7 @@ import { NextResponse } from 'next/server'
  * - Also fetches each NFT's IPFS metadata to avoid duplication in code.
  */
 
-export async function GET(
-  request: Request,
-  { params }: { params: { address: string } }
-) {
+export async function GET(request: Request, { params }: { params: { address: string } }) {
   try {
     const url = new URL(request.url)
     const chainId = parseChainIdParam(url.searchParams.get('chainId'))
@@ -31,16 +28,10 @@ export async function GET(
     const nftStakingPool = getContractConfig(chainId, 'NFTStakingPool')
 
     // 3) Fetch all minted items, then filter by user
-    const allNfts = await fetchAllNFTs(
-      publicClient,
-      nftMintingPlatform,
-      nftMarketplaceHub,
-      nftStakingPool
-    )
+    const allNfts = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
 
     const userItems = allNfts.filter((item) => {
-      const stakedByUser = item.stakeInfo?.staked &&
-        item.stakeInfo.staker.toLowerCase() === userAddress
+      const stakedByUser = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress
       const ownedByUser = item.owner.toLowerCase() === userAddress
       return stakedByUser || ownedByUser
     })
@@ -66,19 +57,19 @@ export async function GET(
         salePrice: nft.salePrice.toString(),
         stakeInfo: nft.stakeInfo
           ? {
-            staker: nft.stakeInfo.staker,
-            startTimestamp: nft.stakeInfo.startTimestamp.toString(),
-            lastClaimed: nft.stakeInfo.lastClaimed.toString(),
-            staked: nft.stakeInfo.staked
-          }
+              staker: nft.stakeInfo.staker,
+              startTimestamp: nft.stakeInfo.startTimestamp.toString(),
+              lastClaimed: nft.stakeInfo.lastClaimed.toString(),
+              staked: nft.stakeInfo.staked
+            }
           : null,
         metadata: metadata
           ? {
-            imageUrl: transformIpfsUriToHttp(metadata.imageUrl),
-            name: metadata.name,
-            description: metadata.description,
-            attributes: metadata.attributes
-          }
+              imageUrl: transformIpfsUriToHttp(metadata.imageUrl),
+              name: metadata.name,
+              description: metadata.description,
+              attributes: metadata.attributes
+            }
           : null
       })
     }

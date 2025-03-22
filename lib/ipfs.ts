@@ -29,9 +29,7 @@ export async function uploadFileToIpfs(file: File): Promise<string> {
   const data = await res.json()
   // data.fullUrl => "https://ipfs.unique.network/ipfs/<CID>/"
   // We typically want the direct file link:
-  const directFileUrl = data.fullUrl.endsWith('/')
-    ? data.fullUrl + file.name
-    : data.fullUrl + '/' + file.name
+  const directFileUrl = data.fullUrl.endsWith('/') ? data.fullUrl + file.name : data.fullUrl + '/' + file.name
 
   return directFileUrl
 }

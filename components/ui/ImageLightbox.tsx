@@ -1,9 +1,9 @@
 'use client'
 
-import { AnimatePresence, motion } from "framer-motion"
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, RefreshCw, X, ZoomIn, ZoomOut } from "lucide-react"
-import React, { useCallback, useEffect, useRef, useState } from "react"
-import { createPortal } from "react-dom"
+import { AnimatePresence, motion } from 'framer-motion'
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, RefreshCw, X, ZoomIn, ZoomOut } from 'lucide-react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 /**
  * Props for the ImageLightbox component:
@@ -45,13 +45,7 @@ function LightboxPortal({ children }: { children: React.ReactNode }) {
  * 5) Allows toggling native fullscreen
  * 6) Adds a "Reset View" to return to initial "fit" scale & no translation
  */
-export default function ImageLightbox({
-  images,
-  open,
-  onClose,
-  startIndex = 0
-}: ImageLightboxProps) {
-
+export default function ImageLightbox({ images, open, onClose, startIndex = 0 }: ImageLightboxProps) {
   // current index among images
   const [currentIndex, setCurrentIndex] = useState(startIndex)
 
@@ -209,7 +203,7 @@ export default function ImageLightbox({
         await document.exitFullscreen()
       }
     } catch (err) {
-      console.error("Fullscreen error:", err)
+      console.error('Fullscreen error:', err)
     }
   }
 
@@ -227,73 +221,74 @@ export default function ImageLightbox({
     <LightboxPortal>
       <AnimatePresence>
         <motion.div
-          key="lightboxBackdrop"
+          key='lightboxBackdrop'
           ref={containerRef}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
+          className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/80'
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           {/* Top-right controls */}
-          <div className="absolute top-4 right-4 z-[9999] flex items-center gap-3">
+          <div className='absolute right-4 top-4 z-[9999] flex items-center gap-3'>
             <button
               onClick={toggleFullscreen}
-              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-              aria-label="Toggle fullscreen"
+              className='rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700'
+              aria-label='Toggle fullscreen'
             >
-              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              {isFullscreen ? <Minimize2 className='h-4 w-4' /> : <Maximize2 className='h-4 w-4' />}
             </button>
             <button
               onClick={handleZoomIn}
-              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-              aria-label="Zoom in"
+              className='rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700'
+              aria-label='Zoom in'
             >
-              <ZoomIn className="h-4 w-4" />
+              <ZoomIn className='h-4 w-4' />
             </button>
             <button
               onClick={handleZoomOut}
-              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-              aria-label="Zoom out"
+              className='rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700'
+              aria-label='Zoom out'
             >
-              <ZoomOut className="h-4 w-4" />
+              <ZoomOut className='h-4 w-4' />
             </button>
             {/* Our new Reset View button */}
             <button
               onClick={resetView}
-              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-              aria-label="Reset View"
+              className='rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700'
+              aria-label='Reset View'
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className='h-4 w-4' />
             </button>
             <button
               onClick={onClose}
-              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
-              aria-label="Close"
+              className='rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700'
+              aria-label='Close'
             >
-              <X className="h-4 w-4" />
+              <X className='h-4 w-4' />
             </button>
           </div>
 
           {/* Navigation arrows */}
           <button
             onClick={handlePrev}
-            className="absolute left-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
-            aria-label="Previous image"
+            className='absolute left-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70'
+            aria-label='Previous image'
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className='h-5 w-5' />
           </button>
           <button
             onClick={handleNext}
-            className="absolute right-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
-            aria-label="Next image"
+            className='absolute right-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70'
+            aria-label='Next image'
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className='h-5 w-5' />
           </button>
 
           {/* The container for pan/zoom */}
           <div
-            className={`relative flex h-full w-full items-center justify-center overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'
-              }`}
+            className={`relative flex h-full w-full items-center justify-center overflow-hidden ${
+              isPanning ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
             onWheel={handleWheel}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -303,7 +298,7 @@ export default function ImageLightbox({
             <motion.img
               key={currentIndex}
               src={images[currentIndex]}
-              alt="Lightbox Preview"
+              alt='Lightbox Preview'
               onLoad={handleImageLoad}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -312,7 +307,7 @@ export default function ImageLightbox({
                 transform: `translate(${translateX}px, ${translateY}px) scale(${effectiveScale})`,
                 transformOrigin: 'center center'
               }}
-              className="max-w-none"
+              className='max-w-none'
             />
           </div>
         </motion.div>

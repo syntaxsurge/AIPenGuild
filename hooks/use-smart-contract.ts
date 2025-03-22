@@ -1,7 +1,7 @@
+import { useChainId } from 'wagmi'
 import { ABIS } from '@/contracts/abis'
 import { CONTRACT_ADDRESSES } from '@/contracts/addresses'
 import { ContractConfig, CoreContractName } from '@/contracts/types'
-import { useChainId } from 'wagmi'
 
 /**
  * Provides the contract config object (address, ABI, explorer)

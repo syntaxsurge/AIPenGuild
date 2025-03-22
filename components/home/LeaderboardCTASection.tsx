@@ -1,8 +1,8 @@
 'use client'
 
-import { motion } from "framer-motion"
-import Link from "next/link"
-import Image from "next/image"
+import { motion } from 'framer-motion'
+import Image from 'next/image'
+import Link from 'next/link'
 
 /**
  * Modified "Check the Latest Ranking" section to have a unique,
@@ -14,13 +14,13 @@ export default function LeaderboardCTASection() {
   return (
     <section
       id='leaderboard-cta'
-      className='relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white'
+      className='relative w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 py-12 text-white sm:py-16 md:py-20 lg:py-24'
     >
       <div className='mx-auto flex max-w-6xl flex-col items-start justify-center gap-8 md:flex-row'>
         {/* Left Column: Heading, Subtitle, Buttons */}
-        <div className='flex-1 flex flex-col justify-center space-y-5'>
+        <div className='flex flex-1 flex-col justify-center space-y-5'>
           <motion.h2
-            className='text-3xl sm:text-4xl md:text-5xl font-extrabold'
+            className='text-3xl font-extrabold sm:text-4xl md:text-5xl'
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
@@ -28,14 +28,13 @@ export default function LeaderboardCTASection() {
             Check the Latest Rankings
           </motion.h2>
           <motion.p
-            className='max-w-md text-sm sm:text-base leading-relaxed text-white/90'
+            className='max-w-md text-sm leading-relaxed text-white/90 sm:text-base'
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.15, duration: 0.6 }}
           >
-            Dive into our Leaderboard to see which collectors and creators are
-            dominating the XP race. Rank up by minting NFTs, staking them,
-            or trading to grow your XP—and become an AIPenGuild legend!
+            Dive into our Leaderboard to see which collectors and creators are dominating the XP race. Rank up by
+            minting NFTs, staking them, or trading to grow your XP—and become an AIPenGuild legend!
           </motion.p>
           <motion.div
             className='mt-4 flex flex-wrap gap-4'

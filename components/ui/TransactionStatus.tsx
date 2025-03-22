@@ -32,29 +32,23 @@ export function TransactionStatus({
   if (!showStatus) return null
 
   return (
-    <div
-      className={`rounded-md border border-border p-4 mt-2 text-sm ${className || ''}`}
-    >
-      <p className="font-bold">Transaction Status:</p>
-      {isLoading && (
-        <p className="font-bold text-muted-foreground">Pending confirmation...</p>
-      )}
-      {isSuccess && (
-        <p className="font-bold text-green-600">Transaction Confirmed!</p>
-      )}
+    <div className={`mt-2 rounded-md border border-border p-4 text-sm ${className || ''}`}>
+      <p className='font-bold'>Transaction Status:</p>
+      {isLoading && <p className='font-bold text-muted-foreground'>Pending confirmation...</p>}
+      {isSuccess && <p className='font-bold text-green-600'>Transaction Confirmed!</p>}
       {errorMessage && (
-        <p className="font-bold text-orange-600 dark:text-orange-500 whitespace-pre-wrap break-words">
+        <p className='whitespace-pre-wrap break-words font-bold text-orange-600 dark:text-orange-500'>
           Transaction Failed: {errorMessage}
         </p>
       )}
       {txHash && chainId && (
-        <div className="mt-2">
-          <p className="font-bold">Transaction Hash:</p>
+        <div className='mt-2'>
+          <p className='font-bold'>Transaction Hash:</p>
           <a
             href={getTxUrl(chainId, txHash)}
-            target="_blank"
-            rel="noreferrer"
-            className="underline text-primary break-all"
+            target='_blank'
+            rel='noreferrer'
+            className='break-all text-primary underline'
           >
             {txHash}
           </a>

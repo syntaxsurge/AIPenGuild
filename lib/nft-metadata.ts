@@ -1,4 +1,4 @@
-import { transformIpfsUriToHttp } from "@/lib/ipfs"
+import { transformIpfsUriToHttp } from '@/lib/ipfs'
 
 /**
  * The shape of the metadata we return after parsing.
@@ -17,17 +17,13 @@ export interface ParsedNftMetadata {
 export async function fetchNftMetadata(resourceUrl: string): Promise<ParsedNftMetadata> {
   const fallback: ParsedNftMetadata = {
     imageUrl: transformIpfsUriToHttp(resourceUrl),
-    name: "",
-    description: "",
+    name: '',
+    description: '',
     attributes: {}
   }
 
   // If it's not ipfs:// or http(s)://, or doesn't look like metadata, just return fallback
-  if (
-    !resourceUrl.startsWith("ipfs://") &&
-    !resourceUrl.startsWith("http://") &&
-    !resourceUrl.startsWith("https://")
-  ) {
+  if (!resourceUrl.startsWith('ipfs://') && !resourceUrl.startsWith('http://') && !resourceUrl.startsWith('https://')) {
     return fallback
   }
 
@@ -42,8 +38,8 @@ export async function fetchNftMetadata(resourceUrl: string): Promise<ParsedNftMe
       const finalImageUrl = transformIpfsUriToHttp(data.image)
       return {
         imageUrl: finalImageUrl,
-        name: data.name ?? "",
-        description: data.description ?? "",
+        name: data.name ?? '',
+        description: data.description ?? '',
         attributes: data.attributes ?? {}
       }
     } else {

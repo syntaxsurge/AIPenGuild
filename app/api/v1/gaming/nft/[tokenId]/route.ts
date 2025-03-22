@@ -1,16 +1,13 @@
+import { NextResponse } from 'next/server'
 import { getContractConfig, getPublicClientForChainId, parseChainIdParam } from '@/lib/chain-utils'
 import { transformIpfsUriToHttp } from '@/lib/ipfs'
 import { fetchNftMetadata } from '@/lib/nft-metadata'
-import { NextResponse } from 'next/server'
 
 /**
  * GET /api/v1/gaming/nft/[tokenId]?chainId=...
  * Returns detailed on-chain + metadata for a single NFT itemId.
  */
-export async function GET(
-  request: Request,
-  { params }: { params: { tokenId: string } }
-) {
+export async function GET(request: Request, { params }: { params: { tokenId: string } }) {
   try {
     const tokenId = BigInt(params.tokenId)
     const url = new URL(request.url)
@@ -25,12 +22,12 @@ export async function GET(
     const nftStakingPool = getContractConfig(chainId, 'NFTStakingPool')
 
     // 1) Read NFT data from nftItems
-    const itemData = await publicClient.readContract({
+    const itemData = (await publicClient.readContract({
       address: nftMintingPlatform.address as `0x${string}`,
       abi: nftMintingPlatform.abi,
       functionName: 'nftItems',
       args: [tokenId]
-    }) as [bigint, string, bigint, string]
+    })) as [bigint, string, bigint, string]
     const [xpValue, resourceUrl, mintedAt, creator] = itemData
 
     // 2) Attempt to read the owner
@@ -43,28 +40,31 @@ export async function GET(
         args: [tokenId]
       })) as `0x${string}`
     } catch {
-      return NextResponse.json({
-        success: false,
-        error: `Token ID ${tokenId.toString()} not found or not minted on chainId ${chainId}.`
-      }, { status: 404 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Token ID ${tokenId.toString()} not found or not minted on chainId ${chainId}.`
+        },
+        { status: 404 }
+      )
     }
 
     // 3) marketplace data
-    const marketData = await publicClient.readContract({
+    const marketData = (await publicClient.readContract({
       address: nftMarketplaceHub.address as `0x${string}`,
       abi: nftMarketplaceHub.abi,
       functionName: 'marketItems',
       args: [tokenId]
-    }) as [boolean, bigint]
+    })) as [boolean, bigint]
     const [isOnSale, salePrice] = marketData
 
     // 4) staking data
-    const stakeData = await publicClient.readContract({
+    const stakeData = (await publicClient.readContract({
       address: nftStakingPool.address as `0x${string}`,
       abi: nftStakingPool.abi,
       functionName: 'stakes',
       args: [tokenId]
-    }) as [string, bigint, bigint, boolean]
+    })) as [string, bigint, bigint, boolean]
     const [stakerAddr, startTimestamp, lastClaimed, staked] = stakeData
 
     // 5) IPFS metadata
@@ -95,11 +95,11 @@ export async function GET(
         },
         metadata: metadata
           ? {
-            imageUrl: transformIpfsUriToHttp(metadata.imageUrl),
-            name: metadata.name,
-            description: metadata.description,
-            attributes: metadata.attributes
-          }
+              imageUrl: transformIpfsUriToHttp(metadata.imageUrl),
+              name: metadata.name,
+              description: metadata.description,
+              attributes: metadata.attributes
+            }
           : null
       }
     })

@@ -1,12 +1,12 @@
 'use client'
 
-import { customMoonbeamChain, westendAssetHubChain } from '@/lib/chain-utils'
 import { RainbowKitProvider, darkTheme, getDefaultConfig, getDefaultWallets } from '@rainbow-me/rainbowkit'
 import { ledgerWallet, trustWallet } from '@rainbow-me/rainbowkit/wallets'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import { moonbaseAlpha } from 'viem/chains'
 import { WagmiProvider } from 'wagmi'
+import { customMoonbeamChain, westendAssetHubChain } from '@/lib/chain-utils'
 
 /**
  * We build a config for Wagmi + RainbowKit that includes the

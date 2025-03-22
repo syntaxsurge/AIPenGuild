@@ -1,17 +1,17 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
-import { Input } from "@/components/ui/Input"
-import { TransactionButton } from "@/components/ui/TransactionButton"
-import { TransactionStatus } from "@/components/ui/TransactionStatus"
-import { useNativeCurrencySymbol } from "@/hooks/use-native-currency-symbol"
-import { useContract } from "@/hooks/use-smart-contract"
-import { useToast } from "@/hooks/use-toast-notifications"
-import { useTransactionState } from "@/hooks/use-transaction-state"
-import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
-import { parseEther } from "viem"
-import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { parseEther } from 'viem'
+import { useAccount, useChainId, usePublicClient, useWalletClient } from 'wagmi'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { TransactionButton } from '@/components/ui/TransactionButton'
+import { TransactionStatus } from '@/components/ui/TransactionStatus'
+import { useNativeCurrencySymbol } from '@/hooks/use-native-currency-symbol'
+import { useContract } from '@/hooks/use-smart-contract'
+import { useToast } from '@/hooks/use-toast-notifications'
+import { useTransactionState } from '@/hooks/use-transaction-state'
 
 export default function AdminPage() {
   const router = useRouter()
@@ -25,15 +25,10 @@ export default function AdminPage() {
   const chainId = useChainId() || 1287
 
   // Contract config
-  const platformRewardPool = useContract("PlatformRewardPool")
+  const platformRewardPool = useContract('PlatformRewardPool')
 
-  const isReferencesReady = (
-    !isDisconnected &&
-    !!publicClient &&
-    !!wagmiAddress &&
-    !!platformRewardPool?.address &&
-    !!platformRewardPool?.abi
-  )
+  const isReferencesReady =
+    !isDisconnected && !!publicClient && !!wagmiAddress && !!platformRewardPool?.address && !!platformRewardPool?.abi
 
   // State to track if the user is the owner
   const [isOwner, setIsOwner] = useState(false)
@@ -44,7 +39,7 @@ export default function AdminPage() {
   const [loadingBalance, setLoadingBalance] = useState(false)
 
   // Withdraw input
-  const [withdrawAmount, setWithdrawAmount] = useState("")
+  const [withdrawAmount, setWithdrawAmount] = useState('')
 
   // A single unified transaction state for withdrawal
   const withdrawTx = useTransactionState()
@@ -60,12 +55,12 @@ export default function AdminPage() {
 
     async function checkOwner() {
       try {
-        const contractOwner = await publicClient!.readContract({
+        const contractOwner = (await publicClient!.readContract({
           address: platformRewardPool!.address as `0x${string}`,
           abi: platformRewardPool!.abi,
-          functionName: "owner",
+          functionName: 'owner',
           args: []
-        }) as `0x${string}`
+        })) as `0x${string}`
 
         setIsOwner(contractOwner.toLowerCase() === wagmiAddress!.toLowerCase())
       } catch {
@@ -81,7 +76,7 @@ export default function AdminPage() {
   // 2) redirect if not owner
   useEffect(() => {
     if (!ownerLoading && !isOwner && isReferencesReady) {
-      router.push("/errors/403")
+      router.push('/errors/403')
     }
   }, [ownerLoading, isOwner, router, isReferencesReady])
 
@@ -94,18 +89,18 @@ export default function AdminPage() {
         const val = await publicClient.readContract({
           address: platformRewardPool.address as `0x${string}`,
           abi: platformRewardPool.abi,
-          functionName: "getPoolBalance",
+          functionName: 'getPoolBalance',
           args: []
         })
-        if (typeof val === "bigint") {
+        if (typeof val === 'bigint') {
           setPoolBalance(val)
         }
       } catch (err: any) {
-        console.error("Error loading pool balance:", err)
+        console.error('Error loading pool balance:', err)
         toast({
-          title: "Error",
-          description: err.message || "Cannot load reward pool balance.",
-          variant: "destructive"
+          title: 'Error',
+          description: err.message || 'Cannot load reward pool balance.',
+          variant: 'destructive'
         })
       } finally {
         setLoadingBalance(false)
@@ -124,17 +119,17 @@ export default function AdminPage() {
     // Make sure references are valid
     if (!platformRewardPool?.address || !platformRewardPool?.abi) {
       toast({
-        title: "Error",
-        description: "Unable to find PlatformRewardPool contract or ABI.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Unable to find PlatformRewardPool contract or ABI.',
+        variant: 'destructive'
       })
       return
     }
     if (!walletClient || !publicClient) {
       toast({
-        title: "No Wallet or Public Client",
-        description: "Please connect your wallet properly before withdrawing.",
-        variant: "destructive"
+        title: 'No Wallet or Public Client',
+        description: 'Please connect your wallet properly before withdrawing.',
+        variant: 'destructive'
       })
       return
     }
@@ -145,14 +140,14 @@ export default function AdminPage() {
 
     try {
       toast({
-        title: "Transaction Submitted",
+        title: 'Transaction Submitted',
         description: `Withdrawing ${withdrawAmount} ${currencySymbol}...`
       })
 
       const hash = await walletClient.writeContract({
         address: platformRewardPool.address as `0x${string}`,
         abi: platformRewardPool.abi,
-        functionName: "withdrawPoolFunds",
+        functionName: 'withdrawPoolFunds',
         args: [weiAmount],
         account: wagmiAddress
       })
@@ -166,37 +161,37 @@ export default function AdminPage() {
       // Mark success
       withdrawTx.success(hash)
       toast({
-        title: "Withdrawal Successful",
-        description: "Funds withdrawn from reward pool."
+        title: 'Withdrawal Successful',
+        description: 'Funds withdrawn from reward pool.'
       })
 
       // Reset input, reload balance
-      setWithdrawAmount("")
+      setWithdrawAmount('')
       const val = await publicClient.readContract({
         address: platformRewardPool.address as `0x${string}`,
         abi: platformRewardPool.abi,
-        functionName: "getPoolBalance",
+        functionName: 'getPoolBalance',
         args: []
       })
-      if (typeof val === "bigint") {
+      if (typeof val === 'bigint') {
         setPoolBalance(val)
       }
     } catch (err: any) {
-      withdrawTx.fail(err.message || "Transaction Failed")
+      withdrawTx.fail(err.message || 'Transaction Failed')
       toast({
-        title: "Transaction Failed",
-        description: err.message || "Something went wrong",
-        variant: "destructive"
+        title: 'Transaction Failed',
+        description: err.message || 'Something went wrong',
+        variant: 'destructive'
       })
     }
   }
 
   if (isDisconnected) {
     return (
-      <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
-        <div className="max-w-5xl w-full">
-          <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
-          <p className="text-center text-sm text-muted-foreground">Please connect your wallet.</p>
+      <main className='flex min-h-screen w-full justify-center bg-white px-4 py-12 text-foreground dark:bg-gray-900'>
+        <div className='w-full max-w-5xl'>
+          <h1 className='mb-6 text-center text-4xl font-extrabold text-primary'>Admin Panel</h1>
+          <p className='text-center text-sm text-muted-foreground'>Please connect your wallet.</p>
         </div>
       </main>
     )
@@ -204,12 +199,10 @@ export default function AdminPage() {
 
   if (!isReferencesReady) {
     return (
-      <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
-        <div className="max-w-5xl w-full">
-          <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
-          <p className="text-center text-sm text-muted-foreground">
-            Loading contract references...
-          </p>
+      <main className='flex min-h-screen w-full justify-center bg-white px-4 py-12 text-foreground dark:bg-gray-900'>
+        <div className='w-full max-w-5xl'>
+          <h1 className='mb-6 text-center text-4xl font-extrabold text-primary'>Admin Panel</h1>
+          <p className='text-center text-sm text-muted-foreground'>Loading contract references...</p>
         </div>
       </main>
     )
@@ -217,10 +210,10 @@ export default function AdminPage() {
 
   if (ownerLoading) {
     return (
-      <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
-        <div className="max-w-5xl w-full">
-          <h1 className="text-center text-4xl font-extrabold text-primary mb-6">Admin Panel</h1>
-          <p className="text-center text-sm text-muted-foreground">Checking ownership...</p>
+      <main className='flex min-h-screen w-full justify-center bg-white px-4 py-12 text-foreground dark:bg-gray-900'>
+        <div className='w-full max-w-5xl'>
+          <h1 className='mb-6 text-center text-4xl font-extrabold text-primary'>Admin Panel</h1>
+          <p className='text-center text-sm text-muted-foreground'>Checking ownership...</p>
         </div>
       </main>
     )
@@ -231,44 +224,34 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="w-full min-h-screen bg-white dark:bg-gray-900 text-foreground flex justify-center px-4 py-12">
-      <div className="max-w-5xl w-full">
-        <h1 className="text-4xl font-extrabold text-primary text-center mb-8">Admin Panel</h1>
-        <Card className="border border-border rounded-lg shadow-xl bg-background">
-          <CardHeader className="p-4 bg-secondary text-secondary-foreground rounded-t-lg">
-            <CardTitle className="text-lg font-semibold">Reward Pool Management</CardTitle>
+    <main className='flex min-h-screen w-full justify-center bg-white px-4 py-12 text-foreground dark:bg-gray-900'>
+      <div className='w-full max-w-5xl'>
+        <h1 className='mb-8 text-center text-4xl font-extrabold text-primary'>Admin Panel</h1>
+        <Card className='rounded-lg border border-border bg-background shadow-xl'>
+          <CardHeader className='rounded-t-lg bg-secondary p-4 text-secondary-foreground'>
+            <CardTitle className='text-lg font-semibold'>Reward Pool Management</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-6">
+          <CardContent className='space-y-6 p-6'>
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Current Pool Balance:</p>
-              <div className="text-lg font-bold text-primary">
-                {loadingBalance ? "Loading..." : `${(Number(poolBalance) / 1e18).toFixed(4)} ${currencySymbol}`}
+              <p className='mb-1 text-sm text-muted-foreground'>Current Pool Balance:</p>
+              <div className='text-lg font-bold text-primary'>
+                {loadingBalance ? 'Loading...' : `${(Number(poolBalance) / 1e18).toFixed(4)} ${currencySymbol}`}
               </div>
             </div>
-            <hr className="border-border" />
+            <hr className='border-border' />
             <div>
-              <p className="text-sm text-muted-foreground mb-2">
-                Withdraw funds from the reward pool (owner only).
-              </p>
-              <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-2">
-                <div className="flex flex-col">
-                  <label className="text-xs font-medium">Amount in {currencySymbol}</label>
-                  <Input
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="0.5"
-                  />
+              <p className='mb-2 text-sm text-muted-foreground'>Withdraw funds from the reward pool (owner only).</p>
+              <form onSubmit={(e) => e.preventDefault()} className='flex flex-col gap-2'>
+                <div className='flex flex-col'>
+                  <label className='text-xs font-medium'>Amount in {currencySymbol}</label>
+                  <Input value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder='0.5' />
                 </div>
 
                 <TransactionButton
                   isLoading={withdrawTx.isProcessing}
-                  loadingText="Processing..."
+                  loadingText='Processing...'
                   onClick={handleWithdraw}
-                  disabled={
-                    !withdrawAmount ||
-                    isNaN(Number(withdrawAmount)) ||
-                    Number(withdrawAmount) <= 0
-                  }
+                  disabled={!withdrawAmount || isNaN(Number(withdrawAmount)) || Number(withdrawAmount) <= 0}
                 >
                   Withdraw
                 </TransactionButton>

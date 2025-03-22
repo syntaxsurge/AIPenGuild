@@ -11,9 +11,9 @@ export function useNativeCurrencySymbol(): string {
 
   switch (chainId) {
     case 1287:
-      return 'DEV'  // Moonbase Alpha
+      return 'DEV' // Moonbase Alpha
     case 420420421:
-      return 'WND'  // Westend AssetHub
+      return 'WND' // Westend AssetHub
     default:
       return 'ETH'
   }

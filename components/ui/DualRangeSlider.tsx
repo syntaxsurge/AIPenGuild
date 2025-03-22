@@ -1,8 +1,8 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import * as SliderPrimitive from '@radix-ui/react-slider'
 import * as React from 'react'
+import { cn } from '@/lib/utils'
 
 const DualRangeSlider = React.forwardRef<
   React.ComponentRef<typeof SliderPrimitive.Root>,

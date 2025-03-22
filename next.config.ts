@@ -1,9 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["replicate.delivery"],
+    domains: ['replicate.delivery'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -19,10 +19,10 @@ const nextConfig: NextConfig = {
       }
     ]
   },
-  webpack: config => {
-    config.externals.push('pino-pretty', 'lokijs', 'encoding');
-    return config;
-  },
-};
+  webpack: (config) => {
+    config.externals.push('pino-pretty', 'lokijs', 'encoding')
+    return config
+  }
+}
 
-export default nextConfig;
+export default nextConfig
