@@ -26,12 +26,10 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   // Fallback if no metadata or image
   const imageUrl = metadata?.imageUrl || item.resourceUrl
   // Construct a display name
-  const nftName = metadata?.name
-    ? `#${itemIdStr} - ${metadata.name}`
-    : `#${itemIdStr}`
+  const nftName = metadata?.name ? `#${itemIdStr} - ${metadata.name}` : `#${itemIdStr}`
 
   // Check if staked
-  const isStaked = !!(item.stakeInfo?.staked)
+  const isStaked = !!item.stakeInfo?.staked
   // Check if listed for sale
   const isListed = item.isOnSale
 
@@ -39,16 +37,16 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   const labels: { text: string; style: string }[] = []
 
   if (isStaked) {
-    // Use a pleasing gradient background for STAKED
+    // Use a darker blue gradient for the STAKED badge
     labels.push({
       text: 'STAKED',
       style:
-        'bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md border border-white',
+        'bg-gradient-to-r from-blue-800 to-blue-900 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md border border-white',
     })
   }
 
   if (isListed) {
-    // Keep the existing gradient, add a border for consistency
+    // Keep the existing gradient & white border for LISTED
     labels.push({
       text: 'LISTED',
       style:
@@ -93,9 +91,7 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
       </div>
 
       {/* NFT Name + ID */}
-      <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>
-        {nftName}
-      </p>
+      <p className='mt-2 line-clamp-1 text-xs font-semibold text-foreground'>{nftName}</p>
     </div>
   )
 }
