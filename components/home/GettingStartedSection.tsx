@@ -1,18 +1,19 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { Code2, Coins, Wallet, Wand2 } from "lucide-react"
 import Link from "next/link"
-import { Wallet, Wand2, Coins, Code2 } from "lucide-react"
 
 /**
- * A modern horizontal timeline approach for "Getting Started",
- * distinct from other sections. Steps are arranged in a row
- * with connecting line behind them, each step featuring an
- * icon, short text, and an action link.
+ * A modern, horizontal timeline approach for "Getting Started",
+ * placing a center line behind the steps. The icons are placed
+ * in normal flow at the top of each step, ensuring no overlap
+ * with text. Each step includes icon, title, description, link,
+ * aligned in a row on larger screens.
  *
- * Background color is inherited (no extra color blocks).
- * The entire layout is horizontal on larger screens,
- * with a subtle, aesthetic design style.
+ * The line is absolutely placed at mid-height, while steps are
+ * in normal flow with higher z-index to appear above the line.
+ * The icon is not absolute, avoiding any overlap on the text below.
  */
 export default function GettingStartedSection() {
   return (
@@ -21,6 +22,7 @@ export default function GettingStartedSection() {
       className="w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24"
     >
       <div className="mx-auto max-w-6xl">
+        {/* Section heading */}
         <motion.div
           className="mx-auto mb-8 max-w-3xl text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -31,58 +33,56 @@ export default function GettingStartedSection() {
             Getting Started with AIPenGuild
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Embark on a streamlined journey to AI-driven NFTs. Connect your wallet,
-            mint AI assets, stake or sell them, and integrate your new items into any
-            external dApp or game. Ready to explore the future?
+            Connect your wallet, mint AI-driven NFTs, stake or sell them
+            on our marketplace, and seamlessly integrate with other dApps
+            or games. Begin your journey in a few simple steps!
           </p>
         </motion.div>
 
         {/**
-          The timeline container: We adopt a horizontal timeline with 4 steps.
-          We place a thin line behind them, and each step has:
-            - Step Icon (circle with glow)
-            - Title
-            - Description
-            - Link
+          Timeline container:
+           - horizontal layout with 4 steps
+           - a line behind them at mid-height
+           - each step is z-10 so icons & text appear above line
         */}
-        <div className="relative flex flex-col items-center justify-between gap-10 overflow-x-auto px-2 md:flex-row">
-          {/* The horizontal line behind the steps */}
-          <div className="absolute top-1/2 left-0 right-0 hidden h-[2px] bg-border md:block" style={{ zIndex: 1 }} />
+        <div className="relative mt-10 flex flex-col items-center gap-8 md:flex-row md:justify-between md:gap-0">
+          {/* Horizontal line in the middle */}
+          <div
+            className="absolute left-0 right-0 top-1/2 h-[2px] bg-border"
+            style={{ zIndex: 1, transform: "translateY(-50%)" }}
+          />
 
-          {/* Step 1 */}
-          <StepItem
-            icon={<Wallet className="h-7 w-7 text-white" />}
+          <Step
+            icon={<Wallet className="h-8 w-8 text-white" />}
             title="Connect Your Wallet"
-            description="Configure for Moonbase Alpha or Westend, then link your wallet to begin exploring AI NFTs."
+            description="Set up for Moonbase Alpha or Westend, then link your wallet with AIPenGuild for AI-based NFT creation."
             linkHref="/dashboard"
             linkText="Go to Dashboard"
+            delay={0}
           />
-
-          {/* Step 2 */}
-          <StepItem
-            icon={<Wand2 className="h-7 w-7 text-white" />}
-            title="Mint Your AI NFT"
-            description="Craft unique NFTs using advanced AI generation. Pay with tokens or 100 XP to finalize minting."
+          <Step
+            icon={<Wand2 className="h-8 w-8 text-white" />}
+            title="Mint AI NFT"
+            description="Generate your NFT with advanced AI prompts. Pay with tokens or burn 100 XP to finalize."
             linkHref="/mint"
             linkText="Mint AI NFT"
+            delay={0.1}
           />
-
-          {/* Step 3 */}
-          <StepItem
-            icon={<Coins className="h-7 w-7 text-white" />}
+          <Step
+            icon={<Coins className="h-8 w-8 text-white" />}
             title="Stake or Sell"
-            description="Lock up your NFT in the Staking Pool for extra XP rewards, or list it on the Marketplace to trade."
+            description="Lock your NFT in our Staking Pool for passive XP earnings, or list it on the Marketplace to trade."
             linkHref="/stake"
             linkText="Stake NFTs"
+            delay={0.2}
           />
-
-          {/* Step 4 */}
-          <StepItem
-            icon={<Code2 className="h-7 w-7 text-white" />}
-            title="Integrate & Expand"
-            description="Use our public APIs to read attributes and XP for your NFTs, embedding them into your games or apps."
+          <Step
+            icon={<Code2 className="h-8 w-8 text-white" />}
+            title="Integrate &amp; Expand"
+            description="Leverage our public APIs to fetch NFT attributes, user XP, and more—perfect for any dApp or game."
             linkHref="/leaderboard"
             linkText="Leaderboard"
+            delay={0.3}
           />
         </div>
       </div>
@@ -91,35 +91,40 @@ export default function GettingStartedSection() {
 }
 
 /**
- * A reusable StepItem component for each step in the timeline.
+ * Single Step component in normal flow, no absolute icon, ensuring
+ * the icon does not overlap text. Each step has a circle for the icon
+ * on top, then title, description, and link.
  */
-function StepItem({
+function Step({
   icon,
   title,
   description,
   linkHref,
   linkText,
+  delay,
 }: {
   icon: React.ReactNode
   title: string
   description: string
   linkHref: string
   linkText: string
+  delay?: number
 }) {
   return (
     <motion.div
-      className="relative flex flex-col items-center text-center"
+      className="relative z-10 flex w-full max-w-[220px] flex-col items-center text-center md:w-auto"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
-      style={{ zIndex: 2 }} // ensures step circles appear above the line
+      transition={{ duration: 0.6, delay }}
     >
-      {/* Circle Icon with a subtle glow */}
-      <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg ring-2 ring-offset-2 ring-offset-background ring-primary transition-transform hover:scale-110">
+      {/* Icon circle (no absolute, so no overlap) */}
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg ring-2 ring-offset-2 ring-offset-background ring-primary">
         {icon}
       </div>
-      <h3 className="mb-2 text-base font-semibold text-foreground sm:text-lg">{title}</h3>
-      <p className="mb-3 max-w-xs text-sm leading-relaxed text-muted-foreground sm:text-base">
+      <h3 className="mb-2 text-base font-semibold text-foreground sm:text-lg">
+        {title}
+      </h3>
+      <p className="mb-3 max-w-[240px] text-sm leading-relaxed text-muted-foreground sm:text-base">
         {description}
       </p>
       <Link href={linkHref} className="text-sm font-medium text-primary hover:underline">
