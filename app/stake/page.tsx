@@ -1,10 +1,10 @@
 'use client'
 
 import { Loader2 } from 'lucide-react'
-import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWalletClient } from 'wagmi'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { NFTCard } from '@/components/ui/NFTCard'
 import { TransactionButton } from '@/components/ui/TransactionButton'
 import { TransactionStatus } from '@/components/ui/TransactionStatus'
 import { useContract } from '@/hooks/use-smart-contract'
@@ -84,8 +84,9 @@ export default function StakePage() {
       !nftMintingPlatform ||
       !nftMarketplaceHub ||
       !nftStakingPool
-    )
+    ) {
       return
+    }
     if (!forceReload && fetched) return
 
     setFetched(true)
@@ -107,6 +108,7 @@ export default function StakePage() {
         const owned = item.owner.toLowerCase() === userAddress.toLowerCase()
         return staked || owned
       })
+
       const newMap = { ...metadataMap }
       for (const item of userNfts) {
         const itemIdStr = String(item.itemId)
@@ -407,44 +409,14 @@ export default function StakePage() {
               <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
                 {userItems().map((nft) => {
                   const itemIdStr = String(nft.itemId)
-                  const meta = metadataMap[itemIdStr] || {
-                    imageUrl: transformIpfsUriToHttp(nft.resourceUrl),
-                    name: '',
-                    description: '',
-                    attributes: {},
-                  }
-                  let label = ''
-                  if (nft.stakeInfo?.staked) {
-                    label = '(STAKED)'
-                  } else if (nft.isOnSale) {
-                    label = '(LISTED)'
-                  }
-                  const selected = selectedNFT?.itemId === nft.itemId
-
                   return (
-                    <div
-                      key={String(nft.itemId)}
+                    <NFTCard
+                      key={itemIdStr}
+                      item={nft}
+                      metadata={metadataMap[itemIdStr]}
+                      selected={selectedNFT?.itemId === nft.itemId}
                       onClick={() => setSelectedNFT(nft)}
-                      className={cn(
-                        'cursor-pointer rounded-md border p-2 transition hover:shadow',
-                        selected ? 'border-primary' : 'border-border',
-                      )}
-                    >
-                      <div className='relative h-24 w-full overflow-hidden rounded bg-secondary sm:h-28'>
-                        <Image
-                          src={meta.imageUrl}
-                          alt={`NFT #${String(nft.itemId)}`}
-                          fill
-                          sizes='(max-width: 768px) 100vw,
-                                 (max-width: 1200px) 50vw,
-                                 33vw'
-                          className='object-cover'
-                        />
-                      </div>
-                      <p className='mt-1 line-clamp-1 text-xs font-semibold text-foreground'>
-                        {meta.name ? meta.name : `NFT #${String(nft.itemId)}`} {label}
-                      </p>
-                    </div>
+                    />
                   )
                 })}
               </div>
@@ -467,103 +439,93 @@ export default function StakePage() {
             ) : (
               <div className='space-y-4'>
                 {(() => {
-                  const itemIdStr = String(selectedNFT.itemId)
-                  const meta = metadataMap[itemIdStr] || {
-                    imageUrl: transformIpfsUriToHttp(selectedNFT.resourceUrl),
-                    name: '',
-                    description: '',
-                    attributes: {},
-                  }
-                  return (
-                    <div className='relative h-96 w-full overflow-hidden rounded-md border border-border bg-secondary'>
-                      <Image
-                        src={meta.imageUrl}
-                        alt={`NFT #${String(selectedNFT.itemId)}`}
-                        fill
-                        sizes='(max-width: 768px) 100vw,
-                               (max-width: 1200px) 50vw,
-                               33vw'
-                        className='object-contain'
-                      />
-                    </div>
-                  )
-                })()}
+                  const unclaimedXP = computeUnclaimedXP(selectedNFT)
+                  const isStaked =
+                    selectedNFT.stakeInfo?.staked &&
+                    selectedNFT.stakeInfo?.staker.toLowerCase() === userAddress.toLowerCase()
 
-                {selectedNFT.stakeInfo?.staked ? (
-                  <div className='text-sm'>
-                    <span className='font-bold text-green-600'>Staked</span> since{' '}
-                    <span className='font-bold text-foreground'>
-                      {new Date(
-                        Number(selectedNFT.stakeInfo?.startTimestamp) * 1000,
-                      ).toLocaleString()}
-                    </span>
-                    .
-                    <div className='mt-2 text-muted-foreground'>
-                      <span>Unclaimed XP:&nbsp;</span>
-                      <span className='text-2xl font-extrabold text-primary'>
-                        {computeUnclaimedXP(selectedNFT).toString()}
-                      </span>
-                    </div>
-                    <TransactionButton
-                      isLoading={claimTx.isProcessing}
-                      loadingText='Processing...'
-                      onClick={() => handleClaim(selectedNFT)}
-                      className='mt-3 w-full'
-                    >
-                      Claim NFT Rewards
-                    </TransactionButton>
-                    <TransactionStatus
-                      isLoading={claimTx.isProcessing}
-                      isSuccess={claimTx.isSuccess}
-                      errorMessage={claimTx.error || undefined}
-                      txHash={claimTx.txHash || undefined}
-                      chainId={chainId}
-                      className='mt-2'
-                    />
-                    <TransactionButton
-                      isLoading={unstakeTx.isProcessing}
-                      loadingText='Processing...'
-                      onClick={() => handleUnstake(selectedNFT)}
-                      variant='outline'
-                      className='mt-3 w-full'
-                    >
-                      Unstake NFT
-                    </TransactionButton>
-                    <TransactionStatus
-                      isLoading={unstakeTx.isProcessing}
-                      isSuccess={unstakeTx.isSuccess}
-                      errorMessage={unstakeTx.error || undefined}
-                      txHash={unstakeTx.txHash || undefined}
-                      chainId={chainId}
-                      className='mt-2'
-                    />
-                  </div>
-                ) : selectedNFT.isOnSale ? (
-                  <p className='text-sm font-bold text-orange-500'>
-                    This NFT is currently listed for sale. Please unlist it first if you want to
-                    stake.
-                  </p>
-                ) : (
-                  <div className='text-sm text-muted-foreground'>
-                    <p className='font-bold text-orange-600'>Not Staked</p>
-                    <TransactionButton
-                      isLoading={stakeTx.isProcessing}
-                      loadingText='Processing...'
-                      onClick={() => handleStake(selectedNFT)}
-                      className='mt-2 w-full'
-                    >
-                      Stake NFT
-                    </TransactionButton>
-                    <TransactionStatus
-                      isLoading={stakeTx.isProcessing}
-                      isSuccess={stakeTx.isSuccess}
-                      errorMessage={stakeTx.error || undefined}
-                      txHash={stakeTx.txHash || undefined}
-                      chainId={chainId}
-                      className='mt-2'
-                    />
-                  </div>
-                )}
+                  if (isStaked) {
+                    return (
+                      <div className='text-sm'>
+                        <span className='font-bold text-green-600'>Staked</span> since{' '}
+                        <span className='font-bold text-foreground'>
+                          {new Date(
+                            Number(selectedNFT.stakeInfo?.startTimestamp) * 1000,
+                          ).toLocaleString()}
+                        </span>
+                        .
+                        <div className='mt-2 text-muted-foreground'>
+                          <span>Unclaimed XP:&nbsp;</span>
+                          <span className='text-2xl font-extrabold text-primary'>
+                            {unclaimedXP.toString()}
+                          </span>
+                        </div>
+                        <TransactionButton
+                          isLoading={claimTx.isProcessing}
+                          loadingText='Processing...'
+                          onClick={() => handleClaim(selectedNFT)}
+                          className='mt-3 w-full'
+                        >
+                          Claim NFT Rewards
+                        </TransactionButton>
+                        <TransactionStatus
+                          isLoading={claimTx.isProcessing}
+                          isSuccess={claimTx.isSuccess}
+                          errorMessage={claimTx.error || undefined}
+                          txHash={claimTx.txHash || undefined}
+                          chainId={chainId}
+                          className='mt-2'
+                        />
+                        <TransactionButton
+                          isLoading={unstakeTx.isProcessing}
+                          loadingText='Processing...'
+                          onClick={() => handleUnstake(selectedNFT)}
+                          variant='outline'
+                          className='mt-3 w-full'
+                        >
+                          Unstake NFT
+                        </TransactionButton>
+                        <TransactionStatus
+                          isLoading={unstakeTx.isProcessing}
+                          isSuccess={unstakeTx.isSuccess}
+                          errorMessage={unstakeTx.error || undefined}
+                          txHash={unstakeTx.txHash || undefined}
+                          chainId={chainId}
+                          className='mt-2'
+                        />
+                      </div>
+                    )
+                  } else if (selectedNFT.isOnSale) {
+                    return (
+                      <p className='text-sm font-bold text-orange-500'>
+                        This NFT is currently listed for sale. Please unlist it first if you want to
+                        stake.
+                      </p>
+                    )
+                  } else {
+                    return (
+                      <div className='text-sm text-muted-foreground'>
+                        <p className='font-bold text-orange-600'>Not Staked</p>
+                        <TransactionButton
+                          isLoading={stakeTx.isProcessing}
+                          loadingText='Processing...'
+                          onClick={() => handleStake(selectedNFT)}
+                          className='mt-2 w-full'
+                        >
+                          Stake NFT
+                        </TransactionButton>
+                        <TransactionStatus
+                          isLoading={stakeTx.isProcessing}
+                          isSuccess={stakeTx.isSuccess}
+                          errorMessage={stakeTx.error || undefined}
+                          txHash={stakeTx.txHash || undefined}
+                          chainId={chainId}
+                          className='mt-2'
+                        />
+                      </div>
+                    )
+                  }
+                })()}
               </div>
             )}
           </CardContent>
