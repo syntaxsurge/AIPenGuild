@@ -1,37 +1,22 @@
 'use client'
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { InteractiveHoverButton } from "@/components/ui/interactive-button"
-import { XP_TITLES } from "@/lib/experience"
-import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
-import { useTheme } from "next-themes"
-import Image from "next/image"
-import Link from "next/link"
-import { useEffect, useState } from "react"
+import { motion } from 'framer-motion'
+import Image from 'next/image'
+import Link from 'next/link'
+import { InteractiveHoverButton } from '@/components/ui/interactive-button'
+import { XP_TITLES } from '@/lib/experience'
+import { cn } from '@/lib/utils'
 
 export default function Home() {
-  const { resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  const logoSrc = mounted && resolvedTheme === "dark" ? "/images/moonbase-logo-white.png" : "/images/moonbase-logo-black.png"
-
   return (
     <>
-      {/* Hero Section */}
-      <section className="w-full bg-background px-4 py-12 sm:py-16 md:py-20 lg:py-24">
-        <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-10 md:flex-row md:gap-6">
+      {/* HERO / LANDING SECTION */}
+      <section className='w-full bg-background px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
+        <div className='mx-auto flex max-w-6xl flex-col-reverse items-center gap-10 md:flex-row md:gap-6'>
           {/* Left side content */}
-          <div className="flex-1">
+          <div className='flex-1'>
             <motion.h1
-              className="mb-4 text-4xl font-extrabold leading-tight text-primary sm:text-5xl md:text-6xl"
+              className='mb-4 text-4xl font-extrabold leading-tight text-primary break-words sm:text-5xl md:text-6xl'
               initial={{ opacity: 0, x: -40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7 }}
@@ -39,469 +24,481 @@ export default function Home() {
               Welcome to AIPenGuild
             </motion.h1>
             <motion.p
-              className="mb-6 max-w-md text-base text-muted-foreground sm:text-lg"
+              className='mb-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg'
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.7 }}
             >
-              A new era of AI-driven NFTs. Build, collect, and explore imaginative digital assets
-              fueled by cutting-edge blockchain technology.
+              AIPenGuild is your gateway to a next-generation NFT ecosystem.
+              Generate AI-based NFTs, stake them for XP, explore an integrated marketplace,
+              and benefit from robust cross-chain & cross-game data—everything at your fingertips.
             </motion.p>
             <motion.div
-              className="flex flex-col sm:flex-row sm:items-center sm:gap-4"
+              className='flex flex-col sm:flex-row sm:items-center sm:gap-4'
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4, duration: 0.7 }}
             >
-              <Link href="/mint">
-                <InteractiveHoverButton text="Mint Your First AI NFT" />
+              <Link href='/mint'>
+                <InteractiveHoverButton text='Mint Your First AI NFT' />
               </Link>
             </motion.div>
           </div>
 
           {/* Right side media */}
           <motion.div
-            className="relative h-[600px] w-full flex-1 overflow-hidden rounded-xl sm:h-[600px]"
+            className='relative h-[600px] w-full flex-1 overflow-hidden rounded-xl sm:h-[600px]'
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7 }}
           >
             <Image
-              src="/images/hero-nft-preview.png"
-              alt="AIPenGuild Showcase"
+              src='/images/hero-nft-preview.png'
+              alt='AIPenGuild Showcase'
               fill
-              sizes="(max-width: 768px) 100vw,
+              sizes='(max-width: 768px) 100vw,
                      (max-width: 1200px) 50vw,
-                     33vw"
-              className={cn("object-cover")}
+                     33vw'
+              className={cn('object-cover')}
             />
           </motion.div>
         </div>
       </section>
 
-      {/* Introduction Section */}
-      <section id="introduction" className="py-12 bg-white dark:bg-gray-900">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-extrabold text-primary">Watch Our Introduction</h2>
-            <p className="mt-2 text-muted-foreground">Learn more about AIPenGuild in this short video.</p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block rounded-md bg-highlight px-6 py-3 font-semibold text-white hover:bg-highlight/90 transition"
-              >
-                View Pitch Deck
-              </Link>
-              <Link
-                href="https://github.com/syntaxsurge/AIPenGuild"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground hover:bg-primary/90 transition"
-              >
-                GitHub Repository
-              </Link>
-              <Link
-                href="https://www.youtube.com/watch?v=MH4DsjtsO8c"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block rounded-md bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700 transition"
-              >
-                YouTube Demo
-              </Link>
-            </div>
-          </div>
-          <div className="relative pb-[56.25%] overflow-hidden rounded-lg shadow-lg">
-            <iframe
-              className="absolute top-0 left-0 w-full h-full"
-              src="https://www.youtube.com/embed/MH4DsjtsO8c"
-              title="YouTube video player"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured AI NFTs Section */}
-      <section id="featured" className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
-        <div className="mx-auto max-w-6xl">
-          <motion.h2
-            className="mb-6 text-center text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl"
+      {/* WHAT IS AIPENGUILD */}
+      <section className='bg-white dark:bg-gray-900 px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
+        <div className='mx-auto max-w-6xl'>
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className='mx-auto max-w-prose text-center'
           >
-            Featured AI Creations
-          </motion.h2>
-          <motion.p
-            className="mx-auto mb-8 max-w-2xl text-center text-muted-foreground sm:text-lg"
-            initial={{ opacity: 0, y: 10 }}
+            <h2 className='mb-4 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl break-words'>
+              What is AIPenGuild?
+            </h2>
+            <p className='text-base leading-relaxed text-muted-foreground sm:text-lg'>
+              AIPenGuild merges the power of AI with decentralized technology,
+              letting you create, own, and trade NFTs that come with dynamic,
+              game-ready attributes. Whether you&apos;re a seasoned collector,
+              a game developer seeking cross-ecosystem items, or a blockchain enthusiast,
+              AIPenGuild provides all the tools you need—beautiful AI imagery,
+              robust attribute data, staking rewards, and frictionless marketplace transactions.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* KEY FEATURES SECTION */}
+      <section
+        id='features'
+        className='relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800'
+      >
+        <div className='mx-auto max-w-6xl'>
+          <motion.h2
+            className='mb-8 text-center text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl break-words'
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-          >
-            Explore a curated selection of next-gen AI-generated NFTs, minted on AIPenGuild by creative minds worldwide.
-          </motion.p>
-          <motion.div
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            {["images/marketplace/nft-1.png", "images/marketplace/nft-2.png", "images/marketplace/nft-3.png"].map((src, idx) => (
-              <div
-                key={idx}
-                className="group relative overflow-hidden rounded-lg border border-border p-2 transition-shadow hover:shadow-lg"
-              >
-                <div className="relative h-56 w-full overflow-hidden rounded-lg sm:h-64 md:h-72">
-                  <Image
-                    src={`/${src}`}
-                    alt={`Featured NFT ${idx + 1}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw,
-                           (max-width: 1200px) 50vw,
-                           33vw"
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-                </div>
-                <div className="mt-3 flex flex-col items-start px-2">
-                  <h3 className="text-sm font-semibold text-foreground">AI NFT #{idx + 1}</h3>
-                  <p className="text-xs text-muted-foreground">by AIPenGuild Creator</p>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-          <div className="mt-8 text-center">
-            <Link
-              href="/marketplace"
-              className="inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            Key Features
+          </motion.h2>
+
+          <div className='grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3'>
+            {/* AI-Driven NFT Generation */}
+            <motion.div
+              className='group flex flex-col items-start rounded-lg border border-border bg-background p-6 shadow-md transition hover:shadow-lg'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
-              Go to Marketplace
-            </Link>
+              <Image
+                src='/images/feature-ai.png'
+                alt='AI NFT Generation'
+                width={60}
+                height={60}
+                className='mb-4'
+              />
+              <h3 className='mb-2 text-lg font-semibold text-foreground'>AI-Powered NFT Generation</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground break-words'>
+                Harness sophisticated LLM prompts to produce unique NFT attributes,
+                while advanced image models craft stunning visuals. Your NFT is stored
+                securely on IPFS, complete with robust metadata for cross-game usage.
+              </p>
+            </motion.div>
+
+            {/* NFT Staking */}
+            <motion.div
+              className='group flex flex-col items-start rounded-lg border border-border bg-background p-6 shadow-md transition hover:shadow-lg'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Image
+                src='/images/feature-staking.png'
+                alt='NFT Staking'
+                width={60}
+                height={60}
+                className='mb-4'
+              />
+              <h3 className='mb-2 text-lg font-semibold text-foreground'>NFT Staking &amp; Rewards</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground break-words'>
+                Lock up your NFTs to passively accumulate XP at a steady rate.
+                Claim your rewards anytime, or let them build for bigger benefits—perfect for
+                gamers aiming to power up in upcoming titles or experiences.
+              </p>
+            </motion.div>
+
+            {/* XP & Titles */}
+            <motion.div
+              className='group flex flex-col items-start rounded-lg border border-border bg-background p-6 shadow-md transition hover:shadow-lg'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Image
+                src='/images/feature-xp.png'
+                alt='XP and Titles'
+                width={60}
+                height={60}
+                className='mb-4'
+              />
+              <h3 className='mb-2 text-lg font-semibold text-foreground'>XP &amp; User Titles</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground break-words'>
+                Each NFT carries random XP (1 to 100). Collect more NFTs or stake them to
+                climb the ranks, earning prestigious titles like
+                &quot;{XP_TITLES[2].label}&quot;, &quot;{XP_TITLES[5].label}&quot;, or
+                &quot;{XP_TITLES[8].label}&quot;. Showcase your progress on the Leaderboard.
+              </p>
+            </motion.div>
+
+            {/* Marketplace */}
+            <motion.div
+              className='group flex flex-col items-start rounded-lg border border-border bg-background p-6 shadow-md transition hover:shadow-lg'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <Image
+                src='/images/feature-marketplace.png'
+                alt='Marketplace'
+                width={60}
+                height={60}
+                className='mb-4'
+              />
+              <h3 className='mb-2 text-lg font-semibold text-foreground'>Dynamic Marketplace</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground break-words'>
+                Seamlessly list, purchase, or trade NFTs in our integrated marketplace.
+                A 10% platform fee supports the <em>PlatformRewardPool</em>,
+                fueling rewards and ecosystem growth. XP ownership transfers automatically
+                with each sale.
+              </p>
+            </motion.div>
+
+            {/* Cross-Chain & Polkadot Ecosystem */}
+            <motion.div
+              className='group flex flex-col items-start rounded-lg border border-border bg-background p-6 shadow-md transition hover:shadow-lg'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Image
+                src='/images/feature-crosschain.png'
+                alt='Cross Chain Support'
+                width={60}
+                height={60}
+                className='mb-4'
+              />
+              <h3 className='mb-2 text-lg font-semibold text-foreground'>Multi-Chain Compatibility</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground break-words'>
+                Operating on networks like Moonbase Alpha and Westend, AIPenGuild
+                ensures your NFTs remain portable. Whether bridging to new Polkadot parachains
+                or EVM ecosystems, your assets follow you seamlessly.
+              </p>
+            </motion.div>
+
+            {/* External Developer APIs */}
+            <motion.div
+              className='group flex flex-col items-start rounded-lg border border-border bg-background p-6 shadow-md transition hover:shadow-lg'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Image
+                src='/images/feature-apis.png'
+                alt='External APIs'
+                width={60}
+                height={60}
+                className='mb-4'
+              />
+              <h3 className='mb-2 text-lg font-semibold text-foreground'>External Developer APIs</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground break-words'>
+                Integrate NFT stats into your own dApps or games with simple endpoints,
+                e.g. <code className='bg-accent/10 px-1 rounded-sm'>/api/v1/gaming/nft/[tokenId]</code>
+                &amp; <code className='bg-accent/10 px-1 rounded-sm'>/api/v1/gaming/user/[address]</code>.
+                Fetch metadata, XP, stake status, or attributes to power truly interoperable experiences.
+              </p>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section
-        id="faq"
-        className="relative px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900"
-        data-aos="fade-up"
-      >
-        <div className="mx-auto max-w-6xl space-y-6">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary text-center mb-8">
-            Frequently Asked Questions
-          </h2>
-          <p className="mx-auto max-w-3xl text-center text-muted-foreground mb-6">
-            Expand each question to learn more about how AIPenGuild works.
-          </p>
-
-          <div className="max-w-4xl mx-auto">
-            <div className="mt-6">
-              <div className="bg-accent/10 rounded-lg p-4 md:p-6">
-                <div className="w-full space-y-2">
-                  <Accordion type="multiple" className="w-full space-y-2">
-                    {/* Leaderboard */}
-                    <AccordionItem value="leaderboard">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        1. What is the Leaderboard?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        The Leaderboard ranks users by their total Experience (XP).
-                        Every time you mint a new NFT, random XP (between 1 and 100)
-                        is assigned to that item. As you accumulate more NFTs,
-                        your total XP increases. The Leaderboard showcases who has
-                        accrued the highest XP on AIPenGuild.
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="titles">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        2. What are Titles?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground space-y-3">
-                        <p>
-                          Titles are fun designations displayed on your profile
-                          or in the Leaderboard once you pass certain XP milestones. For
-                          example, if your XP surpasses a specific threshold, you might
-                          see <em>&quot;Enthusiast&quot;</em> next to your name. Below is an example
-                          table of the title tiers currently recognized on the platform:
-                        </p>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left text-sm md:text-base border border-border">
-                            <thead className="bg-secondary text-secondary-foreground">
-                              <tr>
-                                <th className="px-4 py-2">Title</th>
-                                <th className="px-4 py-2">XP Range</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {XP_TITLES.map((tier) => (
-                                <tr key={tier.label} className="even:bg-accent/5">
-                                  <td className="px-4 py-2">{tier.label}</td>
-                                  <td className="px-4 py-2">
-                                    {tier.max === Infinity
-                                      ? `${tier.min}+`
-                                      : `${tier.min} - ${tier.max}`}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        <p>
-                          Tiers can be updated in future versions but currently remain as above.
-                        </p>
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="xp-distribution">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        3. How is XP distributed?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        The XP assigned for each newly minted NFT is random (ranging from
-                        1 to 100). This random XP value is stored in the contract.
-                        When you own a newly minted NFT, that random XP is credited
-                        to your address. The XP updates automatically if you transfer or sell
-                        the NFT to someone else. It&apos;s all governed by that random assignment in the
-                        smart contract.
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="dashboard">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        4. What is the Dashboard used for?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        The &quot;Dashboard&quot; is your personalized view for tracking
-                        all your stats on AIPenGuild: total XP, number of NFTs minted,
-                        NFTs listed for sale, and more. It provides a quick snapshot
-                        of your entire experience within the platform.
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="admin">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        5. What can I do in the Admin Panel?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        The Admin Panel is primarily for platform maintainers or the contract
-                        owner. In the current implementation, the main admin action is to
-                        withdraw (or manage) funds from the reward pool.
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="nft-staking">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        6. Is NFT Staking included in AIPenGuild?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        Absolutely! AIPenGuild includes an NFT Staking feature, which allows
-                        you to stake your NFTs to earn additional XP over time. Head over to
-                        the &quot;Stake&quot; page to lock up your NFTs and start accumulating XP
-                        rewards.
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="staking-xp">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        7. How many XP do I earn when I stake my NFT?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground">
-                        The amount of XP you earn for staking depends on how long your NFT
-                        remains staked and the current staking rate. By default, each staked
-                        NFT accrues a set rate of XP per second, but this rate can be updated by
-                        the contract owner. You can claim your accumulated XP anytime or upon
-                        unstaking your NFT.
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="usage-guide">
-                      <AccordionTrigger className="text-base md:text-lg font-semibold">
-                        8. Step-by-step: How do I use AIPenGuild?
-                      </AccordionTrigger>
-                      <AccordionContent className="mt-2 text-sm md:text-base text-muted-foreground space-y-3">
-                        <ol className="list-decimal list-inside ml-4">
-                          <li>
-                            <strong>Connect your Wallet</strong> to Moonbase Alpha (or the supported
-                            chain) so you can interact with the smart contracts.
-                          </li>
-                          <li>
-                            <strong>Mint an AI NFT</strong> by going to &quot;Mint&quot;. Provide a
-                            text prompt or upload your own file. Finalize with a wallet transaction.
-                          </li>
-                          <li>
-                            <strong>List or Unlist NFTs</strong> on &quot;My NFTs.&quot; Specify a
-                            sale price if you&apos;d like to sell.
-                          </li>
-                          <li>
-                            <strong>Buy NFTs</strong> in the &quot;Marketplace.&quot; Approve the
-                            purchase in your wallet. Ownership (and XP) will transfer to you.
-                          </li>
-                          <li>
-                            <strong>Track your XP &amp; Title</strong> in the &quot;Leaderboard&quot;
-                            or &quot;Dashboard.&quot; You will see your total XP and the title you have earned.
-                          </li>
-                          <li>
-                            <strong>Admin Panel</strong> (if you have access) to manage reward pool
-                            funds or collection parameters.
-                          </li>
-                        </ol>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section >
-
-      {/* Why AIPenGuild Section */}
-      <section id="why-aipenguild" className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800">
-        <div className="mx-auto max-w-6xl">
+      {/* WORKFLOW OVERVIEW SECTION */}
+      <section className='relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900'>
+        <div className='mx-auto max-w-6xl'>
           <motion.div
-            className="grid grid-cols-1 gap-8 md:grid-cols-2"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
+            className='mx-auto max-w-prose text-center'
           >
-            <div className="flex flex-col justify-center space-y-4">
-              <h2 className="text-3xl font-extrabold text-primary sm:text-4xl">Why AIPenGuild?</h2>
-              <p className="text-muted-foreground sm:text-lg">
-                AIPenGuild merges advanced AI capabilities with seamless blockchain technology,
-                empowering creators to forge unique NFTs and collectors to discover immersive digital art.
-              </p>
-              <ul className="ml-4 list-disc space-y-2 text-sm text-muted-foreground sm:text-base">
-                <li>Cross-chain compatibility with Polkadot ecosystem</li>
-                <li>Cutting-edge AI-based NFT generation tools</li>
-                <li>Reward system incentivizing creators and collectors</li>
-              </ul>
-            </div>
-            <div className="relative h-48 w-full overflow-hidden rounded-md sm:h-64">
-              <Image
-                src="/images/why-aipenguild.png"
-                alt="Why AIPenGuild"
-                fill
-                sizes="(max-width: 768px) 100vw,
-                       (max-width: 1200px) 50vw,
-                       33vw"
-                className={cn("object-cover")}
-              />
-            </div>
+            <h2 className='mb-6 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl break-words'>
+              How AIPenGuild Works
+            </h2>
+            <p className='mb-8 text-sm leading-relaxed text-muted-foreground sm:text-base'>
+              From idea to mint, from staking to trading—here&apos;s a quick overview of
+              how you can harness the power of AI-driven NFT creation and on-chain XP management.
+            </p>
           </motion.div>
-        </div>
-      </section >
 
-      {/* Leaderboard Section */}
-      < section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900" >
-        <div className="mx-auto max-w-6xl text-center">
-          <motion.h2
-            className="mb-6 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl"
+          <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
+            <motion.div
+              className='rounded-lg border border-border bg-secondary/10 p-6 transition hover:shadow-lg'
+              whileHover={{ scale: 1.02 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className='mb-3 text-lg font-bold text-foreground'>1. Generate NFT</h3>
+              <p className='mb-3 text-sm leading-relaxed text-muted-foreground break-words'>
+                Use LLM-based prompts to define your NFT&apos;s attributes.
+                Then Replicate generates a unique image. Store everything on IPFS.
+                Your creation is now ready for on-chain minting!
+              </p>
+              <div className='relative h-40 w-full overflow-hidden rounded-md bg-secondary'>
+                <Image
+                  src='/images/overview-generate.png'
+                  alt='Generate'
+                  fill
+                  sizes='(max-width: 768px) 100vw,
+                         (max-width: 1200px) 50vw,
+                         33vw'
+                  className='object-cover'
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              className='rounded-lg border border-border bg-secondary/10 p-6 transition hover:shadow-lg'
+              whileHover={{ scale: 1.02 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className='mb-3 text-lg font-bold text-foreground'>2. Mint &amp; Acquire XP</h3>
+              <p className='mb-3 text-sm leading-relaxed text-muted-foreground break-words'>
+                Pay via native tokens or 100 XP to finalize minting.
+                Your personal XP is updated once the NFT is yours—an integer between 1 and 100
+                unique to that asset.
+              </p>
+              <div className='relative h-40 w-full overflow-hidden rounded-md bg-secondary'>
+                <Image
+                  src='/images/overview-mint.png'
+                  alt='Minting'
+                  fill
+                  sizes='(max-width: 768px) 100vw,
+                         (max-width: 1200px) 50vw,
+                         33vw'
+                  className='object-cover'
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              className='rounded-lg border border-border bg-secondary/10 p-6 transition hover:shadow-lg'
+              whileHover={{ scale: 1.02 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className='mb-3 text-lg font-bold text-foreground'>3. Stake, Trade, or Integrate</h3>
+              <p className='mb-3 text-sm leading-relaxed text-muted-foreground break-words'>
+                Stake your NFT for extra XP, sell it on the marketplace, or
+                integrate its attributes into external games using our API.
+                Enjoy true NFT interoperability backed by on-chain data.
+              </p>
+              <div className='relative h-40 w-full overflow-hidden rounded-md bg-secondary'>
+                <Image
+                  src='/images/overview-stake.png'
+                  alt='Stake or Trade'
+                  fill
+                  sizes='(max-width: 768px) 100vw,
+                         (max-width: 1200px) 50vw,
+                         33vw'
+                  className='object-cover'
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* GALLERY / SCREENSHOTS SECTION */}
+      <section
+        id='gallery'
+        className='px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800'
+      >
+        <div className='mx-auto max-w-6xl'>
+          <motion.div
+            className='mb-6 max-w-prose text-center mx-auto'
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
           >
-            Check the Latest Rankings
-          </motion.h2>
-          <motion.p
-            className="mx-auto mb-8 max-w-xl text-muted-foreground sm:text-lg"
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            See which artists and minters are dominating the scene. Earn XP, craft phenomenal NFTs, and climb to the top!
-          </motion.p>
-          <Link
-            href="/leaderboard"
-            className="inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Leaderboard
-          </Link>
-          <Link
-            href="/dashboard"
-            className="ml-3 inline-block rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Dashboard
-          </Link>
-        </div>
-      </section >
-
-      {/* Moonbase Test Network Section */}
-      <section id="test-networks" className="relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-b from-secondary/20 via-secondary/30 to-secondary/50 dark:from-gray-800/20 dark:via-gray-800/40 dark:to-gray-800/80" >
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 rounded-xl p-6 sm:p-12 md:flex-row md:gap-12 md:p-16 shadow-md dark:shadow-none bg-white dark:bg-gray-900">
-          {/* Left Side Text */}
-          <div className="flex-1">
-            <h2 className="mb-4 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl">
-              Supported Test Networks
+            <h2 className='text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl break-words'>
+              In-Action Screenshots
             </h2>
-            <p className="mb-6 text-sm sm:text-base text-muted-foreground">
-              AIPenGuild proudly supports three networks by default: West End Asset Hub, Moonbeam, and
-              Moonbase Alpha. For the smoothest experience, we strongly recommend using Moonbase Alpha
-              when testing our AI-driven NFT creation and trading features. Moonbase Alpha is less prone
-              to transaction errors and offers a fast, reliable environment for experimentation.
+            <p className='mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base'>
+              A glimpse of AIPenGuild in motion—experience unique AI NFT generation,
+              user dashboards, staking pages, and on-chain metadata explorers.
             </p>
-            <div className="space-y-4 sm:text-base text-sm text-foreground">
-              <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
-                <strong className="min-w-[2rem] text-lg">1.</strong>
-                <div>
-                  <strong>Connect your wallet:</strong> Configure it for Moonbase Alpha (Chain ID{" "}
-                  <code className="font-mono text-xs">1287</code>), West End Asset Hub, or Moonbeam
-                  depending on your preference. If unsure, we recommend Moonbase Alpha for simplicity.
-                </div>
-              </div>
-              <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
-                <strong className="min-w-[2rem] text-lg">2.</strong>
-                <div>
-                  <strong>Obtain test tokens:</strong> For Moonbase Alpha, request free DEV tokens from{" "}
-                  <a
-                    href="https://faucet.moonbeam.network/"
-                    className="underline hover:opacity-90"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    the official faucet
-                  </a>
-                  . This ensures gas fees remain cost-free during your exploration.
-                </div>
-              </div>
-              <div className="flex items-start gap-3 rounded-lg bg-accent/80 p-4 text-accent-foreground">
-                <strong className="min-w-[2rem] text-lg">3.</strong>
-                <div>
-                  <strong>Begin your journey:</strong> Mint AI NFTs, list them, and trade on AIPenGuild
-                  with zero financial risk. Use any of the three networks for your needs, though
-                  Moonbase Alpha is the recommended choice for its stability and ease of use.
-                </div>
-              </div>
-            </div>
-            <p className="mt-6 text-sm text-muted-foreground sm:text-base">
-              This project is open source, so you can freely customize and add more networks to suit your
-              own needs. Happy minting, discovering, and innovating on AIPenGuild!
-            </p>
-          </div>
-          {/* Right Side Image */}
-          <motion.div
-            className="relative w-full max-w-[500px] max-h-[500px] aspect-square overflow-hidden rounded-md shadow-xl md:w-1/2"
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="absolute inset-0">
-              <Image
-                src={logoSrc}
-                alt="Test Network Overview"
-                fill
-                sizes="(max-width: 768px) 100vw,
-                       (max-width: 1200px) 50vw,
-                       33vw"
-                className="object-contain p-2"
-              />
-            </div>
           </motion.div>
+
+          <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3'>
+            {[1, 2, 3, 4, 5, 6].map((idx) => (
+              <motion.div
+                key={idx}
+                className='relative h-44 w-full overflow-hidden rounded-md bg-secondary transition hover:shadow-lg'
+                whileHover={{ scale: 1.02 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+              >
+                <Image
+                  src={`/images/screenshots/screenshot-${idx}.png`}
+                  alt={`Screenshot ${idx}`}
+                  fill
+                  sizes='(max-width: 768px) 100vw,
+                         (max-width: 1200px) 50vw,
+                         33vw'
+                  className='object-cover'
+                />
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </section >
+      </section>
+
+      {/* GETTING STARTED */}
+      <section
+        id='getting-started'
+        className='w-full bg-white dark:bg-gray-900 px-4 py-12 sm:py-16 md:py-20 lg:py-24'
+      >
+        <div className='mx-auto max-w-5xl text-center'>
+          <motion.h2
+            className='mb-6 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl break-words'
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+          >
+            Getting Started with AIPenGuild
+          </motion.h2>
+          <p className='mx-auto mb-8 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base'>
+            Begin your journey: set up your wallet, mint AI NFTs, stake for XP, or list items
+            in our marketplace. It&apos;s all just a few steps away.
+          </p>
+
+          <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
+            {/* Step 1 */}
+            <motion.div
+              className='flex flex-col gap-3 rounded-lg bg-secondary/10 p-6 text-left transition hover:shadow-md'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className='font-semibold text-lg text-foreground'>Step 1: Connect Your Wallet</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground'>
+                Configure for Moonbase Alpha or Westend.
+                Get test tokens from the official{' '}
+                <a
+                  href='https://faucet.moonbeam.network/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='underline hover:opacity-90 text-primary'
+                >
+                  Moonbase Alpha Faucet
+                </a>
+                to cover gas fees. Then you&apos;re all set to explore AIPenGuild.
+              </p>
+              <Link href='/dashboard' className='text-sm font-medium text-primary hover:underline'>
+                Go to Dashboard
+              </Link>
+            </motion.div>
+
+            {/* Step 2 */}
+            <motion.div
+              className='flex flex-col gap-3 rounded-lg bg-secondary/10 p-6 text-left transition hover:shadow-md'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className='font-semibold text-lg text-foreground'>Step 2: Mint &amp; AI Generate</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground'>
+                Provide a creative prompt to shape your NFT&apos;s stats &amp; image.
+                Once minted, your new NFT is assigned random XP. Pay with tokens or
+                your existing XP.
+              </p>
+              <Link href='/mint' className='text-sm font-medium text-primary hover:underline'>
+                Mint AI NFT
+              </Link>
+            </motion.div>
+
+            {/* Step 3 */}
+            <motion.div
+              className='flex flex-col gap-3 rounded-lg bg-secondary/10 p-6 text-left transition hover:shadow-md'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className='font-semibold text-lg text-foreground'>Step 3: Stake or Sell</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground'>
+                Head to the staking pool to lock in your NFT and earn
+                extra XP over time—or list it in our marketplace for
+                sale, letting others benefit from its attributes.
+              </p>
+              <Link href='/stake' className='text-sm font-medium text-primary hover:underline'>
+                Stake NFTs
+              </Link>
+            </motion.div>
+
+            {/* Step 4 */}
+            <motion.div
+              className='flex flex-col gap-3 rounded-lg bg-secondary/10 p-6 text-left transition hover:shadow-md'
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className='font-semibold text-lg text-foreground'>Step 4: Integrate &amp; Explore</h3>
+              <p className='text-sm leading-relaxed text-muted-foreground'>
+                Use our API to integrate NFT attributes into your dApp or game.
+                Track your XP and titles via the Leaderboard, or check out
+                personal stats in the Dashboard to see your journey.
+              </p>
+              <Link href='/leaderboard' className='text-sm font-medium text-primary hover:underline'>
+                Leaderboard
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* CALL TO ACTION / FOOTER SECTION */}
+      <section className='bg-secondary text-secondary-foreground px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
+        <div className='mx-auto max-w-6xl text-center'>
+          <h2 className='mb-4 text-3xl font-extrabold sm:text-4xl md:text-5xl break-words'>
+            Ready to Dive In?
+          </h2>
+          <p className='mx-auto mb-6 max-w-2xl text-sm leading-relaxed sm:text-base'>
+            Experience the future of AI-generated NFTs on AIPenGuild.
+            Start minting, staking, and sharing cross-chain assets with ease!
+          </p>
+          <Link
+            href='/mint'
+            className='inline-block rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90'
+          >
+            Get Started
+          </Link>
+        </div>
+      </section>
     </>
   )
 }
