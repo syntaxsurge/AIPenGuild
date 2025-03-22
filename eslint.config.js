@@ -1,8 +1,8 @@
-import typescriptEslint from '@typescript-eslint/eslint-plugin'
-import typescriptParser from '@typescript-eslint/parser'
-import eslintConfigPrettier from 'eslint-config-prettier'
-import eslintPluginImport from 'eslint-plugin-import'
-import eslintPluginPrettier from 'eslint-plugin-prettier'
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import eslintPluginImport from 'eslint-plugin-import';
+import eslintPluginPrettier from 'eslint-plugin-prettier';
 
 export default [
     {
@@ -13,7 +13,19 @@ export default [
             '**/build/**',
             '**/coverage/**',
             '**/out/**',
-            '**/public/**'
+            '**/public/**',
+            '**/artifacts/**',
+            '**/cache/**',
+            '**/typechain-types/**',
+            '**/.git/**',
+            '**/.vscode/**',
+            '**/.idea/**',
+            '**/.husky/**',
+            '**/.vercel/**',
+            '**/.turbo/**',
+            '**/.output/**',
+            '**/.cache/**',
+            '**/.DS_Store',
         ],
     },
     eslintConfigPrettier,
@@ -59,4 +71,4 @@ export default [
             ],
         },
     },
-]
+];
