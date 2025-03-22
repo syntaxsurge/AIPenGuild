@@ -66,7 +66,7 @@ export default function LeaderboardCTASection() {
           transition={{ duration: 0.6 }}
         >
           <Image
-            src='/images/marketplace/nft-2.png'
+            src='/images/hero/running-characters.gif'
             alt='Leaderboard Illustration'
             fill
             sizes='(max-width: 768px) 100vw,
