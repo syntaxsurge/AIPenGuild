@@ -8,6 +8,7 @@ AIPenGuild is a comprehensive AI-based NFT ecosystem providing custom Marketplac
   - [Table of Contents](#table-of-contents)
   - [Team Members](#team-members)
   - [1. Project Description](#1-project-description)
+    - [Visual Overview](#visual-overview)
   - [2. Inspiration](#2-inspiration)
   - [3. Technical Stack](#3-technical-stack)
   - [4. Features](#4-features)
@@ -48,6 +49,14 @@ AIPenGuild is a fully-integrated platform for generating AI-driven NFTs with str
 *   Structured JSON attributes for cross-chain and cross-game interoperability
 
 Essentially, AIPenGuild offers a universal standard for AI-generated NFT metadata, enabling real-world gaming integrations in a cross-chain, decentralized environment.
+
+---
+
+### Visual Overview
+
+Below is a quick snapshot of the homepage interface:
+
+![Homepage Overview](public/images/screenshots/homepage-overview.png)
 
 * * *
 
@@ -107,6 +116,8 @@ The project was inspired by the growing need for **interoperable NFTs** in gamin
 
 ### 5.1 Architecture
 
+![AIPenGuild Overall Architecture](public/images/AIPenGuild-Overall-Architecture.png)
+
 At a high level, AIPenGuild combines a front-end (Next.js) with smart contracts that manage NFT minting, staking, XP tracking, and a marketplace:
 
 *   **NFTCreatorCollection.sol**: Defines how NFTs can be minted (paying with native tokens or XP).
@@ -119,6 +130,8 @@ At a high level, AIPenGuild combines a front-end (Next.js) with smart contracts 
 The front-end calls Next.js APIs (`/api/v1/ai-nft/metadata` for attribute generation, etc.), orchestrating LLM-based attributes, AI image creation, and IPFS uploads, then finalizes the on-chain mint.
 
 ### 5.2 Detailed Workflow
+
+![AIPenGuild API Architecture](public/images/AIPenGuild-API-Architecture.png)
 
 1.  **User Chooses Category & Prompt**: (“Character,” “GameItem,” or “Powerup,” plus a creative text prompt).
 2.  **Attribute Generation (LLM)**: Next.js calls `/api/v1/ai-nft/metadata`, enforces strict JSON output with the correct numeric ranges.
