@@ -8,7 +8,6 @@ export default function UserGuidePage() {
   const [open, setOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
-  // The user-guide page references these 4 screenshots:
   const images = [
     "/images/screenshots/user-guide-connect.png",
     "/images/screenshots/mint-nft.png",

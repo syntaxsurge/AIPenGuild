@@ -8,7 +8,6 @@ export default function FAQDocsPage() {
   const [open, setOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
-  // Only one image used here, so images array is length 1
   const images = [
     "/images/faq-visual.png"
   ]
