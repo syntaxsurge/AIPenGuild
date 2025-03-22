@@ -6,7 +6,10 @@ import { cn } from '@/lib/utils'
 
 export default function WhyAIPenGuildSection() {
   return (
-    <section id='why-aipenguild' className='bg-gray-50 px-4 py-12 dark:bg-gray-800 sm:py-16 md:py-20 lg:py-24'>
+    <section
+      id='why-aipenguild'
+      className='bg-gray-50 px-4 py-12 dark:bg-gray-800 sm:py-16 md:py-20 lg:py-24'
+    >
       <div className='mx-auto max-w-6xl'>
         <motion.div
           className='grid grid-cols-1 gap-8 md:grid-cols-2'
@@ -17,8 +20,9 @@ export default function WhyAIPenGuildSection() {
           <div className='flex flex-col justify-center space-y-4'>
             <h2 className='text-3xl font-extrabold text-primary sm:text-4xl'>Why AIPenGuild?</h2>
             <p className='text-muted-foreground sm:text-lg'>
-              AIPenGuild merges advanced AI capabilities with seamless blockchain technology, empowering creators to
-              forge unique NFTs and collectors to discover immersive digital art.
+              AIPenGuild merges advanced AI capabilities with seamless blockchain technology,
+              empowering creators to forge unique NFTs and collectors to discover immersive digital
+              art.
             </p>
             <ul className='ml-4 list-disc space-y-2 text-sm text-muted-foreground sm:text-base'>
               <li>Cross-chain compatibility with Polkadot ecosystem</li>

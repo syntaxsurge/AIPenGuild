@@ -28,10 +28,16 @@ export async function GET(request: Request, { params }: { params: { address: str
     const nftStakingPool = getContractConfig(chainId, 'NFTStakingPool')
 
     // 3) Fetch all minted items, then filter by user
-    const allNfts = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
+    const allNfts = await fetchAllNFTs(
+      publicClient,
+      nftMintingPlatform,
+      nftMarketplaceHub,
+      nftStakingPool,
+    )
 
     const userItems = allNfts.filter((item) => {
-      const stakedByUser = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress
+      const stakedByUser =
+        item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress
       const ownedByUser = item.owner.toLowerCase() === userAddress
       return stakedByUser || ownedByUser
     })
@@ -60,7 +66,7 @@ export async function GET(request: Request, { params }: { params: { address: str
               staker: nft.stakeInfo.staker,
               startTimestamp: nft.stakeInfo.startTimestamp.toString(),
               lastClaimed: nft.stakeInfo.lastClaimed.toString(),
-              staked: nft.stakeInfo.staked
+              staked: nft.stakeInfo.staked,
             }
           : null,
         metadata: metadata
@@ -68,24 +74,24 @@ export async function GET(request: Request, { params }: { params: { address: str
               imageUrl: transformIpfsUriToHttp(metadata.imageUrl),
               name: metadata.name,
               description: metadata.description,
-              attributes: metadata.attributes
+              attributes: metadata.attributes,
             }
-          : null
+          : null,
       })
     }
 
     return NextResponse.json({
       success: true,
       chainId,
-      nfts: results
+      nfts: results,
     })
   } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch user NFTs.'
+        error: error.message || 'Failed to fetch user NFTs.',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

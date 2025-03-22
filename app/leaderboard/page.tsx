@@ -48,7 +48,7 @@ export default function LeaderboardPage() {
         address: nftMintingPlatform.address as `0x${string}`,
         abi: nftMintingPlatform.abi,
         functionName: 'getLatestMintedId',
-        args: []
+        args: [],
       })) as bigint
 
       if (!totalItems || totalItems < 1n) {
@@ -64,20 +64,20 @@ export default function LeaderboardPage() {
           address: nftMintingPlatform.address as `0x${string}`,
           abi: nftMintingPlatform.abi,
           functionName: 'ownerOf',
-          args: [i]
+          args: [i],
         })
         // stakes(i)
         calls.push({
           address: nftStakingPool.address as `0x${string}`,
           abi: nftStakingPool.abi,
           functionName: 'stakes',
-          args: [i]
+          args: [i],
         })
       }
 
       const multicallRes = await publicClient.multicall({
         contracts: calls,
-        allowFailure: true
+        allowFailure: true,
       })
 
       const ownersSet = new Set<string>()
@@ -107,7 +107,7 @@ export default function LeaderboardPage() {
             address: userExperiencePoints.address as `0x${string}`,
             abi: userExperiencePoints.abi,
             functionName: 'userExperience',
-            args: [addr]
+            args: [addr],
           })) as bigint
 
           resultEntries.push({ address: addr, xp: xpVal })
@@ -124,7 +124,7 @@ export default function LeaderboardPage() {
       toast({
         title: 'Error loading leaderboard',
         description: err.message || 'Something went wrong loading XP leaderboard',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     } finally {
       setLoading(false)
@@ -173,7 +173,11 @@ export default function LeaderboardPage() {
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <div>
                 <label className='mb-1 block text-sm font-medium'>Search by Address</label>
-                <Input placeholder='0x...' value={addressSearch} onChange={(e) => setAddressSearch(e.target.value)} />
+                <Input
+                  placeholder='0x...'
+                  value={addressSearch}
+                  onChange={(e) => setAddressSearch(e.target.value)}
+                />
               </div>
               <div>
                 <label className='mb-1 block text-sm font-medium'>XP Range</label>
@@ -204,7 +208,9 @@ export default function LeaderboardPage() {
                 <span>Loading leaderboard data...</span>
               </div>
             ) : filteredLeaderboard.length === 0 ? (
-              <p className='text-sm text-muted-foreground'>No addresses found for the given filters.</p>
+              <p className='text-sm text-muted-foreground'>
+                No addresses found for the given filters.
+              </p>
             ) : (
               <table className='w-full text-sm'>
                 <thead>

@@ -32,7 +32,7 @@ export async function fetchAllNFTs(
   publicClient: UsePublicClientReturnType,
   nftMintingPlatform: ContractConfig,
   nftMarketplaceHub: ContractConfig,
-  nftStakingPool: ContractConfig
+  nftStakingPool: ContractConfig,
 ): Promise<NFTItem[]> {
   // Sanity check
   if (
@@ -52,7 +52,7 @@ export async function fetchAllNFTs(
     address: nftMintingPlatform.address as `0x${string}`,
     abi: nftMintingPlatform.abi,
     functionName: 'getLatestMintedId',
-    args: []
+    args: [],
   })) as bigint
 
   if (!totalMinted || totalMinted < 1n) {
@@ -74,35 +74,35 @@ export async function fetchAllNFTs(
       address: nftMintingPlatform.address as `0x${string}`,
       abi: nftMintingPlatform.abi,
       functionName: 'nftItems',
-      args: [i]
+      args: [i],
     })
     // Owner
     calls.push({
       address: nftMintingPlatform.address as `0x${string}`,
       abi: nftMintingPlatform.abi,
       functionName: 'ownerOf',
-      args: [i]
+      args: [i],
     })
     // Market listing
     calls.push({
       address: nftMarketplaceHub.address as `0x${string}`,
       abi: nftMarketplaceHub.abi,
       functionName: 'marketItems',
-      args: [i]
+      args: [i],
     })
     // Stake info
     calls.push({
       address: nftStakingPool.address as `0x${string}`,
       abi: nftStakingPool.abi,
       functionName: 'stakes',
-      args: [i]
+      args: [i],
     })
   }
 
   // 2) Perform multicall
   const multicallRes = await publicClient.multicall({
     contracts: calls,
-    allowFailure: true
+    allowFailure: true,
   })
 
   // We'll parse them in chunks of 4
@@ -145,7 +145,7 @@ export async function fetchAllNFTs(
       staker: stakerAddr,
       startTimestamp,
       lastClaimed,
-      staked
+      staked,
     }
 
     nfts.push({
@@ -157,7 +157,7 @@ export async function fetchAllNFTs(
       owner,
       isOnSale,
       salePrice,
-      stakeInfo
+      stakeInfo,
     })
   }
 

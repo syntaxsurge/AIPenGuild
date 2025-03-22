@@ -17,7 +17,7 @@ const screenshots = [
   { src: 'list-nft.png', alt: 'List NFT' },
   { src: 'marketplace-overview.png', alt: 'Marketplace Overview' },
   { src: 'leaderboard-overview.png', alt: 'Leaderboard Overview' },
-  { src: 'admin-withdraw.png', alt: 'Admin Withdraw' }
+  { src: 'admin-withdraw.png', alt: 'Admin Withdraw' },
 ]
 
 export default function GallerySection() {
@@ -33,7 +33,10 @@ export default function GallerySection() {
   }
 
   return (
-    <section id='gallery' className='bg-gray-50 px-4 py-12 dark:bg-gray-800 sm:py-16 md:py-20 lg:py-24'>
+    <section
+      id='gallery'
+      className='bg-gray-50 px-4 py-12 dark:bg-gray-800 sm:py-16 md:py-20 lg:py-24'
+    >
       <div className='mx-auto max-w-6xl'>
         <motion.div
           className='mx-auto mb-6 max-w-prose text-center'
@@ -44,8 +47,8 @@ export default function GallerySection() {
             In-Action Screenshots
           </h2>
           <p className='mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base'>
-            A glimpse of AIPenGuild in motion—experience unique AI NFT generation, user dashboards, staking pages, and
-            on-chain metadata explorers.
+            A glimpse of AIPenGuild in motion—experience unique AI NFT generation, user dashboards,
+            staking pages, and on-chain metadata explorers.
           </p>
         </motion.div>
 

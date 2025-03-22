@@ -33,7 +33,10 @@ export default function XPTitlesModal({ buttonLabel = 'View XP Title Table' }: X
           <div className='mb-4 flex items-center justify-between'>
             <Dialog.Title className='text-lg font-bold'>XP Title Table</Dialog.Title>
             <Dialog.Close asChild>
-              <button className='rounded-md p-2 text-muted-foreground hover:bg-secondary' aria-label='Close'>
+              <button
+                className='rounded-md p-2 text-muted-foreground hover:bg-secondary'
+                aria-label='Close'
+              >
                 <X className='h-4 w-4' />
               </button>
             </Dialog.Close>
@@ -52,7 +55,9 @@ export default function XPTitlesModal({ buttonLabel = 'View XP Title Table' }: X
                   <tr key={tier.label} className='border-b border-border last:border-none'>
                     <td className='px-4 py-2'>{tier.label}</td>
                     <td className='px-4 py-2'>{tier.min}</td>
-                    <td className='px-4 py-2'>{tier.max === Infinity ? `${tier.min}+` : tier.max}</td>
+                    <td className='px-4 py-2'>
+                      {tier.max === Infinity ? `${tier.min}+` : tier.max}
+                    </td>
                   </tr>
                 ))}
               </tbody>

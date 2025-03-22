@@ -15,7 +15,7 @@ const docsNavLinks: NavLink[] = [
   { name: 'User Guide', href: '/docs/user-guide' },
   { name: 'Developer APIs', href: '/docs/developer-apis' },
   { name: 'Technical Architecture', href: '/docs/technical-architecture' },
-  { name: 'FAQ', href: '/docs/faq' }
+  { name: 'FAQ', href: '/docs/faq' },
 ]
 
 export default function DocsLayout({ children }: { children: ReactNode }) {

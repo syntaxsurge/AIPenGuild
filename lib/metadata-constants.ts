@@ -17,5 +17,5 @@ export type NFTRarity = (typeof NFT_RARITIES)[number]
 export const CATEGORY_ATTRIBUTE_CONFIG: Record<NFTCategory, string[]> = {
   Character: ['strength', 'agility'],
   GameItem: ['power', 'durability'],
-  Powerup: ['duration']
+  Powerup: ['duration'],
 }

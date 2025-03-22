@@ -1,7 +1,16 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, RefreshCw, X, ZoomIn, ZoomOut } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -45,7 +54,12 @@ function LightboxPortal({ children }: { children: React.ReactNode }) {
  * 5) Allows toggling native fullscreen
  * 6) Adds a "Reset View" to return to initial "fit" scale & no translation
  */
-export default function ImageLightbox({ images, open, onClose, startIndex = 0 }: ImageLightboxProps) {
+export default function ImageLightbox({
+  images,
+  open,
+  onClose,
+  startIndex = 0,
+}: ImageLightboxProps) {
   // current index among images
   const [currentIndex, setCurrentIndex] = useState(startIndex)
 
@@ -305,7 +319,7 @@ export default function ImageLightbox({ images, open, onClose, startIndex = 0 }:
               exit={{ opacity: 0 }}
               style={{
                 transform: `translate(${translateX}px, ${translateY}px) scale(${effectiveScale})`,
-                transformOrigin: 'center center'
+                transformOrigin: 'center center',
               }}
               className='max-w-none'
             />

@@ -1,6 +1,6 @@
 export const SUPPORTED_CHAINS = {
   MOONBASE: 1287,
-  WESTEND: 420420421
+  WESTEND: 420420421,
 } as const
 
 type ChainAddresses = {
@@ -25,7 +25,7 @@ export const CONTRACT_ADDRESSES: ContractAddresses = {
     UserExperiencePoints: '0xCfC194D67101ac4EAE4B5818f979e0E3109d44D9',
     NFTCreatorCollection: '0xbF5B5EC750A9152e84727E7Da0Bfed445938C0d3',
     NFTStakingPool: '0x584facee140ba8755046b1B79B711ec3F8f53F53',
-    explorer: 'https://moonbase.moonscan.io'
+    explorer: 'https://moonbase.moonscan.io',
   },
   [SUPPORTED_CHAINS.WESTEND]: {
     NFTMintingPlatform: '',
@@ -34,6 +34,6 @@ export const CONTRACT_ADDRESSES: ContractAddresses = {
     UserExperiencePoints: '',
     NFTCreatorCollection: '',
     NFTStakingPool: '',
-    explorer: 'https://westend.subscan.io'
-  }
+    explorer: 'https://westend.subscan.io',
+  },
 }

@@ -30,6 +30,6 @@ export function useContract(contractName: CoreContractName): ContractConfig | nu
   return {
     address,
     abi,
-    explorer
+    explorer,
   }
 }

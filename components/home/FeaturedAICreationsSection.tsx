@@ -8,7 +8,11 @@ import ImageLightbox from '@/components/ui/ImageLightbox'
 
 export default function FeaturedAICreationsSection() {
   // We define a list of images for display
-  const images = ['/images/hero/character.png', '/images/hero/game-item.png', '/images/hero/powerup.png']
+  const images = [
+    '/images/hero/character.png',
+    '/images/hero/game-item.png',
+    '/images/hero/powerup.png',
+  ]
 
   // State for the lightbox
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -20,7 +24,10 @@ export default function FeaturedAICreationsSection() {
   }
 
   return (
-    <section id='featured' className='bg-white px-4 py-12 dark:bg-gray-900 sm:py-16 md:py-20 lg:py-24'>
+    <section
+      id='featured'
+      className='bg-white px-4 py-12 dark:bg-gray-900 sm:py-16 md:py-20 lg:py-24'
+    >
       <div className='mx-auto max-w-6xl'>
         <motion.h2
           className='mb-6 text-center text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl'
@@ -36,7 +43,8 @@ export default function FeaturedAICreationsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
         >
-          Explore a curated selection of next-gen AI-generated NFTs, minted on AIPenGuild by creators worldwide.
+          Explore a curated selection of next-gen AI-generated NFTs, minted on AIPenGuild by
+          creators worldwide.
         </motion.p>
         <motion.div
           className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'

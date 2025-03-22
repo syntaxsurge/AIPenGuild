@@ -16,28 +16,30 @@ import './globals.css'
 const unbounded = Unbounded({
   subsets: ['latin'],
   variable: '--font-unbounded',
-  display: 'swap'
+  display: 'swap',
 })
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  display: 'swap'
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
   title: 'AIPenGuild',
   description: 'AIPenGuild: The cutting-edge AI-driven NFT marketplace',
   icons: {
-    icon: 'images/favicon.ico'
-  }
+    icon: 'images/favicon.ico',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // Attach font variables to the <html> element
     <html lang='en' className={`${unbounded.variable} ${inter.variable}`} suppressHydrationWarning>
-      <body className={`custom-selection bg-background text-foreground antialiased ${inter.className}`}>
+      <body
+        className={`custom-selection bg-background text-foreground antialiased ${inter.className}`}
+      >
         <Providers>
           <AnimateOnScrollInitializer />
           <PageTopLoader />

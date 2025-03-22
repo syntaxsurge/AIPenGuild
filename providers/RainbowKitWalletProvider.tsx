@@ -1,6 +1,11 @@
 'use client'
 
-import { RainbowKitProvider, darkTheme, getDefaultConfig, getDefaultWallets } from '@rainbow-me/rainbowkit'
+import {
+  RainbowKitProvider,
+  darkTheme,
+  getDefaultConfig,
+  getDefaultWallets,
+} from '@rainbow-me/rainbowkit'
 import { ledgerWallet, trustWallet } from '@rainbow-me/rainbowkit/wallets'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
@@ -22,10 +27,10 @@ const config = getDefaultConfig({
     ...wallets,
     {
       groupName: 'Other',
-      wallets: [trustWallet, ledgerWallet]
-    }
+      wallets: [trustWallet, ledgerWallet],
+    },
   ],
-  ssr: true
+  ssr: true,
 })
 
 const queryClient = new QueryClient()
@@ -46,7 +51,7 @@ export function RainbowKitWalletProvider({ children }: { children: any }) {
           theme={darkTheme({
             accentColor: '#7856ff',
             accentColorForeground: 'white',
-            borderRadius: 'none'
+            borderRadius: 'none',
           })}
           locale='en-US'
         >

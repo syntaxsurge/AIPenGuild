@@ -83,12 +83,17 @@ export default function DashboardPage() {
           address: _userExperiencePoints.address as `0x${string}`,
           abi: _userExperiencePoints.abi,
           functionName: 'userExperience',
-          args: [_address]
+          args: [_address],
         })) as bigint
         setXp(userXp)
 
         // 2) Load all minted NFTs.
-        const all = await fetchAllNFTs(_publicClient, _nftMintingPlatform, _nftMarketplaceHub, _nftStakingPool)
+        const all = await fetchAllNFTs(
+          _publicClient,
+          _nftMintingPlatform,
+          _nftMarketplaceHub,
+          _nftStakingPool,
+        )
         setNfts(all)
 
         // Filter and count NFTs related to the user.
@@ -103,7 +108,8 @@ export default function DashboardPage() {
             mintedCount++
             // If the item is no longer owned by user or staked by user, we consider it sold.
             const stakedByUser =
-              item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === _address.toLowerCase()
+              item.stakeInfo?.staked &&
+              item.stakeInfo.staker.toLowerCase() === _address.toLowerCase()
             const ownedByUser = item.owner.toLowerCase() === _address.toLowerCase()
             // Mark as sold only if the user doesn't own it AND it's not staked by them
             if (!ownedByUser && !stakedByUser) {
@@ -115,7 +121,10 @@ export default function DashboardPage() {
             listedCount++
           }
           // Count staked NFTs by the user.
-          if (item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === _address.toLowerCase()) {
+          if (
+            item.stakeInfo?.staked &&
+            item.stakeInfo.staker.toLowerCase() === _address.toLowerCase()
+          ) {
             stakedCount++
           }
         }
@@ -129,7 +138,7 @@ export default function DashboardPage() {
         toast({
           title: 'Error',
           description: 'Failed to fetch dashboard data. Please try again.',
-          variant: 'destructive'
+          variant: 'destructive',
         })
       } finally {
         setLoadingXp(false)
@@ -139,7 +148,15 @@ export default function DashboardPage() {
     }
 
     fetchAll()
-  }, [address, publicClient, userExperiencePoints, nftMintingPlatform, nftMarketplaceHub, nftStakingPool, toast])
+  }, [
+    address,
+    publicClient,
+    userExperiencePoints,
+    nftMintingPlatform,
+    nftMarketplaceHub,
+    nftStakingPool,
+    toast,
+  ])
 
   const userTitle = getUserTitle(Number(xp ?? 0))
 
@@ -147,7 +164,9 @@ export default function DashboardPage() {
     return (
       <main className='flex min-h-screen flex-col items-center justify-center bg-background p-8 text-foreground'>
         <h1 className='mb-2 text-4xl font-extrabold text-primary'>Dashboard</h1>
-        <p className='text-sm text-muted-foreground'>Please connect your wallet to view your dashboard.</p>
+        <p className='text-sm text-muted-foreground'>
+          Please connect your wallet to view your dashboard.
+        </p>
       </main>
     )
   }
@@ -156,7 +175,9 @@ export default function DashboardPage() {
     <main className='mx-auto min-h-screen max-w-5xl bg-background px-4 py-12 text-foreground sm:px-6 md:px-8'>
       <div className='mb-8 text-center'>
         <h1 className='mb-4 text-4xl font-extrabold text-primary'>Dashboard</h1>
-        <p className='text-sm text-muted-foreground'>Your personal control center for AIPenGuild.</p>
+        <p className='text-sm text-muted-foreground'>
+          Your personal control center for AIPenGuild.
+        </p>
       </div>
 
       <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
@@ -238,9 +259,14 @@ export default function DashboardPage() {
             <CardTitle className='text-base font-semibold'>Owned NFTs</CardTitle>
           </CardHeader>
           <CardContent className='p-6'>
-            <p className='mb-4 text-sm text-muted-foreground'>View and manage all the NFTs you own.</p>
+            <p className='mb-4 text-sm text-muted-foreground'>
+              View and manage all the NFTs you own.
+            </p>
             <Link href='/my-nfts'>
-              <Button variant='default' className='bg-primary text-primary-foreground hover:bg-primary/90'>
+              <Button
+                variant='default'
+                className='bg-primary text-primary-foreground hover:bg-primary/90'
+              >
                 View Owned NFTs
               </Button>
             </Link>

@@ -19,11 +19,15 @@ export async function fetchNftMetadata(resourceUrl: string): Promise<ParsedNftMe
     imageUrl: transformIpfsUriToHttp(resourceUrl),
     name: '',
     description: '',
-    attributes: {}
+    attributes: {},
   }
 
   // If it's not ipfs:// or http(s)://, or doesn't look like metadata, just return fallback
-  if (!resourceUrl.startsWith('ipfs://') && !resourceUrl.startsWith('http://') && !resourceUrl.startsWith('https://')) {
+  if (
+    !resourceUrl.startsWith('ipfs://') &&
+    !resourceUrl.startsWith('http://') &&
+    !resourceUrl.startsWith('https://')
+  ) {
     return fallback
   }
 
@@ -40,7 +44,7 @@ export async function fetchNftMetadata(resourceUrl: string): Promise<ParsedNftMe
         imageUrl: finalImageUrl,
         name: data.name ?? '',
         description: data.description ?? '',
-        attributes: data.attributes ?? {}
+        attributes: data.attributes ?? {},
       }
     } else {
       // No 'image' key => treat the entire resourceUrl as fallback

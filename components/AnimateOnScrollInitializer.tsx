@@ -8,7 +8,7 @@ export function AnimateOnScrollInitializer() {
     if (typeof window !== 'undefined') {
       Aos.init({
         easing: 'ease-out-quad',
-        duration: 500
+        duration: 500,
       })
     }
   }, [])

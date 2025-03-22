@@ -20,7 +20,7 @@ export async function uploadFileToIpfs(file: File): Promise<string> {
 
   const res = await fetch('https://rest.unique.network/opal/v1/ipfs/upload-files', {
     method: 'POST',
-    body: formData
+    body: formData,
   })
   if (!res.ok) {
     throw new Error('Failed to upload file to IPFS')
@@ -29,7 +29,9 @@ export async function uploadFileToIpfs(file: File): Promise<string> {
   const data = await res.json()
   // data.fullUrl => "https://ipfs.unique.network/ipfs/<CID>/"
   // We typically want the direct file link:
-  const directFileUrl = data.fullUrl.endsWith('/') ? data.fullUrl + file.name : data.fullUrl + '/' + file.name
+  const directFileUrl = data.fullUrl.endsWith('/')
+    ? data.fullUrl + file.name
+    : data.fullUrl + '/' + file.name
 
   return directFileUrl
 }
@@ -46,7 +48,7 @@ export async function uploadJsonToIpfs(jsonData: any): Promise<string> {
 
   const res = await fetch('https://rest.unique.network/opal/v1/ipfs/upload-files', {
     method: 'POST',
-    body: formData
+    body: formData,
   })
   if (!res.ok) {
     throw new Error('Failed to upload JSON to IPFS')

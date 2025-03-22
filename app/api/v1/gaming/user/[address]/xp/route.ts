@@ -24,22 +24,22 @@ export async function GET(request: Request, { params }: { params: { address: str
       address: xpConfig.address as `0x${string}`,
       abi: xpConfig.abi,
       functionName: 'userExperience',
-      args: [userAddress as `0x${string}`]
+      args: [userAddress as `0x${string}`],
     })) as bigint
 
     return NextResponse.json({
       success: true,
       chainId,
       address: userAddress,
-      xp: xpVal.toString()
+      xp: xpVal.toString(),
     })
   } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to read user XP.'
+        error: error.message || 'Failed to read user XP.',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

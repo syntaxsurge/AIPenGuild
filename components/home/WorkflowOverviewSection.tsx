@@ -10,16 +10,16 @@ export default function WorkflowOverviewSection() {
   const stepImages = [
     {
       src: '/images/screenshots/generate-nft.png',
-      alt: 'Generate'
+      alt: 'Generate',
     },
     {
       src: '/images/screenshots/mint-nft.png',
-      alt: 'Minting'
+      alt: 'Minting',
     },
     {
       src: '/images/screenshots/stake-nft.png',
-      alt: 'Stake or Trade'
-    }
+      alt: 'Stake or Trade',
+    },
   ]
 
   // Lightbox state
@@ -47,8 +47,8 @@ export default function WorkflowOverviewSection() {
             How AIPenGuild Works
           </h2>
           <p className='mb-8 text-sm leading-relaxed text-muted-foreground sm:text-base'>
-            From idea to mint, from staking to trading—here&apos;s a quick overview of how you can harness the power of
-            AI-driven NFT creation and on-chain XP management.
+            From idea to mint, from staking to trading—here&apos;s a quick overview of how you can
+            harness the power of AI-driven NFT creation and on-chain XP management.
           </p>
         </motion.div>
 
@@ -62,8 +62,9 @@ export default function WorkflowOverviewSection() {
           >
             <h3 className='mb-3 text-lg font-bold text-foreground'>1. Generate NFT</h3>
             <p className='mb-3 break-words text-sm leading-relaxed text-muted-foreground'>
-              Use LLM-based prompts to define your NFT&apos;s attributes. Then Replicate generates a unique image. Store
-              everything on IPFS. Your creation is now ready for on-chain minting!
+              Use LLM-based prompts to define your NFT&apos;s attributes. Then Replicate generates a
+              unique image. Store everything on IPFS. Your creation is now ready for on-chain
+              minting!
             </p>
             <div
               className='relative h-40 w-full cursor-pointer overflow-hidden rounded-md bg-secondary'
@@ -90,8 +91,8 @@ export default function WorkflowOverviewSection() {
           >
             <h3 className='mb-3 text-lg font-bold text-foreground'>2. Mint &amp; Acquire XP</h3>
             <p className='mb-3 break-words text-sm leading-relaxed text-muted-foreground'>
-              Pay via native tokens or 100 XP to finalize minting. Your personal XP is updated once the NFT is yours—an
-              integer between 1 and 100 unique to that asset.
+              Pay via native tokens or 100 XP to finalize minting. Your personal XP is updated once
+              the NFT is yours—an integer between 1 and 100 unique to that asset.
             </p>
             <div
               className='relative h-40 w-full cursor-pointer overflow-hidden rounded-md bg-secondary'
@@ -116,10 +117,13 @@ export default function WorkflowOverviewSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
           >
-            <h3 className='mb-3 text-lg font-bold text-foreground'>3. Stake, Trade, or Integrate</h3>
+            <h3 className='mb-3 text-lg font-bold text-foreground'>
+              3. Stake, Trade, or Integrate
+            </h3>
             <p className='mb-3 break-words text-sm leading-relaxed text-muted-foreground'>
-              Stake your NFT for extra XP, sell it on the marketplace, or integrate its attributes into external games
-              using our API. Enjoy true NFT interoperability backed by on-chain data.
+              Stake your NFT for extra XP, sell it on the marketplace, or integrate its attributes
+              into external games using our API. Enjoy true NFT interoperability backed by on-chain
+              data.
             </p>
             <div
               className='relative h-40 w-full cursor-pointer overflow-hidden rounded-md bg-secondary'

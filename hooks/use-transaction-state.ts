@@ -19,7 +19,7 @@ export function useTransactionState() {
     isProcessing: false,
     isSuccess: false,
     error: null,
-    txHash: null
+    txHash: null,
   })
 
   /**
@@ -30,7 +30,7 @@ export function useTransactionState() {
       isProcessing: true,
       isSuccess: false,
       error: null,
-      txHash: txHash || null
+      txHash: txHash || null,
     })
   }
 
@@ -44,7 +44,7 @@ export function useTransactionState() {
       isProcessing: false,
       isSuccess: true,
       error: null,
-      txHash: txHash ?? prev.txHash
+      txHash: txHash ?? prev.txHash,
     }))
   }
 
@@ -56,7 +56,7 @@ export function useTransactionState() {
       ...prev,
       isProcessing: false,
       isSuccess: false,
-      error: errorMessage
+      error: errorMessage,
     }))
   }
 
@@ -68,7 +68,7 @@ export function useTransactionState() {
       isProcessing: false,
       isSuccess: false,
       error: null,
-      txHash: null
+      txHash: null,
     })
   }
 
@@ -77,6 +77,6 @@ export function useTransactionState() {
     start,
     success,
     fail,
-    reset
+    reset,
   }
 }

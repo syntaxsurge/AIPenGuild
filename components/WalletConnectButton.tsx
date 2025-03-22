@@ -16,8 +16,8 @@ export default function WalletConnectButton() {
               style: {
                 opacity: 0,
                 pointerEvents: 'none',
-                userSelect: 'none'
-              }
+                userSelect: 'none',
+              },
             })}
           >
             {(() => {

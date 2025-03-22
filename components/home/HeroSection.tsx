@@ -20,8 +20,8 @@ export default function HeroSection() {
             Welcome to AIPenGuild
           </h1>
           <p className='mb-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg'>
-            Create AI-driven NFTs that power your gaming experience—choose from characters, game items, or power-ups.
-            All interoperable and fully on-chain.
+            Create AI-driven NFTs that power your gaming experience—choose from characters, game
+            items, or power-ups. All interoperable and fully on-chain.
           </p>
           <div className='mt-2'>
             <Link href='/mint'>

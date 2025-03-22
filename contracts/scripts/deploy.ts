@@ -23,7 +23,7 @@ async function main() {
     rewardPool.address,
     experience.address,
     'AIPenGuild',
-    'AIPEN'
+    'AIPEN',
   )
   await nftMintingPlatform.deployed()
   console.log('NFTMintingPlatform deployed to:', nftMintingPlatform.address)
@@ -31,7 +31,11 @@ async function main() {
   // 4) Deploy NFTMarketplaceHub
   //    Constructor: (address _rewardPool, address _experienceModule, address _nftMintingPlatform)
   const NFTMarketplaceHub = await ethers.getContractFactory('NFTMarketplaceHub')
-  const marketplace = await NFTMarketplaceHub.deploy(rewardPool.address, experience.address, nftMintingPlatform.address)
+  const marketplace = await NFTMarketplaceHub.deploy(
+    rewardPool.address,
+    experience.address,
+    nftMintingPlatform.address,
+  )
   await marketplace.deployed()
   console.log('NFTMarketplaceHub deployed to:', marketplace.address)
 
@@ -43,7 +47,7 @@ async function main() {
     ethers.utils.parseEther('0.1'),
     100,
     nftMintingPlatform.address, // minterPlatformAddress
-    experience.address // xpModuleAddress
+    experience.address, // xpModuleAddress
   )
   await creatorCollection.deployed()
   console.log('NFTCreatorCollection deployed to:', creatorCollection.address)

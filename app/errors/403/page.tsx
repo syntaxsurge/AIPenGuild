@@ -7,7 +7,9 @@ export default function ForbiddenPage() {
     <div className='flex h-[70vh] w-full items-center justify-center'>
       <div className='flex flex-col items-center gap-2 text-center'>
         <h1 className='text-[7rem] font-bold leading-tight text-primary'>403</h1>
-        <span className='text-xl font-semibold'>Oops! You don't have permission to view this page.</span>
+        <span className='text-xl font-semibold'>
+          Oops! You don't have permission to view this page.
+        </span>
         <p className='max-w-md text-muted-foreground'>
           If you believe this is in error, please contact the site administrator.
         </p>

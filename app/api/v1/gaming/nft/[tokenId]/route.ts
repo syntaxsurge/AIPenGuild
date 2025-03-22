@@ -26,7 +26,7 @@ export async function GET(request: Request, { params }: { params: { tokenId: str
       address: nftMintingPlatform.address as `0x${string}`,
       abi: nftMintingPlatform.abi,
       functionName: 'nftItems',
-      args: [tokenId]
+      args: [tokenId],
     })) as [bigint, string, bigint, string]
     const [xpValue, resourceUrl, mintedAt, creator] = itemData
 
@@ -37,15 +37,15 @@ export async function GET(request: Request, { params }: { params: { tokenId: str
         address: nftMintingPlatform.address as `0x${string}`,
         abi: nftMintingPlatform.abi,
         functionName: 'ownerOf',
-        args: [tokenId]
+        args: [tokenId],
       })) as `0x${string}`
     } catch {
       return NextResponse.json(
         {
           success: false,
-          error: `Token ID ${tokenId.toString()} not found or not minted on chainId ${chainId}.`
+          error: `Token ID ${tokenId.toString()} not found or not minted on chainId ${chainId}.`,
         },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
@@ -54,7 +54,7 @@ export async function GET(request: Request, { params }: { params: { tokenId: str
       address: nftMarketplaceHub.address as `0x${string}`,
       abi: nftMarketplaceHub.abi,
       functionName: 'marketItems',
-      args: [tokenId]
+      args: [tokenId],
     })) as [boolean, bigint]
     const [isOnSale, salePrice] = marketData
 
@@ -63,7 +63,7 @@ export async function GET(request: Request, { params }: { params: { tokenId: str
       address: nftStakingPool.address as `0x${string}`,
       abi: nftStakingPool.abi,
       functionName: 'stakes',
-      args: [tokenId]
+      args: [tokenId],
     })) as [string, bigint, bigint, boolean]
     const [stakerAddr, startTimestamp, lastClaimed, staked] = stakeData
 
@@ -91,25 +91,25 @@ export async function GET(request: Request, { params }: { params: { tokenId: str
           staker: stakerAddr,
           startTimestamp: startTimestamp.toString(),
           lastClaimed: lastClaimed.toString(),
-          staked
+          staked,
         },
         metadata: metadata
           ? {
               imageUrl: transformIpfsUriToHttp(metadata.imageUrl),
               name: metadata.name,
               description: metadata.description,
-              attributes: metadata.attributes
+              attributes: metadata.attributes,
             }
-          : null
-      }
+          : null,
+      },
     })
   } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch NFT data.'
+        error: error.message || 'Failed to fetch NFT data.',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

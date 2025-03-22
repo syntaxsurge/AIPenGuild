@@ -24,10 +24,12 @@ export default function IntroductionSection() {
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7 }}
         >
-          <h2 className='text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl'>Watch Our Introduction</h2>
+          <h2 className='text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl'>
+            Watch Our Introduction
+          </h2>
           <p className='max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base'>
-            Learn more about AIPenGuild in this short video. Discover how our AI-driven NFT platform, staking rewards,
-            and gamified XP system create a truly immersive experience.
+            Learn more about AIPenGuild in this short video. Discover how our AI-driven NFT
+            platform, staking rewards, and gamified XP system create a truly immersive experience.
           </p>
           <div className='flex flex-wrap items-center gap-4'>
             <Link

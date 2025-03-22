@@ -14,6 +14,6 @@ import { XP_TITLES } from '@/lib/experience'
 export async function GET() {
   return NextResponse.json({
     success: true,
-    titles: XP_TITLES
+    titles: XP_TITLES,
   })
 }

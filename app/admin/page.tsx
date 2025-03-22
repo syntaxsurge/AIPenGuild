@@ -28,7 +28,11 @@ export default function AdminPage() {
   const platformRewardPool = useContract('PlatformRewardPool')
 
   const isReferencesReady =
-    !isDisconnected && !!publicClient && !!wagmiAddress && !!platformRewardPool?.address && !!platformRewardPool?.abi
+    !isDisconnected &&
+    !!publicClient &&
+    !!wagmiAddress &&
+    !!platformRewardPool?.address &&
+    !!platformRewardPool?.abi
 
   // State to track if the user is the owner
   const [isOwner, setIsOwner] = useState(false)
@@ -59,7 +63,7 @@ export default function AdminPage() {
           address: platformRewardPool!.address as `0x${string}`,
           abi: platformRewardPool!.abi,
           functionName: 'owner',
-          args: []
+          args: [],
         })) as `0x${string}`
 
         setIsOwner(contractOwner.toLowerCase() === wagmiAddress!.toLowerCase())
@@ -90,7 +94,7 @@ export default function AdminPage() {
           address: platformRewardPool.address as `0x${string}`,
           abi: platformRewardPool.abi,
           functionName: 'getPoolBalance',
-          args: []
+          args: [],
         })
         if (typeof val === 'bigint') {
           setPoolBalance(val)
@@ -100,7 +104,7 @@ export default function AdminPage() {
         toast({
           title: 'Error',
           description: err.message || 'Cannot load reward pool balance.',
-          variant: 'destructive'
+          variant: 'destructive',
         })
       } finally {
         setLoadingBalance(false)
@@ -121,7 +125,7 @@ export default function AdminPage() {
       toast({
         title: 'Error',
         description: 'Unable to find PlatformRewardPool contract or ABI.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       return
     }
@@ -129,7 +133,7 @@ export default function AdminPage() {
       toast({
         title: 'No Wallet or Public Client',
         description: 'Please connect your wallet properly before withdrawing.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       return
     }
@@ -141,7 +145,7 @@ export default function AdminPage() {
     try {
       toast({
         title: 'Transaction Submitted',
-        description: `Withdrawing ${withdrawAmount} ${currencySymbol}...`
+        description: `Withdrawing ${withdrawAmount} ${currencySymbol}...`,
       })
 
       const hash = await walletClient.writeContract({
@@ -149,7 +153,7 @@ export default function AdminPage() {
         abi: platformRewardPool.abi,
         functionName: 'withdrawPoolFunds',
         args: [weiAmount],
-        account: wagmiAddress
+        account: wagmiAddress,
       })
 
       // We may set the txHash right away if desired
@@ -162,7 +166,7 @@ export default function AdminPage() {
       withdrawTx.success(hash)
       toast({
         title: 'Withdrawal Successful',
-        description: 'Funds withdrawn from reward pool.'
+        description: 'Funds withdrawn from reward pool.',
       })
 
       // Reset input, reload balance
@@ -171,7 +175,7 @@ export default function AdminPage() {
         address: platformRewardPool.address as `0x${string}`,
         abi: platformRewardPool.abi,
         functionName: 'getPoolBalance',
-        args: []
+        args: [],
       })
       if (typeof val === 'bigint') {
         setPoolBalance(val)
@@ -181,7 +185,7 @@ export default function AdminPage() {
       toast({
         title: 'Transaction Failed',
         description: err.message || 'Something went wrong',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -202,7 +206,9 @@ export default function AdminPage() {
       <main className='flex min-h-screen w-full justify-center bg-white px-4 py-12 text-foreground dark:bg-gray-900'>
         <div className='w-full max-w-5xl'>
           <h1 className='mb-6 text-center text-4xl font-extrabold text-primary'>Admin Panel</h1>
-          <p className='text-center text-sm text-muted-foreground'>Loading contract references...</p>
+          <p className='text-center text-sm text-muted-foreground'>
+            Loading contract references...
+          </p>
         </div>
       </main>
     )
@@ -235,23 +241,33 @@ export default function AdminPage() {
             <div>
               <p className='mb-1 text-sm text-muted-foreground'>Current Pool Balance:</p>
               <div className='text-lg font-bold text-primary'>
-                {loadingBalance ? 'Loading...' : `${(Number(poolBalance) / 1e18).toFixed(4)} ${currencySymbol}`}
+                {loadingBalance
+                  ? 'Loading...'
+                  : `${(Number(poolBalance) / 1e18).toFixed(4)} ${currencySymbol}`}
               </div>
             </div>
             <hr className='border-border' />
             <div>
-              <p className='mb-2 text-sm text-muted-foreground'>Withdraw funds from the reward pool (owner only).</p>
+              <p className='mb-2 text-sm text-muted-foreground'>
+                Withdraw funds from the reward pool (owner only).
+              </p>
               <form onSubmit={(e) => e.preventDefault()} className='flex flex-col gap-2'>
                 <div className='flex flex-col'>
                   <label className='text-xs font-medium'>Amount in {currencySymbol}</label>
-                  <Input value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder='0.5' />
+                  <Input
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder='0.5'
+                  />
                 </div>
 
                 <TransactionButton
                   isLoading={withdrawTx.isProcessing}
                   loadingText='Processing...'
                   onClick={handleWithdraw}
-                  disabled={!withdrawAmount || isNaN(Number(withdrawAmount)) || Number(withdrawAmount) <= 0}
+                  disabled={
+                    !withdrawAmount || isNaN(Number(withdrawAmount)) || Number(withdrawAmount) <= 0
+                  }
                 >
                   Withdraw
                 </TransactionButton>

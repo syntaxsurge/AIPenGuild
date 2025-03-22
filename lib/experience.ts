@@ -33,7 +33,7 @@ export const XP_TITLES: XPTier[] = [
   { label: 'Ultimate', min: 100000000000000, max: 999999999999999 },
   { label: 'Absolute', min: 1000000000000000, max: 9999999999999999 },
   { label: 'Infinite Singularity', min: 10000000000000000, max: 99999999999999999 },
-  { label: 'Transdimensional', min: 100000000000000000, max: Infinity }
+  { label: 'Transdimensional', min: 100000000000000000, max: Infinity },
 ]
 
 /**

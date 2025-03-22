@@ -22,7 +22,7 @@ export const LinkButton = React.forwardRef<HTMLAnchorElement, LinkButtonProps>(
         {...props}
       />
     )
-  }
+  },
 )
 
 LinkButton.displayName = 'LinkButton'

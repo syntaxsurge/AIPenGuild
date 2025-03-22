@@ -64,7 +64,7 @@ export default function StakePage() {
           address: nftStakingPool.address as `0x${string}`,
           abi: nftStakingPool.abi,
           functionName: 'xpPerSecond',
-          args: []
+          args: [],
         })
         if (typeof val === 'bigint') {
           setXpPerSecond(val)
@@ -78,18 +78,32 @@ export default function StakePage() {
   }, [publicClient, nftStakingPool, hasFetchedXpRate])
 
   async function fetchAllData(forceReload?: boolean) {
-    if (!userAddress || !publicClient || !nftMintingPlatform || !nftMarketplaceHub || !nftStakingPool) return
+    if (
+      !userAddress ||
+      !publicClient ||
+      !nftMintingPlatform ||
+      !nftMarketplaceHub ||
+      !nftStakingPool
+    )
+      return
     if (!forceReload && fetched) return
 
     setFetched(true)
     setLoadingItems(true)
     try {
-      const nfts = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
+      const nfts = await fetchAllNFTs(
+        publicClient,
+        nftMintingPlatform,
+        nftMarketplaceHub,
+        nftStakingPool,
+      )
       setAllItems(nfts)
 
       // Preload metadata for user items only
       const userNfts = nfts.filter((item) => {
-        const staked = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
+        const staked =
+          item.stakeInfo?.staked &&
+          item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
         const owned = item.owner.toLowerCase() === userAddress.toLowerCase()
         return staked || owned
       })
@@ -105,7 +119,7 @@ export default function StakePage() {
               imageUrl: transformIpfsUriToHttp(item.resourceUrl),
               name: '',
               description: '',
-              attributes: {}
+              attributes: {},
             }
           }
         }
@@ -116,7 +130,7 @@ export default function StakePage() {
       toast({
         title: 'Error',
         description: 'Unable to fetch your NFTs. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     } finally {
       setLoadingItems(false)
@@ -138,7 +152,8 @@ export default function StakePage() {
   function userItems() {
     if (!userAddress) return []
     return allItems.filter((item) => {
-      const staked = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
+      const staked =
+        item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress.toLowerCase()
       const owned = item.owner.toLowerCase() === userAddress.toLowerCase()
       return staked || owned
     })
@@ -166,19 +181,19 @@ export default function StakePage() {
             stateMutability: 'view',
             inputs: [
               { name: 'owner', type: 'address' },
-              { name: 'operator', type: 'address' }
+              { name: 'operator', type: 'address' },
             ],
-            outputs: [{ name: '', type: 'bool' }]
-          }
+            outputs: [{ name: '', type: 'bool' }],
+          },
         ],
         functionName: 'isApprovedForAll',
-        args: [userAddress, nftStakingPool.address as `0x${string}`]
+        args: [userAddress, nftStakingPool.address as `0x${string}`],
       })) as boolean
 
       if (!isApproved) {
         toast({
           title: 'Approval Required',
-          description: 'Approving staking contract...'
+          description: 'Approving staking contract...',
         })
         const minimalABI = [
           {
@@ -187,33 +202,33 @@ export default function StakePage() {
             stateMutability: 'nonpayable',
             inputs: [
               { name: 'operator', type: 'address' },
-              { name: 'approved', type: 'bool' }
+              { name: 'approved', type: 'bool' },
             ],
-            outputs: []
-          }
+            outputs: [],
+          },
         ]
         const hash = await walletClient.writeContract({
           address: nftMintingPlatform.address as `0x${string}`,
           abi: minimalABI,
           functionName: 'setApprovalForAll',
           args: [nftStakingPool.address as `0x${string}`, true],
-          account: userAddress
+          account: userAddress,
         })
         toast({
           title: 'Approval Tx Sent',
-          description: `Hash: ${String(hash)}`
+          description: `Hash: ${String(hash)}`,
         })
         await publicClient?.waitForTransactionReceipt({ hash })
         toast({
           title: 'Approved!',
-          description: 'Staking contract can now manage your NFTs.'
+          description: 'Staking contract can now manage your NFTs.',
         })
       }
     } catch (err: any) {
       toast({
         title: 'Approval Failed',
         description: err.message || 'Could not set approval for all.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       throw err
     }
@@ -225,7 +240,7 @@ export default function StakePage() {
       toast({
         title: 'Cannot Stake',
         description: 'This NFT is currently listed for sale. Please unlist it first.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       return
     }
@@ -239,7 +254,7 @@ export default function StakePage() {
         abi: nftStakingPool.abi,
         functionName: 'stakeNFT',
         args: [item.itemId],
-        account: userAddress
+        account: userAddress,
       })
       stakeTx.start(hash)
 
@@ -254,7 +269,7 @@ export default function StakePage() {
       toast({
         title: 'Stake Error',
         description: err.message || 'Failed to stake NFT',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -270,7 +285,7 @@ export default function StakePage() {
         abi: nftStakingPool.abi,
         functionName: 'claimStakingRewards',
         args: [item.itemId],
-        account: userAddress
+        account: userAddress,
       })
       claimTx.start(hash)
 
@@ -285,7 +300,7 @@ export default function StakePage() {
       toast({
         title: 'Claim Error',
         description: err.message || 'Failed to claim rewards',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -301,7 +316,7 @@ export default function StakePage() {
         abi: nftStakingPool.abi,
         functionName: 'unstakeNFT',
         args: [item.itemId],
-        account: userAddress
+        account: userAddress,
       })
       unstakeTx.start(hash)
 
@@ -316,7 +331,7 @@ export default function StakePage() {
       toast({
         title: 'Unstake Error',
         description: err.message || 'Failed to unstake NFT',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -338,7 +353,9 @@ export default function StakePage() {
     <main className='mx-auto min-h-screen w-full bg-background px-4 py-12 text-foreground sm:px-6 md:px-8'>
       <div className='mb-6 text-center'>
         <h1 className='text-4xl font-extrabold text-primary'>Stake Your NFTs</h1>
-        <p className='mt-2 text-sm text-muted-foreground'>Enjoy extra XP rewards by staking your NFTs on AIPenGuild.</p>
+        <p className='mt-2 text-sm text-muted-foreground'>
+          Enjoy extra XP rewards by staking your NFTs on AIPenGuild.
+        </p>
       </div>
 
       <Card className='mb-6 rounded-lg border border-border shadow-sm'>
@@ -365,7 +382,9 @@ export default function StakePage() {
           <hr className='my-3 border-border' />
           <div className='flex items-center justify-between'>
             <span className='text-muted-foreground'>Total Unclaimed XP:</span>
-            <span className='text-2xl font-extrabold text-primary'>{totalUnclaimed.toString()}</span>
+            <span className='text-2xl font-extrabold text-primary'>
+              {totalUnclaimed.toString()}
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -392,7 +411,7 @@ export default function StakePage() {
                     imageUrl: transformIpfsUriToHttp(nft.resourceUrl),
                     name: '',
                     description: '',
-                    attributes: {}
+                    attributes: {},
                   }
                   let label = ''
                   if (nft.stakeInfo?.staked) {
@@ -408,7 +427,7 @@ export default function StakePage() {
                       onClick={() => setSelectedNFT(nft)}
                       className={cn(
                         'cursor-pointer rounded-md border p-2 transition hover:shadow',
-                        selected ? 'border-primary' : 'border-border'
+                        selected ? 'border-primary' : 'border-border',
                       )}
                     >
                       <div className='relative h-24 w-full overflow-hidden rounded bg-secondary sm:h-28'>
@@ -442,7 +461,9 @@ export default function StakePage() {
           </CardHeader>
           <CardContent className='p-4'>
             {!selectedNFT ? (
-              <p className='text-sm text-muted-foreground'>Please select an NFT from the left panel.</p>
+              <p className='text-sm text-muted-foreground'>
+                Please select an NFT from the left panel.
+              </p>
             ) : (
               <div className='space-y-4'>
                 {(() => {
@@ -451,7 +472,7 @@ export default function StakePage() {
                     imageUrl: transformIpfsUriToHttp(selectedNFT.resourceUrl),
                     name: '',
                     description: '',
-                    attributes: {}
+                    attributes: {},
                   }
                   return (
                     <div className='relative h-96 w-full overflow-hidden rounded-md border border-border bg-secondary'>
@@ -472,7 +493,9 @@ export default function StakePage() {
                   <div className='text-sm'>
                     <span className='font-bold text-green-600'>Staked</span> since{' '}
                     <span className='font-bold text-foreground'>
-                      {new Date(Number(selectedNFT.stakeInfo?.startTimestamp) * 1000).toLocaleString()}
+                      {new Date(
+                        Number(selectedNFT.stakeInfo?.startTimestamp) * 1000,
+                      ).toLocaleString()}
                     </span>
                     .
                     <div className='mt-2 text-muted-foreground'>
@@ -517,7 +540,8 @@ export default function StakePage() {
                   </div>
                 ) : selectedNFT.isOnSale ? (
                   <p className='text-sm font-bold text-orange-500'>
-                    This NFT is currently listed for sale. Please unlist it first if you want to stake.
+                    This NFT is currently listed for sale. Please unlist it first if you want to
+                    stake.
                   </p>
                 ) : (
                   <div className='text-sm text-muted-foreground'>

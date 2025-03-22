@@ -15,25 +15,25 @@ export const westendAssetHubChain = defineChain({
   nativeCurrency: {
     decimals: 18,
     name: 'Westend',
-    symbol: 'WND'
+    symbol: 'WND',
   },
   rpcUrls: {
     default: {
       http: ['https://westend-asset-hub-eth-rpc.polkadot.io'],
-      webSocket: ['wss://westend-asset-hub-eth-rpc.polkadot.io']
+      webSocket: ['wss://westend-asset-hub-eth-rpc.polkadot.io'],
     },
     public: {
       http: ['https://westend-asset-hub-eth-rpc.polkadot.io'],
-      webSocket: ['wss://westend-asset-hub-eth-rpc.polkadot.io']
-    }
+      webSocket: ['wss://westend-asset-hub-eth-rpc.polkadot.io'],
+    },
   },
   blockExplorers: {
     default: {
       name: 'Subscan Westend',
       url: 'https://assethub-westend.subscan.io',
-      apiUrl: 'https://assethub-westend.subscan.io'
-    }
-  }
+      apiUrl: 'https://assethub-westend.subscan.io',
+    },
+  },
 })
 
 /**
@@ -48,25 +48,25 @@ export const customMoonbeamChain = defineChain({
   nativeCurrency: {
     decimals: 18,
     name: 'GLMR',
-    symbol: 'GLMR'
+    symbol: 'GLMR',
   },
   rpcUrls: {
     default: {
       http: ['https://rpc.api.moonbeam.network'],
-      webSocket: ['wss://rpc.api.moonbeam.network']
+      webSocket: ['wss://rpc.api.moonbeam.network'],
     },
     public: {
       http: ['https://rpc.api.moonbeam.network'],
-      webSocket: ['wss://rpc.api.moonbeam.network']
-    }
+      webSocket: ['wss://rpc.api.moonbeam.network'],
+    },
   },
   blockExplorers: {
     default: {
       name: 'Moonscan',
       url: 'https://moonbeam.moonscan.io',
-      apiUrl: 'https://moonbeam.moonscan.io/api'
-    }
-  }
+      apiUrl: 'https://moonbeam.moonscan.io/api',
+    },
+  },
 })
 
 /**
@@ -93,7 +93,7 @@ export function getPublicClientForChainId(chainId: number) {
   const chain = getChainForChainId(chainId)
   return createPublicClient({
     chain,
-    transport: http()
+    transport: http(),
   })
 }
 
@@ -122,7 +122,7 @@ export function getContractConfig(chainId: number, contractName: CoreContractNam
   return {
     address,
     abi,
-    explorer
+    explorer,
   }
 }
 

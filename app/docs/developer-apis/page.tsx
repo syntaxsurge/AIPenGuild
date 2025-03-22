@@ -8,7 +8,10 @@ export default function DeveloperApisPage() {
   const [open, setOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
-  const images = ['/images/AIPenGuild-API-Architecture.png', '/images/screenshots/api-terminal-example.png']
+  const images = [
+    '/images/AIPenGuild-API-Architecture.png',
+    '/images/screenshots/api-terminal-example.png',
+  ]
 
   function handleImageClick(idx: number) {
     setLightboxIndex(idx)
@@ -19,9 +22,10 @@ export default function DeveloperApisPage() {
     <section className='space-y-8'>
       <h1 className='text-4xl font-extrabold text-primary'>Developer APIs</h1>
       <p className='text-lg leading-relaxed text-foreground'>
-        AIPenGuild offers straightforward REST endpoints for retrieving NFT data, user XP, staking information, minted
-        item details, and more. These endpoints allow your dApp or game to communicate seamlessly with the on-chain data
-        stored by AIPenGuild’s contracts. Let’s dive in!
+        AIPenGuild offers straightforward REST endpoints for retrieving NFT data, user XP, staking
+        information, minted item details, and more. These endpoints allow your dApp or game to
+        communicate seamlessly with the on-chain data stored by AIPenGuild’s contracts. Let’s dive
+        in!
       </p>
 
       <div className='flex flex-col items-center gap-4 md:flex-row'>
@@ -40,8 +44,9 @@ export default function DeveloperApisPage() {
         <div className='space-y-3 md:w-1/2'>
           <h2 className='text-2xl font-bold text-primary'>Key Endpoints</h2>
           <p className='text-base leading-relaxed text-foreground'>
-            All endpoints are available under <code className='rounded bg-accent/10 px-1'>/api/v1</code>. For
-            chain-specific queries, append <code className='rounded bg-accent/10 px-1'>?chainId=1287</code>,
+            All endpoints are available under{' '}
+            <code className='rounded bg-accent/10 px-1'>/api/v1</code>. For chain-specific queries,
+            append <code className='rounded bg-accent/10 px-1'>?chainId=1287</code>,
             <code className='rounded bg-accent/10 px-1'>?chainId=420420421</code>, etc.
           </p>
         </div>
@@ -85,7 +90,8 @@ export default function DeveloperApisPage() {
 `}
           </pre>
           <p className='text-base text-foreground'>
-            Returns JSON with <em>finalReplicatePrompt</em>, refined attributes, and a direct AI image URL.
+            Returns JSON with <em>finalReplicatePrompt</em>, refined attributes, and a direct AI
+            image URL.
           </p>
         </div>
       </div>
@@ -152,9 +158,9 @@ export default function DeveloperApisPage() {
         <div className='space-y-3 md:w-1/2'>
           <h2 className='text-2xl font-bold text-primary'>Seamless Integration</h2>
           <p className='text-base leading-relaxed text-foreground'>
-            By calling these endpoints, you can easily integrate minted NFTs, attribute data, user XP, and marketplace
-            status into your own UI or game logic. Build a rich, dynamic experience by leveraging AIPenGuild’s robust
-            API.
+            By calling these endpoints, you can easily integrate minted NFTs, attribute data, user
+            XP, and marketplace status into your own UI or game logic. Build a rich, dynamic
+            experience by leveraging AIPenGuild’s robust API.
           </p>
         </div>
         <div className='flex justify-center md:w-1/2'>
@@ -172,14 +178,19 @@ export default function DeveloperApisPage() {
       <div className='rounded-md border border-border bg-secondary p-4 text-secondary-foreground shadow-sm'>
         <h3 className='mb-2 text-xl font-bold text-primary'>Summary</h3>
         <p className='text-base leading-relaxed text-foreground'>
-          The AIPenGuild API is designed to be flexible yet powerful. Whether you’re building a new game on Polkadot or
-          hooking into existing EVM chains, these endpoints open the door to a synergy of AI-driven NFT content,
-          staking, and real-time user progression.
+          The AIPenGuild API is designed to be flexible yet powerful. Whether you’re building a new
+          game on Polkadot or hooking into existing EVM chains, these endpoints open the door to a
+          synergy of AI-driven NFT content, staking, and real-time user progression.
         </p>
       </div>
 
       {/* Lightbox */}
-      <ImageLightbox images={images} open={open} onClose={() => setOpen(false)} startIndex={lightboxIndex} />
+      <ImageLightbox
+        images={images}
+        open={open}
+        onClose={() => setOpen(false)}
+        startIndex={lightboxIndex}
+      />
     </section>
   )
 }

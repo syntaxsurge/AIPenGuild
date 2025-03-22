@@ -17,40 +17,47 @@ interface Requirements {
 // Example category-specific config from the old code. You can expand or adapt if needed.
 const CATEGORIES_CONFIG: Record<NFTCategory, Requirements> = {
   Character: {
-    requiredKeys: ['strength', 'agility', 'specialEffect', 'rarity', 'name', 'finalReplicatePrompt'],
+    requiredKeys: [
+      'strength',
+      'agility',
+      'specialEffect',
+      'rarity',
+      'name',
+      'finalReplicatePrompt',
+    ],
     systemRanges: {
       strength: { min: 1, max: 100 },
-      agility: { min: 1, max: 100 }
-    }
+      agility: { min: 1, max: 100 },
+    },
   },
   GameItem: {
     requiredKeys: ['durability', 'power', 'rarity', 'name', 'finalReplicatePrompt'],
     systemRanges: {
       durability: { min: 1, max: 100 },
-      power: { min: 1, max: 100 }
-    }
+      power: { min: 1, max: 100 },
+    },
   },
   Powerup: {
     requiredKeys: ['boostType', 'duration', 'rarity', 'name', 'finalReplicatePrompt'],
     systemRanges: {
-      duration: { min: 1, max: 300 }
-    }
-  }
+      duration: { min: 1, max: 300 },
+    },
+  },
 }
 
 // Base prompt text, mapped by category
 const BASE_CATEGORY_PROMPT: Record<NFTCategory, string> = {
   Character: `Focus on illustrating a single character, no large environment. Ensure it's a fantasy or stylized figure.`,
   GameItem: `Focus on illustrating a single game item or object (e.g., swords, shields, potions, etc.), with no living creatures or people included.`,
-  Powerup: `Focus on illustrating a single power-up or buff item, like a glowing potion, magical effect, or special icon.`
+  Powerup: `Focus on illustrating a single power-up or buff item, like a glowing potion, magical effect, or special icon.`,
 }
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
+  apiKey: process.env.OPENAI_API_KEY || '',
 })
 
 const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN || ''
+  auth: process.env.REPLICATE_API_TOKEN || '',
 })
 
 export async function POST(request: Request) {
@@ -58,10 +65,16 @@ export async function POST(request: Request) {
     const { prompt, category } = (await request.json()) as { prompt?: string; category?: string }
 
     if (!prompt || !category) {
-      return NextResponse.json({ success: false, error: 'Missing prompt or category' }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: 'Missing prompt or category' },
+        { status: 400 },
+      )
     }
     if (!NFT_CATEGORIES.includes(category as NFTCategory)) {
-      return NextResponse.json({ success: false, error: `Unsupported category: ${category}` }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: `Unsupported category: ${category}` },
+        { status: 400 },
+      )
     }
 
     const typedCategory = category as NFTCategory
@@ -123,9 +136,9 @@ Obey the category, numeric ranges, and no extra keys!
         model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: systemInstruction },
-          { role: 'user', content: userMessage }
+          { role: 'user', content: userMessage },
         ],
-        temperature: 0.7
+        temperature: 0.7,
       })
 
       if (!completion.choices?.length) {
@@ -170,7 +183,10 @@ Obey the category, numeric ranges, and no extra keys!
           continue
         }
 
-        if (typeof parsed.finalReplicatePrompt !== 'string' || !parsed.finalReplicatePrompt.trim()) {
+        if (
+          typeof parsed.finalReplicatePrompt !== 'string' ||
+          !parsed.finalReplicatePrompt.trim()
+        ) {
           continue
         }
 
@@ -182,15 +198,17 @@ Obey the category, numeric ranges, and no extra keys!
     }
 
     if (!success) {
-      throw new Error(`Failed to get correct JSON after 5 attempts.\nLast LLM output:\n${rawContent}`)
+      throw new Error(
+        `Failed to get correct JSON after 5 attempts.\nLast LLM output:\n${rawContent}`,
+      )
     }
 
     // We have finalReplicatePrompt, let's feed that to replicate
     const replicatePrompt = attributesJson.finalReplicatePrompt
     const replicateOutput = await replicate.run('black-forest-labs/flux-dev', {
       input: {
-        prompt: replicatePrompt
-      }
+        prompt: replicatePrompt,
+      },
     })
     if (!Array.isArray(replicateOutput) || replicateOutput.length === 0) {
       throw new Error('No output from replicate model')
@@ -214,8 +232,8 @@ Obey the category, numeric ranges, and no extra keys!
       image: imageUrl,
       attributes: {
         category,
-        ...restAttrs
-      }
+        ...restAttrs,
+      },
     }
 
     return NextResponse.json({ success: true, metadata })
@@ -223,9 +241,9 @@ Obey the category, numeric ranges, and no extra keys!
     return NextResponse.json(
       {
         success: false,
-        error: err.message || 'LLM/AI generation error'
+        error: err.message || 'LLM/AI generation error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

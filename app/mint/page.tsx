@@ -26,7 +26,7 @@ export default function MintNFTPage() {
   const currencySymbol = useNativeCurrencySymbol()
 
   const { data: userBalanceData } = useBalance({
-    address: wagmiAddress
+    address: wagmiAddress,
   })
 
   const creatorCollection = useContract('NFTCreatorCollection')
@@ -44,7 +44,9 @@ export default function MintNFTPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [payWithXP, setPayWithXP] = useState(false)
   const [useAIImage, setUseAIImage] = useState(true)
-  const [debugUploadCustomImage] = useState(process.env.NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE === 'true')
+  const [debugUploadCustomImage] = useState(
+    process.env.NEXT_PUBLIC_DEBUG_UPLOAD_CUSTOM_IMAGE === 'true',
+  )
 
   // The single unified transaction state
   const mintTx = useTransactionState()
@@ -75,7 +77,7 @@ export default function MintNFTPage() {
       const resp = await fetch('/api/v1/ai-nft/metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, category })
+        body: JSON.stringify({ prompt, category }),
       })
       if (!resp.ok) throw new Error('Metadata generation request failed.')
       const data = await resp.json()
@@ -85,14 +87,14 @@ export default function MintNFTPage() {
       setAiNft(data.metadata)
       toast({
         title: 'AI Generation Complete',
-        description: 'AI-generated image & attributes ready.'
+        description: 'AI-generated image & attributes ready.',
       })
     } catch (err: any) {
       setGenerateImageError(err.message || 'Failed to generate image')
       toast({
         title: 'Generation Error',
         description: err.message || 'Failed to generate image',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     } finally {
       setGeneratingImage(false)
@@ -104,7 +106,7 @@ export default function MintNFTPage() {
       toast({
         title: 'Wallet not connected',
         description: 'Please connect your wallet before minting.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       return
     }
@@ -112,7 +114,7 @@ export default function MintNFTPage() {
       toast({
         title: 'No Contract Found',
         description: 'NFTCreatorCollection contract not found. Check your chain or config.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       return
     }
@@ -130,7 +132,7 @@ export default function MintNFTPage() {
           address: xpModule?.address as `0x${string}`,
           abi: xpModule?.abi,
           functionName: 'userExperience',
-          args: [wagmiAddress]
+          args: [wagmiAddress],
         })) as bigint
         if (xpVal < 100n) {
           throw new Error(`Insufficient XP. You have ${xpVal.toString()} XP, need 100.`)
@@ -139,7 +141,7 @@ export default function MintNFTPage() {
         if (userBalanceData?.value) {
           if (userBalanceData.value < parseEther('0.1')) {
             throw new Error(
-              `Insufficient balance. You only have ${userBalanceData.formatted} ${userBalanceData.symbol}`
+              `Insufficient balance. You only have ${userBalanceData.formatted} ${userBalanceData.symbol}`,
             )
           }
         }
@@ -160,7 +162,7 @@ export default function MintNFTPage() {
         const finalMetadata = {
           name: aiNft.name || 'Untitled NFT',
           image: imageIpfsUrl,
-          attributes: aiNft.attributes || {}
+          attributes: aiNft.attributes || {},
         }
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       } else {
@@ -174,12 +176,12 @@ export default function MintNFTPage() {
         const randomAttrs = {
           power: Math.floor(Math.random() * 100) + 1,
           durability: Math.floor(Math.random() * 100) + 1,
-          rarity: 'Random'
+          rarity: 'Random',
         }
         const finalMetadata = {
           name: prompt || 'Untitled NFT',
           image: imageIpfsUrl,
-          attributes: randomAttrs
+          attributes: randomAttrs,
         }
         finalMetadataUrl = await uploadJsonToIpfs(finalMetadata)
       }
@@ -197,12 +199,12 @@ export default function MintNFTPage() {
         abi: creatorCollection.abi,
         functionName: 'mintFromCollection',
         args: [0, finalMetadataUrl, payWithXP],
-        value: mintValue
+        value: mintValue,
       })
 
       toast({
         title: 'Transaction Sent',
-        description: `Tx Hash: ${hash}`
+        description: `Tx Hash: ${hash}`,
       })
 
       // Wait for transaction receipt
@@ -216,14 +218,14 @@ export default function MintNFTPage() {
       mintTx.success(hash)
       toast({
         title: 'Transaction Confirmed',
-        description: 'NFT minted successfully!'
+        description: 'NFT minted successfully!',
       })
     } catch (err: any) {
       mintTx.fail(err.message || 'Minting failed.')
       toast({
         title: 'Mint Failure',
         description: err.message || 'Unable to mint NFT',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -261,7 +263,9 @@ export default function MintNFTPage() {
           </CardHeader>
           <CardContent className='space-y-6'>
             <div>
-              <div className='mb-2 text-sm font-medium text-muted-foreground'>Choose how to get your NFT image</div>
+              <div className='mb-2 text-sm font-medium text-muted-foreground'>
+                Choose how to get your NFT image
+              </div>
               <div className='flex items-center space-x-3'>
                 <Button
                   variant={useAIImage ? 'default' : 'outline'}
@@ -293,18 +297,24 @@ export default function MintNFTPage() {
 
             {useAIImage && (
               <div className='rounded-md bg-secondary p-4'>
-                <label className='mb-2 block text-sm font-medium text-muted-foreground'>Enter an AI Prompt</label>
+                <label className='mb-2 block text-sm font-medium text-muted-foreground'>
+                  Enter an AI Prompt
+                </label>
                 <Input
                   placeholder='e.g. Vibrant cyberpunk samurai with neon aesthetic'
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
                 <div className='mt-2'>
-                  <label className='mb-1 block text-sm font-medium text-muted-foreground'>Category</label>
+                  <label className='mb-1 block text-sm font-medium text-muted-foreground'>
+                    Category
+                  </label>
                   <select
                     className='border border-input bg-background p-2 text-sm'
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as 'Character' | 'GameItem' | 'Powerup')}
+                    onChange={(e) =>
+                      setCategory(e.target.value as 'Character' | 'GameItem' | 'Powerup')
+                    }
                   >
                     <option value='Character'>Character</option>
                     <option value='GameItem'>Game Item</option>
@@ -312,9 +322,15 @@ export default function MintNFTPage() {
                   </select>
                 </div>
                 {showPromptError && (
-                  <p className='mt-1 text-xs text-red-600 dark:text-red-400'>Please enter a prompt.</p>
+                  <p className='mt-1 text-xs text-red-600 dark:text-red-400'>
+                    Please enter a prompt.
+                  </p>
                 )}
-                <Button onClick={handleGenerateAttributesAndImage} disabled={generatingImage} className='mt-2 w-full'>
+                <Button
+                  onClick={handleGenerateAttributesAndImage}
+                  disabled={generatingImage}
+                  className='mt-2 w-full'
+                >
                   {generatingImage ? (
                     <>
                       <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -352,7 +368,9 @@ export default function MintNFTPage() {
 
             {!useAIImage && debugUploadCustomImage && (
               <div className='rounded-md bg-secondary p-4'>
-                <label className='mb-2 block text-sm font-medium text-muted-foreground'>Upload Custom Image</label>
+                <label className='mb-2 block text-sm font-medium text-muted-foreground'>
+                  Upload Custom Image
+                </label>
                 <Input
                   type='file'
                   accept='image/*'
@@ -381,18 +399,30 @@ export default function MintNFTPage() {
 
         <Card className='mt-8 rounded-lg border border-border p-6 shadow-lg'>
           <CardHeader>
-            <CardTitle className='flex items-center gap-2 text-lg font-semibold'>Payment Method</CardTitle>
+            <CardTitle className='flex items-center gap-2 text-lg font-semibold'>
+              Payment Method
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className='flex flex-col space-y-2'>
               <div className='flex items-center gap-3'>
-                <input type='radio' id='payWithXP' checked={payWithXP} onChange={() => setPayWithXP(true)} />
+                <input
+                  type='radio'
+                  id='payWithXP'
+                  checked={payWithXP}
+                  onChange={() => setPayWithXP(true)}
+                />
                 <label htmlFor='payWithXP' className='text-sm'>
                   Pay with 100 XP
                 </label>
               </div>
               <div className='flex items-center gap-3'>
-                <input type='radio' id='payWithNative' checked={!payWithXP} onChange={() => setPayWithXP(false)} />
+                <input
+                  type='radio'
+                  id='payWithNative'
+                  checked={!payWithXP}
+                  onChange={() => setPayWithXP(false)}
+                />
                 <label htmlFor='payWithNative' className='text-sm'>
                   Pay 0.1 {currencySymbol}
                 </label>

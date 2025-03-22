@@ -19,11 +19,16 @@ function Header() {
       <div className='flex flex-col md:flex-row md:items-center md:justify-between md:px-20'>
         <div className='flex items-center justify-between px-4 py-4 md:px-0 md:py-3'>
           <Logo />
-          <IconMenu2 onClick={toggleOpen} className='ml-auto block h-5 w-5 cursor-pointer md:hidden' />
+          <IconMenu2
+            onClick={toggleOpen}
+            className='ml-auto block h-5 w-5 cursor-pointer md:hidden'
+          />
         </div>
 
         {/* Desktop Nav */}
-        <div className={`${open ? 'block' : 'hidden'} border-t border-border md:block md:border-none`}>
+        <div
+          className={`${open ? 'block' : 'hidden'} border-t border-border md:block md:border-none`}
+        >
           <div className='flex flex-col gap-4 px-4 py-4 text-sm uppercase md:flex-row md:items-center md:justify-end md:py-0'>
             {/* HOME Menu (with dropdown linking to each homepage section) */}
             <div className='group relative'>
@@ -39,7 +44,10 @@ function Header() {
                   <Link href='/#introduction' className='block rounded-sm px-4 py-2 hover:bg-muted'>
                     INTRODUCTION
                   </Link>
-                  <Link href='/#what-is-aipenguild' className='block rounded-sm px-4 py-2 hover:bg-muted'>
+                  <Link
+                    href='/#what-is-aipenguild'
+                    className='block rounded-sm px-4 py-2 hover:bg-muted'
+                  >
                     WHAT IS AIPENGUILD
                   </Link>
                   <Link href='/#key-features' className='block rounded-sm px-4 py-2 hover:bg-muted'>
@@ -48,13 +56,22 @@ function Header() {
                   <Link href='/#featured' className='block rounded-sm px-4 py-2 hover:bg-muted'>
                     FEATURED
                   </Link>
-                  <Link href='/#workflow-overview' className='block rounded-sm px-4 py-2 hover:bg-muted'>
+                  <Link
+                    href='/#workflow-overview'
+                    className='block rounded-sm px-4 py-2 hover:bg-muted'
+                  >
                     WORKFLOW OVERVIEW
                   </Link>
-                  <Link href='/#getting-started' className='block rounded-sm px-4 py-2 hover:bg-muted'>
+                  <Link
+                    href='/#getting-started'
+                    className='block rounded-sm px-4 py-2 hover:bg-muted'
+                  >
                     GETTING STARTED
                   </Link>
-                  <Link href='/#why-aipenguild' className='block rounded-sm px-4 py-2 hover:bg-muted'>
+                  <Link
+                    href='/#why-aipenguild'
+                    className='block rounded-sm px-4 py-2 hover:bg-muted'
+                  >
                     WHY AIPENGUILD
                   </Link>
                   <Link href='/#faq' className='block rounded-sm px-4 py-2 hover:bg-muted'>
@@ -63,10 +80,16 @@ function Header() {
                   <Link href='/#gallery' className='block rounded-sm px-4 py-2 hover:bg-muted'>
                     GALLERY
                   </Link>
-                  <Link href='/#leaderboard-cta' className='block rounded-sm px-4 py-2 hover:bg-muted'>
+                  <Link
+                    href='/#leaderboard-cta'
+                    className='block rounded-sm px-4 py-2 hover:bg-muted'
+                  >
                     LEADERBOARD CTA
                   </Link>
-                  <Link href='/#call-to-action' className='block rounded-sm px-4 py-2 hover:bg-muted'>
+                  <Link
+                    href='/#call-to-action'
+                    className='block rounded-sm px-4 py-2 hover:bg-muted'
+                  >
                     CALL TO ACTION
                   </Link>
                 </div>

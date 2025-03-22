@@ -5,7 +5,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWalletClient } from 'wagmi'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/Accordion'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/Accordion'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { DualRangeSlider } from '@/components/ui/DualRangeSlider'
@@ -75,9 +80,10 @@ export default function MarketplacePage() {
     agility: [0, 150],
     durability: [0, 150],
     power: [0, 150],
-    duration: [0, 300]
+    duration: [0, 300],
   }
-  const [tempAttribRanges, setTempAttribRanges] = useState<AttributeFilterRanges>(defaultAttribRanges)
+  const [tempAttribRanges, setTempAttribRanges] =
+    useState<AttributeFilterRanges>(defaultAttribRanges)
   const [attribRanges, setAttribRanges] = useState<AttributeFilterRanges>(defaultAttribRanges)
 
   const [metadataMap, setMetadataMap] = useState<Record<string, ParsedNftMetadata>>({})
@@ -89,8 +95,8 @@ export default function MarketplacePage() {
       ...prev,
       [itemId]: {
         ...prev[itemId],
-        ...patch
-      }
+        ...patch,
+      },
     }))
   }
 
@@ -101,7 +107,7 @@ export default function MarketplacePage() {
         toast({
           title: 'Wallet not connected',
           description: 'Please connect your wallet before buying.',
-          variant: 'destructive'
+          variant: 'destructive',
         })
         return
       }
@@ -109,7 +115,7 @@ export default function MarketplacePage() {
         toast({
           title: 'Item not for sale',
           description: 'That item is not currently for sale.',
-          variant: 'destructive'
+          variant: 'destructive',
         })
         return
       }
@@ -117,7 +123,7 @@ export default function MarketplacePage() {
         toast({
           title: 'No Contract Found',
           description: 'NFTMarketplaceHub contract not found. Check your chain or config.',
-          variant: 'destructive'
+          variant: 'destructive',
         })
         return
       }
@@ -125,7 +131,7 @@ export default function MarketplacePage() {
         toast({
           title: 'Already Owned',
           description: "You already own this NFT. You can't buy your own NFT.",
-          variant: 'destructive'
+          variant: 'destructive',
         })
         return
       }
@@ -133,7 +139,7 @@ export default function MarketplacePage() {
         toast({
           title: 'Missing Clients',
           description: 'No wallet or public client found. Please check your connection.',
-          variant: 'destructive'
+          variant: 'destructive',
         })
         return
       }
@@ -142,7 +148,7 @@ export default function MarketplacePage() {
         loading: true,
         success: false,
         error: null,
-        txHash: null
+        txHash: null,
       })
 
       const purchaseABI = {
@@ -150,7 +156,7 @@ export default function MarketplacePage() {
         type: 'function',
         stateMutability: 'payable',
         inputs: [{ name: 'itemId', type: 'uint256' }],
-        outputs: []
+        outputs: [],
       }
 
       const hash = await walletClient.writeContract({
@@ -158,14 +164,14 @@ export default function MarketplacePage() {
         abi: [purchaseABI],
         functionName: 'purchaseNFTItem',
         args: [item.itemId],
-        value: item.salePrice
+        value: item.salePrice,
       })
 
       updateBuyTxMap(itemIdStr, { txHash: hash })
 
       toast({
         title: 'Purchase Transaction',
-        description: 'Transaction submitted... awaiting confirmation.'
+        description: 'Transaction submitted... awaiting confirmation.',
       })
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash })
@@ -173,12 +179,12 @@ export default function MarketplacePage() {
         updateBuyTxMap(itemIdStr, {
           loading: false,
           success: false,
-          error: 'Transaction reverted on-chain.'
+          error: 'Transaction reverted on-chain.',
         })
         toast({
           title: 'Transaction Failed',
           description: 'Reverted on-chain.',
-          variant: 'destructive'
+          variant: 'destructive',
         })
         return
       }
@@ -186,12 +192,12 @@ export default function MarketplacePage() {
       updateBuyTxMap(itemIdStr, {
         loading: false,
         success: true,
-        error: null
+        error: null,
       })
 
       toast({
         title: 'Transaction Successful!',
-        description: 'You have purchased the NFT successfully!'
+        description: 'You have purchased the NFT successfully!',
       })
 
       // Refresh the marketplace
@@ -201,12 +207,12 @@ export default function MarketplacePage() {
       updateBuyTxMap(String(item.itemId), {
         loading: false,
         success: false,
-        error: msg
+        error: msg,
       })
       toast({
         title: 'Purchase Failure',
         description: msg,
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -237,7 +243,12 @@ export default function MarketplacePage() {
 
     setIsLoading(true)
     try {
-      const allNfts = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
+      const allNfts = await fetchAllNFTs(
+        publicClient,
+        nftMintingPlatform,
+        nftMarketplaceHub,
+        nftStakingPool,
+      )
       setListedItems(allNfts)
 
       const newMap: Record<string, ParsedNftMetadata> = {}
@@ -252,7 +263,7 @@ export default function MarketplacePage() {
               imageUrl: transformIpfsUriToHttp(item.resourceUrl),
               name: '',
               description: '',
-              attributes: {}
+              attributes: {},
             }
           }
         }
@@ -262,7 +273,7 @@ export default function MarketplacePage() {
       toast({
         title: 'Error',
         description: 'Unable to load marketplace items. Try again later.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     } finally {
       setIsLoading(false)
@@ -334,7 +345,15 @@ export default function MarketplacePage() {
 
         return true
       })
-  }, [listedItems, priceRange, searchTerm, selectedCategories, selectedRarities, attribRanges, metadataMap])
+  }, [
+    listedItems,
+    priceRange,
+    searchTerm,
+    selectedCategories,
+    selectedRarities,
+    attribRanges,
+    metadataMap,
+  ])
 
   function toggleCategory(cat: string) {
     setTempSelectedCategories((prev) => {
@@ -367,7 +386,12 @@ export default function MarketplacePage() {
           <CardHeader className='rounded-t-lg border-b border-border bg-secondary p-4 text-secondary-foreground'>
             <div className='flex items-center justify-between'>
               <CardTitle className='text-xl font-bold'>Filters</CardTitle>
-              <Button variant='ghost' size='icon' className='md:hidden' onClick={() => setSidebarOpen(false)}>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='md:hidden'
+                onClick={() => setSidebarOpen(false)}
+              >
                 <X className='h-5 w-5' />
               </Button>
             </div>
@@ -470,8 +494,8 @@ export default function MarketplacePage() {
                 <AccordionTrigger>Attributes</AccordionTrigger>
                 <AccordionContent>
                   <p className='mt-2 text-xs text-muted-foreground'>
-                    Specify numeric ranges for each attribute if you'd like to filter by them. Only NFTs that have the
-                    attribute in their metadata will be filtered.
+                    Specify numeric ranges for each attribute if you'd like to filter by them. Only
+                    NFTs that have the attribute in their metadata will be filtered.
                   </p>
                   {/* Strength */}
                   <div className='mt-4'>
@@ -481,7 +505,9 @@ export default function MarketplacePage() {
                       max={150}
                       step={1}
                       value={tempAttribRanges.strength}
-                      onValueChange={(val) => setTempAttribRanges((prev) => ({ ...prev, strength: [val[0], val[1]] }))}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, strength: [val[0], val[1]] }))
+                      }
                     />
                     <div className='mt-1 flex justify-between text-xs text-muted-foreground'>
                       <span>{tempAttribRanges.strength[0]}</span>
@@ -497,7 +523,9 @@ export default function MarketplacePage() {
                       max={150}
                       step={1}
                       value={tempAttribRanges.agility}
-                      onValueChange={(val) => setTempAttribRanges((prev) => ({ ...prev, agility: [val[0], val[1]] }))}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, agility: [val[0], val[1]] }))
+                      }
                     />
                     <div className='mt-1 flex justify-between text-xs text-muted-foreground'>
                       <span>{tempAttribRanges.agility[0]}</span>
@@ -531,7 +559,9 @@ export default function MarketplacePage() {
                       max={150}
                       step={1}
                       value={tempAttribRanges.power}
-                      onValueChange={(val) => setTempAttribRanges((prev) => ({ ...prev, power: [val[0], val[1]] }))}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, power: [val[0], val[1]] }))
+                      }
                     />
                     <div className='mt-1 flex justify-between text-xs text-muted-foreground'>
                       <span>{tempAttribRanges.power[0]}</span>
@@ -547,7 +577,9 @@ export default function MarketplacePage() {
                       max={300}
                       step={1}
                       value={tempAttribRanges.duration}
-                      onValueChange={(val) => setTempAttribRanges((prev) => ({ ...prev, duration: [val[0], val[1]] }))}
+                      onValueChange={(val) =>
+                        setTempAttribRanges((prev) => ({ ...prev, duration: [val[0], val[1]] }))
+                      }
                     />
                     <div className='mt-1 flex justify-between text-xs text-muted-foreground'>
                       <span>{tempAttribRanges.duration[0]}</span>
@@ -578,17 +610,30 @@ export default function MarketplacePage() {
             <Link href='/mint'>
               <Button size='sm'>Generate AI NFT</Button>
             </Link>
-            <Button variant='outline' size='sm' className='md:hidden' onClick={() => setSidebarOpen(true)}>
+            <Button
+              variant='outline'
+              size='sm'
+              className='md:hidden'
+              onClick={() => setSidebarOpen(true)}
+            >
               Filters
             </Button>
           </div>
         </header>
 
         <div className='mb-6 flex items-center justify-end gap-2'>
-          <Button variant={viewMode === 'grid' ? 'default' : 'ghost'} size='sm' onClick={() => setViewMode('grid')}>
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size='sm'
+            onClick={() => setViewMode('grid')}
+          >
             <Grid2X2 className='h-4 w-4' />
           </Button>
-          <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size='sm' onClick={() => setViewMode('list')}>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size='sm'
+            onClick={() => setViewMode('list')}
+          >
             <LayoutList className='h-4 w-4' />
           </Button>
         </div>
@@ -599,7 +644,9 @@ export default function MarketplacePage() {
             <span>Loading marketplace items...</span>
           </div>
         ) : filteredItems.length === 0 ? (
-          <p className='mt-16 text-center text-sm text-muted-foreground'>No items found for the given filters.</p>
+          <p className='mt-16 text-center text-sm text-muted-foreground'>
+            No items found for the given filters.
+          </p>
         ) : (
           <>
             {viewMode === 'grid' ? (
@@ -611,13 +658,13 @@ export default function MarketplacePage() {
                     imageUrl: transformIpfsUriToHttp(item.resourceUrl),
                     name: '',
                     description: '',
-                    attributes: {}
+                    attributes: {},
                   }
                   const buyTx = buyTxMap[itemIdStr] || {
                     loading: false,
                     success: false,
                     error: null,
-                    txHash: null
+                    txHash: null,
                   }
 
                   return (
@@ -685,13 +732,13 @@ export default function MarketplacePage() {
                     imageUrl: transformIpfsUriToHttp(item.resourceUrl),
                     name: '',
                     description: '',
-                    attributes: {}
+                    attributes: {},
                   }
                   const buyTx = buyTxMap[itemIdStr] || {
                     loading: false,
                     success: false,
                     error: null,
-                    txHash: null
+                    txHash: null,
                   }
 
                   return (
@@ -711,7 +758,9 @@ export default function MarketplacePage() {
                         />
                       </div>
                       <div className='flex flex-1 flex-col'>
-                        <h3 className='text-base font-semibold'>{meta.name ? meta.name : `AI NFT #${itemIdStr}`}</h3>
+                        <h3 className='text-base font-semibold'>
+                          {meta.name ? meta.name : `AI NFT #${itemIdStr}`}
+                        </h3>
                         <p className='text-sm text-muted-foreground'>
                           Owner: {item.owner.slice(0, 6)}...{item.owner.slice(-4)}
                         </p>

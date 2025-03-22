@@ -24,7 +24,7 @@ export function TransactionStatus({
   errorMessage,
   txHash,
   chainId,
-  className
+  className,
 }: TransactionStatusProps) {
   // If there's no relevant transaction state, don't render anything
   const showStatus = isLoading || isSuccess || !!errorMessage

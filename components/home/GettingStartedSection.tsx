@@ -30,8 +30,9 @@ export default function GettingStartedSection() {
             Getting Started with AIPenGuild
           </h2>
           <p className='text-sm leading-relaxed text-muted-foreground sm:text-base'>
-            Connect your wallet, mint AI-driven NFTs, stake or sell them on our marketplace, and seamlessly integrate
-            with other dApps or games. Begin your journey in a few simple steps!
+            Connect your wallet, mint AI-driven NFTs, stake or sell them on our marketplace, and
+            seamlessly integrate with other dApps or games. Begin your journey in a few simple
+            steps!
           </p>
         </motion.div>
 
@@ -97,7 +98,7 @@ function Step({
   description,
   linkHref,
   linkText,
-  delay
+  delay,
 }: {
   icon: React.ReactNode
   title: string
@@ -118,7 +119,9 @@ function Step({
         {icon}
       </div>
       <h3 className='mb-2 text-base font-semibold text-foreground sm:text-lg'>{title}</h3>
-      <p className='mb-3 max-w-[240px] text-sm leading-relaxed text-muted-foreground sm:text-base'>{description}</p>
+      <p className='mb-3 max-w-[240px] text-sm leading-relaxed text-muted-foreground sm:text-base'>
+        {description}
+      </p>
       <Link href={linkHref} className='text-sm font-medium text-primary hover:underline'>
         {linkText}
       </Link>

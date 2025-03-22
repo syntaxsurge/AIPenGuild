@@ -54,10 +54,17 @@ export default function MyNFTsPage() {
 
     try {
       // fetch all minted items
-      const allItems = await fetchAllNFTs(publicClient, nftMintingPlatform, nftMarketplaceHub, nftStakingPool)
+      const allItems = await fetchAllNFTs(
+        publicClient,
+        nftMintingPlatform,
+        nftMarketplaceHub,
+        nftStakingPool,
+      )
       // filter for items that belong to or are staked by user
       const myItems = allItems.filter((item) => {
-        const staked = item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+        const staked =
+          item.stakeInfo?.staked &&
+          item.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
         const owned = item.owner.toLowerCase() === wagmiAddress.toLowerCase()
         return staked || owned
       })
@@ -73,7 +80,7 @@ export default function MyNFTsPage() {
             imageUrl: item.resourceUrl,
             name: '',
             description: '',
-            attributes: {}
+            attributes: {},
           }
         }
       }
@@ -85,7 +92,7 @@ export default function MyNFTsPage() {
       toast({
         title: 'Error',
         description: 'Unable to fetch your NFTs. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     } finally {
       setLoadingNFTs(false)
@@ -115,9 +122,9 @@ export default function MyNFTsPage() {
         stateMutability: 'view',
         inputs: [
           { name: 'owner', type: 'address' },
-          { name: 'operator', type: 'address' }
+          { name: 'operator', type: 'address' },
         ],
-        outputs: [{ name: '', type: 'bool' }]
+        outputs: [{ name: '', type: 'bool' }],
       },
       {
         name: 'setApprovalForAll',
@@ -125,23 +132,23 @@ export default function MyNFTsPage() {
         stateMutability: 'nonpayable',
         inputs: [
           { name: 'operator', type: 'address' },
-          { name: 'approved', type: 'bool' }
+          { name: 'approved', type: 'bool' },
         ],
-        outputs: []
-      }
+        outputs: [],
+      },
     ]
 
     const isApproved = (await publicClient.readContract({
       address: nftMintingPlatform.address as `0x${string}`,
       abi: minimalABI,
       functionName: 'isApprovedForAll',
-      args: [wagmiAddress, nftMarketplaceHub.address]
+      args: [wagmiAddress, nftMarketplaceHub.address],
     })) as boolean
 
     if (!isApproved) {
       toast({
         title: 'Marketplace Approval',
-        description: 'Approving the Marketplace to transfer your NFTs...'
+        description: 'Approving the Marketplace to transfer your NFTs...',
       })
 
       const hash = await walletClient.writeContract({
@@ -149,18 +156,18 @@ export default function MyNFTsPage() {
         abi: minimalABI,
         functionName: 'setApprovalForAll',
         args: [nftMarketplaceHub.address, true],
-        account: wagmiAddress
+        account: wagmiAddress,
       })
 
       toast({
         title: 'Approval Transaction Sent',
-        description: `Tx Hash: ${String(hash)}`
+        description: `Tx Hash: ${String(hash)}`,
       })
 
       await publicClient.waitForTransactionReceipt({ hash })
       toast({
         title: 'Marketplace Approved',
-        description: 'You can now list your NFTs in the Marketplace.'
+        description: 'You can now list your NFTs in the Marketplace.',
       })
     }
   }
@@ -170,7 +177,7 @@ export default function MyNFTsPage() {
       toast({
         title: 'Error',
         description: 'Select an NFT and enter a price',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       return
     }
@@ -188,15 +195,15 @@ export default function MyNFTsPage() {
         stateMutability: 'nonpayable',
         inputs: [
           { name: 'itemId', type: 'uint256' },
-          { name: 'price', type: 'uint256' }
+          { name: 'price', type: 'uint256' },
         ],
-        outputs: []
+        outputs: [],
       }
       const hash = await walletClient?.writeContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: [abiListNFT],
         functionName: 'listNFTItem',
-        args: [selectedNFT.itemId, parseEther(price)]
+        args: [selectedNFT.itemId, parseEther(price)],
       })
       if (!hash) {
         throw new Error('Write failed. No transaction hash returned.')
@@ -205,21 +212,23 @@ export default function MyNFTsPage() {
 
       toast({
         title: 'Transaction Pending',
-        description: 'Your list transaction is being confirmed...'
+        description: 'Your list transaction is being confirmed...',
       })
       await publicClient?.waitForTransactionReceipt({ hash })
 
       listTx.success(hash)
       toast({
         title: 'Transaction Successful!',
-        description: 'Your NFT has been listed for sale.'
+        description: 'Your NFT has been listed for sale.',
       })
 
       if (selectedNFT) {
         try {
           const bigPrice = parseEther(price)
           setUserNFTs((prev) =>
-            prev.map((n) => (n.itemId === selectedNFT.itemId ? { ...n, isOnSale: true, salePrice: bigPrice } : n))
+            prev.map((n) =>
+              n.itemId === selectedNFT.itemId ? { ...n, isOnSale: true, salePrice: bigPrice } : n,
+            ),
           )
         } catch {
           // parse error ignored
@@ -230,7 +239,7 @@ export default function MyNFTsPage() {
       toast({
         title: 'Error',
         description: err.message || 'An error occurred while listing the NFT',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -240,7 +249,7 @@ export default function MyNFTsPage() {
       toast({
         title: 'Error',
         description: 'No NFT selected or it is not listed.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
       return
     }
@@ -254,13 +263,13 @@ export default function MyNFTsPage() {
         type: 'function',
         stateMutability: 'nonpayable',
         inputs: [{ name: 'itemId', type: 'uint256' }],
-        outputs: []
+        outputs: [],
       }
       const hash = await walletClient?.writeContract({
         address: nftMarketplaceHub.address as `0x${string}`,
         abi: [abiUnlistNFT],
         functionName: 'unlistNFTItem',
-        args: [selectedNFT.itemId]
+        args: [selectedNFT.itemId],
       })
       if (!hash) {
         throw new Error('Write failed. No transaction hash returned.')
@@ -269,19 +278,21 @@ export default function MyNFTsPage() {
 
       toast({
         title: 'Transaction Pending',
-        description: 'Your unlist transaction is being confirmed...'
+        description: 'Your unlist transaction is being confirmed...',
       })
       await publicClient?.waitForTransactionReceipt({ hash })
 
       unlistTx.success(hash)
       toast({
         title: 'Transaction Successful!',
-        description: 'Your NFT has been unlisted.'
+        description: 'Your NFT has been unlisted.',
       })
 
       if (selectedNFT) {
         setUserNFTs((prev) =>
-          prev.map((n) => (n.itemId === selectedNFT.itemId ? { ...n, isOnSale: false, salePrice: 0n } : n))
+          prev.map((n) =>
+            n.itemId === selectedNFT.itemId ? { ...n, isOnSale: false, salePrice: 0n } : n,
+          ),
         )
       }
     } catch (err: any) {
@@ -289,7 +300,7 @@ export default function MyNFTsPage() {
       toast({
         title: 'Error',
         description: err.message || 'An error occurred while unlisting the NFT',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -298,7 +309,9 @@ export default function MyNFTsPage() {
     return (
       <main className='flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 text-foreground'>
         <h1 className='mb-2 text-4xl font-extrabold text-primary'>My NFTs</h1>
-        <p className='text-sm text-muted-foreground'>Please connect your wallet to view your NFTs.</p>
+        <p className='text-sm text-muted-foreground'>
+          Please connect your wallet to view your NFTs.
+        </p>
       </main>
     )
   }
@@ -328,10 +341,11 @@ export default function MyNFTsPage() {
                     imageUrl: nft.resourceUrl,
                     name: '',
                     description: '',
-                    attributes: {}
+                    attributes: {},
                   }
                   const isStaked =
-                    nft.stakeInfo?.staked && nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
+                    nft.stakeInfo?.staked &&
+                    nft.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase()
                   const label = isStaked ? '(STAKED)' : nft.isOnSale ? '(LISTED)' : ''
                   const selected = selectedNFT?.itemId === nft.itemId
 
@@ -376,7 +390,9 @@ export default function MyNFTsPage() {
           </CardHeader>
           <CardContent className='p-6'>
             {!selectedNFT ? (
-              <p className='text-sm text-muted-foreground'>Click one of your NFTs on the left to view details.</p>
+              <p className='text-sm text-muted-foreground'>
+                Click one of your NFTs on the left to view details.
+              </p>
             ) : (
               <>
                 {/* Image */}
@@ -387,7 +403,7 @@ export default function MyNFTsPage() {
                       imageUrl: selectedNFT.resourceUrl,
                       name: '',
                       description: '',
-                      attributes: {}
+                      attributes: {},
                     }
                     if (!meta.imageUrl) return null
 
@@ -412,7 +428,7 @@ export default function MyNFTsPage() {
                     imageUrl: selectedNFT.resourceUrl,
                     name: '',
                     description: '',
-                    attributes: {}
+                    attributes: {},
                   }
                   return (
                     <>
@@ -445,7 +461,8 @@ export default function MyNFTsPage() {
                   <strong>XP Value:</strong> {selectedNFT.xpValue.toString()}
                 </p>
                 <p className='mb-1 text-sm'>
-                  <strong>Creator:</strong> {selectedNFT.creator.slice(0, 6)}...{selectedNFT.creator.slice(-4)}
+                  <strong>Creator:</strong> {selectedNFT.creator.slice(0, 6)}...
+                  {selectedNFT.creator.slice(-4)}
                 </p>
                 <p className='mb-1 break-all text-sm'>
                   <strong>Resource URL:</strong> {selectedNFT.resourceUrl}
@@ -455,7 +472,8 @@ export default function MyNFTsPage() {
                 </p>
                 {selectedNFT.isOnSale && (
                   <p className='mb-1 text-sm'>
-                    <strong>Price:</strong> {(Number(selectedNFT.salePrice) / 1e18).toFixed(4)} {currencySymbol}
+                    <strong>Price:</strong> {(Number(selectedNFT.salePrice) / 1e18).toFixed(4)}{' '}
+                    {currencySymbol}
                   </p>
                 )}
                 {selectedNFT.stakeInfo?.staked &&

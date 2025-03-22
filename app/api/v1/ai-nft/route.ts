@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import Replicate from 'replicate'
 
 const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN
+  auth: process.env.REPLICATE_API_TOKEN,
 })
 
 export async function POST(request: Request) {
@@ -18,8 +18,8 @@ export async function POST(request: Request) {
     // Run the replicate model black-forest-labs/flux-dev
     const output = await replicate.run('black-forest-labs/flux-dev', {
       input: {
-        prompt: finalPrompt
-      }
+        prompt: finalPrompt,
+      },
     })
 
     // According to Replicate docs, some image-based models return an array of FileOutput
@@ -49,18 +49,18 @@ export async function POST(request: Request) {
           { trait_type: 'AI Style', value: 'Generative' },
           {
             trait_type: 'Prompt',
-            value: prompt.slice(0, 60)
-          }
-        ]
-      }
+            value: prompt.slice(0, 60),
+          },
+        ],
+      },
     })
   } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'AI generation failed'
+        error: error.message || 'AI generation failed',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

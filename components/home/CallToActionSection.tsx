@@ -9,10 +9,12 @@ export default function CallToActionSection() {
       className='bg-secondary px-4 py-12 text-secondary-foreground sm:py-16 md:py-20 lg:py-24'
     >
       <div className='mx-auto max-w-6xl text-center'>
-        <h2 className='mb-4 break-words text-3xl font-extrabold sm:text-4xl md:text-5xl'>Ready to Dive In?</h2>
+        <h2 className='mb-4 break-words text-3xl font-extrabold sm:text-4xl md:text-5xl'>
+          Ready to Dive In?
+        </h2>
         <p className='mx-auto mb-6 max-w-2xl text-sm leading-relaxed sm:text-base'>
-          Experience the future of AI-generated NFTs on AIPenGuild. Start minting, staking, and sharing cross-chain
-          assets with ease!
+          Experience the future of AI-generated NFTs on AIPenGuild. Start minting, staking, and
+          sharing cross-chain assets with ease!
         </p>
         <Link
           href='/mint'

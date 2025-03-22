@@ -7,7 +7,8 @@ export default function NotFoundError() {
         <h1 className='text-[7rem] font-bold leading-tight text-primary'>404</h1>
         <span className='text-xl font-semibold'>Uh oh, we can't find that page.</span>
         <p className='max-w-md text-muted-foreground'>
-          The link might be broken or the page may have been removed. Double-check your URL or try again later.
+          The link might be broken or the page may have been removed. Double-check your URL or try
+          again later.
         </p>
         <div className='mt-6'>
           <LinkButton href='/' variant='default'>

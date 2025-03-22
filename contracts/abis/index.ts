@@ -12,5 +12,5 @@ export const ABIS = {
   NFTMintingPlatform: NFTMintingPlatformArtifact.abi,
   NFTStakingPool: NFTStakingPoolArtifact.abi,
   PlatformRewardPool: PlatformRewardPoolArtifact.abi,
-  UserExperiencePoints: UserExperiencePointsArtifact.abi
+  UserExperiencePoints: UserExperiencePointsArtifact.abi,
 }

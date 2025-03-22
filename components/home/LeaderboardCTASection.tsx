@@ -33,8 +33,9 @@ export default function LeaderboardCTASection() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.15, duration: 0.6 }}
           >
-            Dive into our Leaderboard to see which collectors and creators are dominating the XP race. Rank up by
-            minting NFTs, staking them, or trading to grow your XP—and become an AIPenGuild legend!
+            Dive into our Leaderboard to see which collectors and creators are dominating the XP
+            race. Rank up by minting NFTs, staking them, or trading to grow your XP—and become an
+            AIPenGuild legend!
           </motion.p>
           <motion.div
             className='mt-4 flex flex-wrap gap-4'
