@@ -7,6 +7,7 @@ import {
   AccordionTrigger
 } from "@/components/ui/Accordion"
 import { motion } from "framer-motion"
+import Link from "next/link"
 import XPTitlesModal from "../ui/XPTitlesModal"
 
 export default function FAQSection() {
@@ -15,14 +16,14 @@ export default function FAQSection() {
       id='faq'
       className='relative px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900'
     >
-      <div className='mx-auto max-w-6xl space-y-6'>
-        <h2 className='text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary text-center mb-8'>
-          Frequently Asked Questions
-        </h2>
-        <p className='mx-auto max-w-3xl text-center text-muted-foreground mb-6'>
-          Expand each question to learn more about how AIPenGuild works.
-        </p>
+      <h2 className='text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary text-center mb-8'>
+        Frequently Asked Questions
+      </h2>
+      <p className='mx-auto max-w-3xl text-center text-muted-foreground mb-6'>
+        Expand each question to learn more about how AIPenGuild works.
+      </p>
 
+      <div className='max-w-4xl mx-auto'>
         <div className='max-w-4xl mx-auto'>
           <motion.div
             className='bg-accent/10 rounded-lg p-4 md:p-6'
@@ -32,7 +33,6 @@ export default function FAQSection() {
             transition={{ duration: 0.6 }}
           >
             <Accordion type='multiple' className='w-full space-y-2'>
-              {/* Leaderboard */}
               <AccordionItem value='leaderboard'>
                 <AccordionTrigger className='text-base md:text-lg font-semibold'>
                   1. What is the Leaderboard?
@@ -119,7 +119,7 @@ export default function FAQSection() {
                 <AccordionContent className='mt-2 text-sm md:text-base text-muted-foreground'>
                   The exact amount of XP you earn while staking depends on how long your NFT
                   remains staked and the current rate in the staking pool. You can claim your
-                  accumulated XP anytime or upon unstaking your NFT, at which point
+                  accumulated XP anytime or automatically upon unstaking your NFT, at which point
                   the XP is added to your total experience.
                 </AccordionContent>
               </AccordionItem>
@@ -176,6 +176,14 @@ export default function FAQSection() {
               </AccordionItem>
             </Accordion>
           </motion.div>
+          <div className="mt-4 text-center">
+            <Link
+              href="/docs/faq"
+              className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/80"
+            >
+              View More FAQ Questions
+            </Link>
+          </div>
         </div>
       </div>
     </section>
