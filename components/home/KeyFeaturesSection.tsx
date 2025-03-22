@@ -7,7 +7,7 @@ import { XP_TITLES } from "@/lib/experience"
 export default function KeyFeaturesSection() {
   return (
     <section
-      id='features'
+      id='key-features'
       className='relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 dark:bg-gray-800'
     >
       <div className='mx-auto max-w-6xl'>

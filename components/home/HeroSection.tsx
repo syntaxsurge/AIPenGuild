@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 
 export default function HeroSection() {
   return (
-    <section className='w-full bg-background px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
+    <section id='hero' className='w-full bg-background px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
       <div className='mx-auto flex max-w-6xl flex-col-reverse items-center gap-10 md:flex-row md:gap-6'>
         {/* Left side content */}
         <div className='flex-1'>

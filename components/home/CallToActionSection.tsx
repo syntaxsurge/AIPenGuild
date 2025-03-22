@@ -4,7 +4,7 @@ import Link from "next/link"
 
 export default function CallToActionSection() {
   return (
-    <section className='bg-secondary text-secondary-foreground px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
+    <section id='call-to-action' className='bg-secondary text-secondary-foreground px-4 py-12 sm:py-16 md:py-20 lg:py-24'>
       <div className='mx-auto max-w-6xl text-center'>
         <h2 className='mb-4 text-3xl font-extrabold sm:text-4xl md:text-5xl break-words'>
           Ready to Dive In?

@@ -5,7 +5,7 @@ import Link from "next/link"
 
 export default function LeaderboardCTASection() {
   return (
-    <section className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
+    <section id='leaderboard-cta' className="px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900">
       <div className="mx-auto max-w-6xl text-center">
         <motion.h2
           className="mb-6 text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl"

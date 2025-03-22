@@ -5,7 +5,7 @@ import Image from "next/image"
 
 export default function WorkflowOverviewSection() {
   return (
-    <section className='relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900'>
+    <section id='workflow-overview' className='relative w-full px-4 py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-gray-900'>
       <div className='mx-auto max-w-6xl'>
         <motion.div
           initial={{ opacity: 0 }}
