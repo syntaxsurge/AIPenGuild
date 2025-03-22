@@ -452,12 +452,6 @@ export default function MyNFTsPage() {
                     {currencySymbol}
                   </p>
                 )}
-                {selectedNFT.stakeInfo?.staked &&
-                  selectedNFT.stakeInfo.staker.toLowerCase() === wagmiAddress.toLowerCase() && (
-                    <p className='mb-1 text-sm text-green-600'>
-                      <strong>Staked:</strong> This NFT is currently staked.
-                    </p>
-                  )}
 
                 <form onSubmit={(e) => e.preventDefault()} className='mt-4 space-y-4'>
                   <div>
