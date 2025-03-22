@@ -14,6 +14,7 @@ const docsNavLinks: NavLink[] = [
   { name: "Overview", href: "/docs/overview" },
   { name: "User Guide", href: "/docs/user-guide" },
   { name: "Developer APIs", href: "/docs/developer-apis" },
+  { name: "Technical Architecture", href: "/docs/technical-architecture" },
   { name: "FAQ", href: "/docs/faq" }
 ]
 
