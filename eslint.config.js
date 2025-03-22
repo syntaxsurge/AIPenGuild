@@ -5,9 +5,20 @@ import eslintPluginImport from 'eslint-plugin-import'
 import eslintPluginPrettier from 'eslint-plugin-prettier'
 
 export default [
+    {
+        ignores: [
+            '**/node_modules/**',
+            '**/.next/**',
+            '**/dist/**',
+            '**/build/**',
+            '**/coverage/**',
+            '**/out/**',
+            '**/public/**'
+        ],
+    },
     eslintConfigPrettier,
     {
-        files: ['**/*.{js,jsx,ts,tsx}'],
+        files: ['**/*.{ts,tsx}'],
         languageOptions: {
             parser: typescriptParser,
             parserOptions: {
