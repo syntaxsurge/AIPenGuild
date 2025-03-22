@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from "framer-motion"
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X, ZoomIn, ZoomOut } from "lucide-react"
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, RefreshCw, X, ZoomIn, ZoomOut } from "lucide-react"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
@@ -20,7 +20,7 @@ interface ImageLightboxProps {
 }
 
 /**
- * A helper for Portal usage. Renders children at top-level <body>.
+ * Portal helper to mount lightbox content at the top-level body
  */
 function LightboxPortal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
@@ -38,11 +38,12 @@ function LightboxPortal({ children }: { children: React.ReactNode }) {
 
 /**
  * ImageLightbox:
- * 1) Fits large images to screen by default (downscales if needed).
- * 2) Allows wheel-based zoom in/out around that baseline (fitScale).
- * 3) Supports "click & drag" panning when zoomed in.
- * 4) Next/Prev arrows to browse multiple images.
- * 5) Optional native fullscreen toggle.
+ * 1) Fits large images to screen by default, storing "fitScale"
+ * 2) Allows user to zoom in/out beyond fitScale using "zoomDelta"
+ * 3) Allows user to pan (drag) the image around if zoomed
+ * 4) Provides next/prev navigation
+ * 5) Allows toggling native fullscreen
+ * 6) Adds a "Reset View" to return to initial "fit" scale & no translation
  */
 export default function ImageLightbox({
   images,
@@ -54,16 +55,16 @@ export default function ImageLightbox({
   // current index among images
   const [currentIndex, setCurrentIndex] = useState(startIndex)
 
-  // the "fit scale" to show the entire image on screen
+  // "fit scale" to show entire image on screen
   const [fitScale, setFitScale] = useState(1)
-  // additional zoom factor (user-controlled above/below fit)
+  // additional zoom factor on top of fitScale
   const [zoomDelta, setZoomDelta] = useState(1)
 
   // translation offsets for panning
   const [translateX, setTranslateX] = useState(0)
   const [translateY, setTranslateY] = useState(0)
 
-  // used for pointer drag logic
+  // panning state
   const [isPanning, setIsPanning] = useState(false)
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const initialOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
@@ -72,7 +73,7 @@ export default function ImageLightbox({
   const containerRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // reset states when open changes or startIndex changes
+  // reset everything when open or startIndex changes
   useEffect(() => {
     if (open) {
       const validIndex = Math.min(Math.max(0, startIndex), images.length - 1)
@@ -84,7 +85,7 @@ export default function ImageLightbox({
     }
   }, [open, startIndex, images.length])
 
-  // Next / Prev
+  // next/prev
   const handleNext = useCallback(() => {
     setFitScale(1)
     setZoomDelta(1)
@@ -101,7 +102,7 @@ export default function ImageLightbox({
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
   }, [images.length])
 
-  // handle zoom in/out
+  // Zoom in/out
   function handleZoomIn() {
     setZoomDelta((z) => Math.min(z + 0.2, 5))
   }
@@ -109,7 +110,7 @@ export default function ImageLightbox({
     setZoomDelta((z) => Math.max(z - 0.2, 0.2))
   }
 
-  // wheel-based zoom
+  // Wheel-based zoom
   function handleWheel(e: React.WheelEvent) {
     if (e.deltaY < 0) {
       // zoom in
@@ -120,10 +121,10 @@ export default function ImageLightbox({
     }
   }
 
-  // compute scale
+  // effective scale
   const effectiveScale = fitScale * zoomDelta
 
-  // on image load, determine how to "fit" the image in the viewport
+  // on image load, compute how to fit the entire image on screen
   function handleImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { naturalWidth, naturalHeight } = e.currentTarget
     const screenW = window.innerWidth
@@ -140,11 +141,9 @@ export default function ImageLightbox({
     setTranslateY(0)
   }
 
-  // pointer / mouse events for panning
+  // pointer events for drag/pan
   function onPointerDown(e: React.PointerEvent) {
     e.preventDefault()
-    // only allow panning if we have scale > 1 or something?
-    // but let's allow panning anyway. If scale=1 we won't see difference
     setIsPanning(true)
     panStartRef.current = { x: e.clientX, y: e.clientY }
     initialOffsetRef.current = { x: translateX, y: translateY }
@@ -164,8 +163,6 @@ export default function ImageLightbox({
     e.preventDefault()
     setIsPanning(false)
   }
-
-  // handle leaving the container => panning ends
   function onPointerLeave(e: React.PointerEvent) {
     if (!isPanning) return
     e.preventDefault()
@@ -216,6 +213,14 @@ export default function ImageLightbox({
     }
   }
 
+  // new function to reset view
+  function resetView() {
+    // keep fitScale as is, reset zoomDelta to 1, translations to 0
+    setZoomDelta(1)
+    setTranslateX(0)
+    setTranslateY(0)
+  }
+
   if (!open) return null
 
   return (
@@ -229,7 +234,7 @@ export default function ImageLightbox({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Controls top-right */}
+          {/* Top-right controls */}
           <div className="absolute top-4 right-4 z-[9999] flex items-center gap-3">
             <button
               onClick={toggleFullscreen}
@@ -252,6 +257,14 @@ export default function ImageLightbox({
             >
               <ZoomOut className="h-4 w-4" />
             </button>
+            {/* Our new Reset View button */}
+            <button
+              onClick={resetView}
+              className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
+              aria-label="Reset View"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
             <button
               onClick={onClose}
               className="rounded-md bg-gray-800 p-2 text-white hover:bg-gray-700"
@@ -261,7 +274,7 @@ export default function ImageLightbox({
             </button>
           </div>
 
-          {/* Navigation Arrows */}
+          {/* Navigation arrows */}
           <button
             onClick={handlePrev}
             className="absolute left-2 top-1/2 z-[9999] -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70"
@@ -277,11 +290,10 @@ export default function ImageLightbox({
             <ChevronRight className="h-5 w-5" />
           </button>
 
-          {/* The container that allows wheel & drag/pan */}
+          {/* The container for pan/zoom */}
           <div
-            className={`relative flex h-full w-full items-center justify-center overflow-hidden ${
-              isPanning ? 'cursor-grabbing' : 'cursor-grab'
-            }`}
+            className={`relative flex h-full w-full items-center justify-center overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
             onWheel={handleWheel}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
