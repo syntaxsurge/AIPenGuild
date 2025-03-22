@@ -19,8 +19,8 @@ export default function DeveloperApisPage() {
         {/* Image left */}
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/developer-apis-1.png"
-            alt="Developer APIs Example"
+            src="/images/AIPenGuild-API-Architecture.png"
+            alt="AIPenGuild API Architecture"
             width={400}
             height={250}
             className="rounded-md border border-border shadow-sm"
@@ -144,8 +144,8 @@ export default function DeveloperApisPage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/dev-apis-integration.png"
-            alt="Integration Diagram"
+            src="/images/screenshots/api-terminal-example.png"
+            alt="Developer APIs Example"
             width={450}
             height={280}
             className="rounded-md border border-border shadow-sm"

@@ -25,7 +25,7 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/user-guide-connect.png"
+            src="/images/screenshots/user-guide-connect.png"
             alt="Connect Wallet Screenshot"
             width={400}
             height={250}
@@ -46,7 +46,7 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/user-guide-mint.png"
+            src="/images/screenshots/mint-nft.png"
             alt="Mint AI NFT Screenshot"
             width={400}
             height={250}
@@ -67,7 +67,7 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/user-guide-stake.png"
+            src="/images/screenshots/stake-nft.png"
             alt="NFT Staking Screenshot"
             width={400}
             height={250}
@@ -88,7 +88,7 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/user-guide-marketplace.png"
+            src="/images/screenshots/marketplace-overview.png"
             alt="Marketplace Screenshot"
             width={400}
             height={250}
@@ -109,7 +109,7 @@ export default function UserGuidePage() {
         </div>
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/user-guide-leaderboard.png"
+            src="/images/screenshots/leaderboard-overview.png"
             alt="Leaderboard Screenshot"
             width={400}
             height={250}

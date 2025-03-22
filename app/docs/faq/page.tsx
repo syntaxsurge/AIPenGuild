@@ -101,7 +101,7 @@ export default function FAQDocsPage() {
 
           <div className="flex justify-center mt-4">
             <Image
-              src="/images/docs/faq-visual.png"
+              src="/images/faq-visual.png"
               alt="FAQ Illustration"
               width={300}
               height={200}

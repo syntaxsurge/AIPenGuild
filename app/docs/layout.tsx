@@ -27,8 +27,8 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         {/* Sidebar branding or banner */}
         <div className="p-6 flex flex-col items-center justify-center gap-3 border-b border-border">
           <Image
-            src="/images/docs/docs-banner.png"
-            alt="Documentation Banner"
+            src="/images/aipenguild-logo.png"
+            alt="AIPenGuild Logo"
             width={200}
             height={100}
             className="object-contain"

@@ -23,8 +23,8 @@ export default function DocsOverviewPage() {
         {/* Image Column */}
         <div className="md:w-1/2 flex justify-center">
           <Image
-            src="/images/docs/overview-banner.png"
-            alt="AIPenGuild Overview Banner"
+            src="/images/screenshots/homepage-overview.png"
+            alt="Homepage Overview"
             width={500}
             height={350}
             className="rounded-md object-cover border border-border shadow-sm"
