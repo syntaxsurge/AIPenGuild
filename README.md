@@ -16,7 +16,7 @@ AIPenGuild is a comprehensive AI-based NFT ecosystem providing custom Marketplac
     - [5.1 Architecture](#51-architecture)
     - [5.2 Detailed Workflow](#52-detailed-workflow)
   - [6. Demo Instructions](#6-demo-instructions)
-  - [7. Code Formatting \& Optimization](#7-code-formatting--optimization)
+  - [7. Code Formatting And Optimization](#7-code-formatting-and-optimization)
   - [8. Challenges](#8-challenges)
   - [9. Future Development](#9-future-development)
   - [10. Submission Details](#10-submission-details)
@@ -187,7 +187,7 @@ The front-end calls Next.js APIs (`/api/v1/ai-nft/metadata` for attribute genera
 
 * * *
 
-7\. Code Formatting & Optimization
+7\. Code Formatting And Optimization
 -----------------------------------
 
 To ensure code consistency and automatic formatting, please run the following ESLint command after making changes to the project:
