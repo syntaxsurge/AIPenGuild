@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 import { getContractConfig, getPublicClientForChainId, parseChainIdParam } from '@/lib/chain-utils'
 import { transformIpfsUriToHttp } from '@/lib/ipfs'
@@ -14,7 +15,7 @@ import { fetchNftMetadata } from '@/lib/nft-metadata'
  * - Also fetches each NFT's IPFS metadata to avoid duplication in code.
  */
 
-export async function GET(request: Request, { params }: { params: { address: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { address: string } }) {
   try {
     const url = new URL(request.url)
     const chainId = parseChainIdParam(url.searchParams.get('chainId'))

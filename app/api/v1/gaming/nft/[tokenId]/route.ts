@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 import { getContractConfig, getPublicClientForChainId, parseChainIdParam } from '@/lib/chain-utils'
 import { transformIpfsUriToHttp } from '@/lib/ipfs'
@@ -8,7 +9,7 @@ import { fetchNftMetadata } from '@/lib/nft-metadata'
  * GET /api/v1/gaming/nft/[tokenId]?chainId=...
  * Returns detailed on-chain + metadata for a single NFT itemId.
  */
-export async function GET(request: Request, { params }: { params: { tokenId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { tokenId: string } }) {
   try {
     const tokenId = BigInt(params.tokenId)
     const url = new URL(request.url)
