@@ -233,6 +233,8 @@ We tackled these by implementing thorough checks in our Next.js backend, fallbac
 10\. Submission Details
 ----------------------
 
+[![Watch the video](https://github.com/syntaxsurge/AIPenGuild/blob/main/public/images/screenshots/youtube-demo.png?raw=true)](https://www.youtube.com/watch?v=gvjl6qbt35s)
+
 *   **GitHub Repository:** [https://github.com/syntaxsurge/AIPenGuild](https://github.com/syntaxsurge/AIPenGuild)
 *   **Live Demo:** [YouTube Demo](https://www.youtube.com/watch?v=gvjl6qbt35s)
 *   **Presentation Slides:** [Canva Pitch Deck](https://www.canva.com/design/DAGhvgXMfyQ/4wb7P2oUgSfPZp8zXUN8xA/edit)
