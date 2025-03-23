@@ -193,7 +193,7 @@ The front-end calls Next.js APIs (`/api/v1/ai-nft/metadata` for attribute genera
 To ensure code consistency and automatic formatting, please run the following ESLint command after making changes to the project:
 
 ```bash
-npx eslint . --ext .ts,.tsx,.js,.jsx --fix --debug
+npm run lint:fix
 ```
 
 This command will:
