@@ -37,7 +37,7 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   const labels: { text: string; style: string }[] = []
 
   if (isStaked) {
-    // Use a darker blue gradient for the STAKED badge
+    // STAKED: dark blue gradient
     labels.push({
       text: 'STAKED',
       style:
@@ -46,11 +46,11 @@ export function NFTCard({ item, metadata, selected, onClick }: NFTCardProps) {
   }
 
   if (isListed) {
-    // Keep the existing gradient & white border for LISTED
+    // LISTED: darker purple/pink gradient
     labels.push({
       text: 'LISTED',
       style:
-        'bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md border border-white',
+        'bg-gradient-to-r from-purple-800 to-pink-900 text-white px-2 py-1 text-xs font-semibold rounded-md shadow-md border border-white',
     })
   }
 
