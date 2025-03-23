@@ -17,5 +17,15 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "lucide",
+  "components": [
+    "accordion",
+    "badge",
+    "button",
+    "card",
+    "dialog",
+    "input",
+    "toast",
+    "slider"
+  ]
 }
