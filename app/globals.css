@@ -75,3 +75,14 @@ body {
     @apply selection:bg-black selection:text-highlight dark:selection:bg-white;
   }
 }
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-unbounded;
+  }
+}
