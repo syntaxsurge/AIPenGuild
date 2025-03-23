@@ -51,6 +51,7 @@ export default function HeroSection() {
            33vw'
                 className='object-contain'
                 priority
+                unoptimized={true}
               />
               <p className='absolute bottom-0 left-1/2 w-max -translate-x-1/2 rounded-md bg-secondary/80 px-2 py-1 text-xs font-semibold text-secondary-foreground'>
                 Character
@@ -67,6 +68,7 @@ export default function HeroSection() {
            (max-width: 1200px) 50vw,
            33vw'
                 className='object-contain'
+                unoptimized={true}
               />
               <p className='absolute bottom-0 left-1/2 w-max -translate-x-1/2 rounded-md bg-secondary/80 px-2 py-1 text-xs font-semibold text-secondary-foreground'>
                 Game Item
@@ -83,6 +85,7 @@ export default function HeroSection() {
            (max-width: 1200px) 50vw,
            33vw'
                 className='object-contain'
+                unoptimized={true}
               />
               <p className='absolute bottom-0 left-1/2 w-max -translate-x-1/2 rounded-md bg-secondary/80 px-2 py-1 text-xs font-semibold text-secondary-foreground'>
                 Powerup
