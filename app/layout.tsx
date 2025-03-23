@@ -1,5 +1,5 @@
 import { GoogleAnalytics } from '@next/third-parties/google'
-import { Inter, Unbounded } from 'next/font/google'
+import localFont from 'next/font/local'
 
 import { Metadata } from 'next'
 
@@ -12,21 +12,19 @@ import '@rainbow-me/rainbowkit/styles.css'
 
 import './globals.css'
 
-/**
- * Load two fonts:
- * - Unbounded (for headings) to reflect Polkadot brand style.
- * - Inter (for body text) as a clean, readable base.
- */
-const unbounded = Unbounded({
-  subsets: ['latin'],
-  variable: '--font-unbounded',
+const inter = localFont({
+  src: [
+    { path: '../public/fonts/Inter.ttf', style: 'normal' },
+    { path: '../public/fonts/Inter-Italic.ttf', style: 'italic' },
+  ],
   display: 'swap',
+  variable: '--font-inter',
 })
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
+const unbounded = localFont({
+  src: '../public/fonts/Unbounded.ttf',
   display: 'swap',
+  variable: '--font-unbounded',
 })
 
 export const metadata: Metadata = {
