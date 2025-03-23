@@ -199,7 +199,12 @@ contract NFTStakingPool is Ownable, ReentrancyGuard {
   /**
    * @dev Required by the ERC721 standard to allow this contract to receive NFTs safely.
    */
-  function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+  function onERC721Received(
+    address,
+    address,
+    uint256,
+    bytes calldata
+  ) external pure returns (bytes4) {
     // Return the magic value that signifies safe receipt of ERC721 tokens
     return 0x150b7a02;
   }

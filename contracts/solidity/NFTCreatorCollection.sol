@@ -44,7 +44,11 @@ interface INFTMintingPlatformForCollection {
    * @param collectionId The ID of the collection (e.g., 0 for the primary one).
    * @param imageUrl The metadata pointer (IPFS link or other) for the NFT's visuals/attributes.
    */
-  function generateNFTItem(address recipient, uint256 collectionId, string memory imageUrl) external payable;
+  function generateNFTItem(
+    address recipient,
+    uint256 collectionId,
+    string memory imageUrl
+  ) external payable;
 }
 
 /**
@@ -242,7 +246,11 @@ contract NFTCreatorCollection is Ownable {
    *  - The user must either have enough XP (if paying with XP) or send enough native currency (if paying with tokens).
    *  - The supply limit must not be exceeded.
    */
-  function mintFromCollection(uint256 collectionId, string memory imageUrl, bool payWithXP) external payable {
+  function mintFromCollection(
+    uint256 collectionId,
+    string memory imageUrl,
+    bool payWithXP
+  ) external payable {
     CollectionData storage info;
     if (collectionId == 0) {
       require(primaryCollection.active, 'Primary collection not active');
@@ -257,7 +265,9 @@ contract NFTCreatorCollection is Ownable {
 
     if (payWithXP) {
       // The user has chosen to pay with XP. So we check if they have at least 100 XP.
-      IUserExperiencePointsForCollection xpContract = IUserExperiencePointsForCollection(experienceModule);
+      IUserExperiencePointsForCollection xpContract = IUserExperiencePointsForCollection(
+        experienceModule
+      );
       uint256 userXP = xpContract.userExperience(msg.sender);
       require(userXP >= 100, 'Not enough XP (need 100)');
 
@@ -273,12 +283,16 @@ contract NFTCreatorCollection is Ownable {
 
       // The entire fee goes to the reward pool (owned by the main platform).
       address rewardPool = INFTMintingPlatformForCollection(minterPlatform).getRewardPool();
-      (bool success, ) = rewardPool.call{value: msg.value}('');
+      (bool success, ) = rewardPool.call{ value: msg.value }('');
       require(success, 'Fee payment to reward pool failed');
     }
 
     // Actually mint the NFT by calling the minter platform's `generateNFTItem`.
-    INFTMintingPlatformForCollection(minterPlatform).generateNFTItem(msg.sender, collectionId, imageUrl);
+    INFTMintingPlatformForCollection(minterPlatform).generateNFTItem(
+      msg.sender,
+      collectionId,
+      imageUrl
+    );
 
     // Increment the supply count for this collection.
     info.currentSupply++;

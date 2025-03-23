@@ -177,11 +177,11 @@ contract NFTMarketplaceHub is Ownable {
     uint256 sellerAmount = msg.value - feeAmount;
 
     // Send fee to the reward pool
-    (bool sentFee, ) = rewardPool.call{value: feeAmount}('');
+    (bool sentFee, ) = rewardPool.call{ value: feeAmount }('');
     require(sentFee, 'Fee transfer failed');
 
     // Send remainder to the seller
-    (bool sentSeller, ) = payable(seller).call{value: sellerAmount}('');
+    (bool sentSeller, ) = payable(seller).call{ value: sellerAmount }('');
     require(sentSeller, 'Seller payment failed');
 
     // Unlist the item

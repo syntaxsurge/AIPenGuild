@@ -58,7 +58,7 @@ contract PlatformRewardPool is Ownable {
    */
   function withdrawPoolFunds(uint256 amount) external onlyOwner {
     require(address(this).balance >= amount, 'Insufficient pool balance');
-    (bool success, ) = payable(owner()).call{value: amount}('');
+    (bool success, ) = payable(owner()).call{ value: amount }('');
     require(success, 'Withdrawal failed');
 
     emit PoolWithdrawal(owner(), amount);

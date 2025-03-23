@@ -28,7 +28,11 @@ interface INFTMintingPlatform {
   /**
    * @notice Actually mints the NFT item and assigns random XP. Called by an authorized contract (e.g., NFTCreatorCollection).
    */
-  function generateNFTItem(address recipient, uint256 collectionId, string memory imageUrl) external payable;
+  function generateNFTItem(
+    address recipient,
+    uint256 collectionId,
+    string memory imageUrl
+  ) external payable;
 
   /**
    * @notice Return the platform's reward pool address, used for referencing where fees go.
@@ -137,7 +141,11 @@ contract NFTMintingPlatform is ERC721URIStorage, Ownable, INFTMintingPlatform {
    * @param collectionId Identifies the collection (so we can verify the caller's authorization).
    * @param imageUrl A pointer to the NFT's resource (IPFS with metadata).
    */
-  function generateNFTItem(address recipient, uint256 collectionId, string memory imageUrl) external payable override {
+  function generateNFTItem(
+    address recipient,
+    uint256 collectionId,
+    string memory imageUrl
+  ) external payable override {
     // Ensure the caller is authorized for this collectionId
     require(nftCollections[collectionId] == msg.sender, 'Not an authorized collection');
     require(recipient != address(0), 'Invalid recipient');
