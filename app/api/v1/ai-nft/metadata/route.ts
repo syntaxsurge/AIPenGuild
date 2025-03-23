@@ -227,7 +227,7 @@ Obey the category, numeric ranges, and no extra keys!
     }
 
     const finalName = attributesJson.name || 'Unnamed NFT'
-    const { finalReplicatePrompt, ...restAttrs } = attributesJson
+    const { _finalReplicatePrompt, ...restAttrs } = attributesJson
 
     const metadata = {
       name: finalName,

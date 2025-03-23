@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const [xp, setXp] = useState<bigint | null>(null)
   const [loadingXp, setLoadingXp] = useState(false)
 
-  const [nfts, setNfts] = useState<NFTItem[]>([])
+  const [_nfts, setNfts] = useState<NFTItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
 
   const [totalMinted, setTotalMinted] = useState<number>(0)
@@ -39,7 +39,7 @@ export default function DashboardPage() {
   const [totalListed, setTotalListed] = useState<number>(0)
   const [totalStaked, setTotalStaked] = useState<number>(0)
 
-  const [loaded, setLoaded] = useState(false)
+  const [_loaded, setLoaded] = useState(false)
   const loadedRef = useRef(false)
 
   useEffect(() => {

@@ -271,7 +271,7 @@ export default function MarketplacePage() {
         }
       }
       setMetadataMap(newMap)
-    } catch (err) {
+    } catch (_err) {
       toast({
         title: 'Error',
         description: 'Unable to load marketplace items. Try again later.',
