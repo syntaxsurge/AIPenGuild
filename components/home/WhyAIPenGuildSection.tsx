@@ -41,6 +41,7 @@ export default function WhyAIPenGuildSection() {
                      (max-width: 1200px) 50vw,
                      33vw'
               className={cn('object-cover')}
+              unoptimized={true}
             />
           </div>
         </motion.div>

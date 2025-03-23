@@ -74,6 +74,7 @@ export default function LeaderboardCTASection() {
                    (max-width: 1200px) 50vw,
                    33vw'
             className='object-cover'
+            unoptimized={true}
           />
         </motion.div>
       </div>
