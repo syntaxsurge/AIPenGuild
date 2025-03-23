@@ -93,6 +93,10 @@ export default {
           },
         },
       },
+      fontFamily: {
+        inter: ['var(--font-inter)', 'sans-serif'],
+        unbounded: ['var(--font-unbounded)', 'sans-serif'],
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],
