@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
 import { getContractConfig, getPublicClientForChainId, parseChainIdParam } from '@/lib/chain-utils'
 import { transformIpfsUriToHttp } from '@/lib/ipfs'
@@ -8,28 +7,37 @@ import { fetchNftMetadata } from '@/lib/nft-metadata'
 
 /**
  * GET /api/v1/gaming/user/[address]/nfts?chainId=...
- *
- * - chainId param can be 1287 (Moonbase Alpha), 420420421 (Westend), or 1284 (Moonbeam).
- * - If missing or invalid, fallback to 1287 (Moonbase Alpha).
- * - Returns all NFTs that the user either owns or has staked.
- * - Also fetches each NFT's IPFS metadata to avoid duplication in code.
+ * No second argument with { params }. We'll parse the "[address]" from path segments ourselves.
  */
-
-export async function GET(request: NextRequest, { params }: { params: { address: string } }) {
+export async function GET(request: Request): Promise<Response> {
   try {
+    // 1) parse address from the path
     const url = new URL(request.url)
-    const chainId = parseChainIdParam(url.searchParams.get('chainId'))
-    const userAddress = params.address.toLowerCase()
+    const segments = url.pathname.split('/')
+    // The last segment is "nfts" -> we want the second to last, "[address]"
+    // e.g. /api/v1/gaming/user/0x1234abcd/nfts
+    // segments might be ["", "api", "v1", "gaming", "user", "0x1234abcd", "nfts"]
+    if (segments.length < 7) {
+      return NextResponse.json(
+        { success: false, error: 'No address found in path' },
+        { status: 400 },
+      )
+    }
+    const address = segments[segments.length - 2]
+    const userAddress = address.toLowerCase()
 
-    // 1) Build a publicClient for the chain
+    // 2) parse chainId from query param
+    const chainId = parseChainIdParam(url.searchParams.get('chainId'))
+
+    // 3) build a public client for that chain
     const publicClient = getPublicClientForChainId(chainId)
 
-    // 2) Prepare needed contract configs
+    // 4) get contract configs
     const nftMintingPlatform = getContractConfig(chainId, 'NFTMintingPlatform')
     const nftMarketplaceHub = getContractConfig(chainId, 'NFTMarketplaceHub')
     const nftStakingPool = getContractConfig(chainId, 'NFTStakingPool')
 
-    // 3) Fetch all minted items, then filter by user
+    // 5) fetch all minted items
     const allNfts = await fetchAllNFTs(
       publicClient,
       nftMintingPlatform,
@@ -37,6 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: { address:
       nftStakingPool,
     )
 
+    // 6) filter by user’s address
     const userItems = allNfts.filter((item) => {
       const stakedByUser =
         item.stakeInfo?.staked && item.stakeInfo.staker.toLowerCase() === userAddress
@@ -44,7 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: { address:
       return stakedByUser || ownedByUser
     })
 
-    // 4) Fetch IPFS metadata for each item
+    // 7) fetch IPFS metadata for each
     const results = []
     for (const nft of userItems) {
       let metadata = null
@@ -89,10 +98,7 @@ export async function GET(request: NextRequest, { params }: { params: { address:
     })
   } catch (error: any) {
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to fetch user NFTs.',
-      },
+      { success: false, error: error.message || 'Failed to fetch user NFTs.' },
       { status: 500 },
     )
   }

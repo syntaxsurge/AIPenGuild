@@ -1,27 +1,36 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
 import { getContractConfig, getPublicClientForChainId, parseChainIdParam } from '@/lib/chain-utils'
 
 /**
  * GET /api/v1/gaming/user/[address]/xp?chainId=...
- *
  * Returns { success: boolean, chainId, address, xp }
  */
-export async function GET(request: NextRequest, { params }: { params: { address: string } }) {
+export async function GET(request: Request): Promise<Response> {
   try {
+    // parse address from path
     const url = new URL(request.url)
+    const segments = url.pathname.split('/')
+    // The last segment is "xp" -> we want the second to last, "[address]"
+    // e.g. /api/v1/gaming/user/0x1234abcd/xp
+    if (segments.length < 7) {
+      return NextResponse.json(
+        { success: false, error: 'No address found in path' },
+        { status: 400 },
+      )
+    }
+    const address = segments[segments.length - 2]
+    const userAddress = address.toLowerCase()
+
+    // parse chainId
     const chainId = parseChainIdParam(url.searchParams.get('chainId'))
 
     // Build public client
     const publicClient = getPublicClientForChainId(chainId)
-
-    // Get XP contract config
+    // get XP contract config
     const xpConfig = getContractConfig(chainId, 'UserExperiencePoints')
 
-    const userAddress = params.address.toLowerCase()
-
-    // read user XP from contract
+    // read user XP
     const xpVal = (await publicClient.readContract({
       address: xpConfig.address as `0x${string}`,
       abi: xpConfig.abi,
