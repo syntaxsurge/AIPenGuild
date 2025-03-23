@@ -18,14 +18,5 @@
     "hooks": "@/hooks"
   },
   "iconLibrary": "lucide",
-  "components": [
-    "accordion",
-    "badge",
-    "button",
-    "card",
-    "dialog",
-    "input",
-    "toast",
-    "slider"
-  ]
+  "components": ["accordion", "badge", "button", "card", "dialog", "input", "toast", "slider"]
 }
